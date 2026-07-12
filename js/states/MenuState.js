@@ -3,11 +3,23 @@ import { Level } from '../world/Level.js';
 import { Player } from '../entities/Player.js';
 import { ColorZone } from '../mechanics/ColorZone.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
+import { MenuButtons } from '../ui/MenuButtons.js';
+import { Panel } from '../ui/Panel.js';
 
 const PLAYER_SPEED = 60;
 const CHARACTER_FRAME_SIZE = 96;
 const BACKGROUND_OVERLAP_PX = 32;
 const CHARACTER_GROUND_OFFSET_PX = 5;
+
+// Settings/Credits/Imprint/Privacy are self-contained (no dependency on states
+// that don't exist yet) so they get real panels now. New Game/Continue are not
+// in here on purpose - they lead to Difficulty selection -> CutsceneState ->
+// WorldmapState (08_menu-flow.md 9.2), none of which exist yet.
+const PANEL_CONTENT = {
+    settings: { title: 'Settings', body: '<p>Audio, Controls, and Language settings - coming soon.</p>' },
+    credits: { title: 'Credits', body: '<p>Credits - coming soon.</p>' },
+    'imprint-privacy': { title: 'Imprint & Privacy', body: '<p>Imprint and privacy policy - coming soon.</p>' },
+};
 
 export class MenuState extends State {
     enter() {
@@ -59,10 +71,25 @@ export class MenuState extends State {
         this.titleEl.className = 'menu-title';
         this.titleEl.textContent = 'CHROMATIC';
         this.game.overlay.appendChild(this.titleEl);
+
+        this.panel = new Panel(this.game.overlay);
+
+        this.menuButtons = new MenuButtons(this.game.overlay, {
+            hasSave: false,
+            onSelect: (id) => this._handleMenuSelect(id),
+        });
+        this.menuButtons.mount();
+    }
+
+    _handleMenuSelect(id) {
+        const content = PANEL_CONTENT[id];
+        if (content) this.panel.open(content.title, content.body);
     }
 
     exit() {
         this.titleEl?.remove();
+        this.menuButtons?.unmount();
+        this.panel?.close();
     }
 
     update(dt) {

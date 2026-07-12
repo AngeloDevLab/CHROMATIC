@@ -115,3 +115,85 @@ body {
 #fullscreen-btn:hover {
   background: rgba(0, 0, 0, 0.7);
 }
+
+.menu-buttons {
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.menu-button {
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: #f2f2f2;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  padding: 4px 28px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.menu-button:hover,
+.menu-button:focus-visible {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.menu-button:disabled {
+  color: rgba(242, 242, 242, 0.35);
+  border-color: rgba(255, 255, 255, 0.1);
+  cursor: not-allowed;
+}
+
+.panel-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.panel {
+  position: relative;
+  width: 420px;
+  max-width: calc(100% - 40px);
+  max-height: calc(100% - 40px);
+  overflow-y: auto;
+  background: #1a1c20;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 20px 24px;
+  color: #f2f2f2;
+  font-family: 'Jersey 10', sans-serif;
+}
+
+.panel-title {
+  font-size: 26px;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+.panel-body {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.panel-close {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #f2f2f2;
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+}

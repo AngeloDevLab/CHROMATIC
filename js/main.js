@@ -19,7 +19,7 @@ fullscreenBtn.addEventListener('click', () => {
     if (document.fullscreenElement) {
         document.exitFullscreen();
     } else {
-        document.documentElement.requestFullscreen().catch(() => {});
+        document.documentElement.requestFullscreen().catch(() => { });
     }
 });
 document.addEventListener('fullscreenchange', () => {

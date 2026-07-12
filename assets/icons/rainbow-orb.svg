@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="rainbow-orb" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#ff5c5c" stop-opacity="1"/>
+      <stop offset="15%"  stop-color="#ffb35c" stop-opacity="1"/>
+      <stop offset="30%"  stop-color="#ffe75c" stop-opacity="0.95"/>
+      <stop offset="45%"  stop-color="#6cff8a" stop-opacity="0.8"/>
+      <stop offset="60%"  stop-color="#5cc9ff" stop-opacity="0.6"/>
+      <stop offset="75%"  stop-color="#b45cff" stop-opacity="0.35"/>
+      <stop offset="90%"  stop-color="#ff5cc7" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#ff5cc7" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="100" cy="100" r="100" fill="url(#rainbow-orb)"/>
+</svg>
