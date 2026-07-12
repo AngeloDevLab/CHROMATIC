@@ -1,0 +1,117 @@
+@font-face {
+    font-family: 'Jersey 10';
+    src: url('assets/fonts/Jersey10-Regular.woff2') format('woff2'),
+        url('assets/fonts/Jersey10-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Jacquard 24';
+    src: url('assets/fonts/Jacquard24-Regular.woff2') format('woff2'),
+        url('assets/fonts/Jacquard24-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+  --game-width: 640;
+  --game-height: 360;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #000;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#viewport {
+  position: relative;
+  /* width/height set in JS to the largest whole-number multiple of 640x360 that fits the window */
+}
+
+#game-canvas {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+#ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(var(--game-width) * 1px);
+  height: calc(var(--game-height) * 1px);
+  transform-origin: top left;
+  pointer-events: none;
+}
+
+#ui-overlay * {
+  pointer-events: auto;
+}
+
+.loading-label {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Jersey 10', monospace;
+  font-size: 20px;
+  color: #e5e5e5;
+  pointer-events: none;
+}
+
+.menu-title {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Jersey 10', serif;
+  font-size: 56px;
+  letter-spacing: 4px;
+  background: linear-gradient(90deg, #ff5c5c, #ffb35c, #ffe75c, #6cff8a, #5cc9ff, #b45cff, #ff5cc7);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
+  pointer-events: none;
+}
+
+#fullscreen-btn {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #f2f2f2;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+#fullscreen-btn:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
