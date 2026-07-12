@@ -25,13 +25,14 @@ Implemented with two Canvas layers using `destination-out` compositing — no du
 
 ## Current Status
 
-Concept phase complete, implementation starting.
+Concept phase complete, implementation underway.
 
 - [x] Game Design Document (complete, maintained iteratively)
 - [x] Scope defined and bounded
 - [x] Technical architecture planned (state machine, inheritance hierarchy, asset/level pipeline)
-- [ ] Foundation: game loop, state machine, player movement
-- [ ] Color-mechanic prototype (validation before investing in assets)
+- [x] Foundation: game loop, state machine, canvas rendering, fullscreen window-fill scaling
+- [x] Color-mechanic prototype (validated via the main menu's living background demo scene)
+- [ ] Real player movement & input handling (desktop first)
 - [ ] Prologue (6 levels)
 
 ## Scope
@@ -46,7 +47,7 @@ The Prologue proves the reusable system; everything beyond it is content scaling
 
 ## Tech Stack
 
-- **Rendering:** HTML5 Canvas, internal resolution 640×360 with integer scaling (`image-rendering: pixelated`)
+- **Rendering:** HTML5 Canvas, internal resolution 640×360, fractional window-fill scaling + fullscreen toggle (`image-rendering: pixelated`)
 - **Language:** vanilla JavaScript, ES Modules, OOP with classes and inheritance
 - **Architecture:** state-driven (LoadingState, MenuState, WorldmapState, GameState, BossState, …)
 - **Level design:** Tiled, exported as JSON
