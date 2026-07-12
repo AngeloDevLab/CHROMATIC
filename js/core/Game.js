@@ -24,9 +24,13 @@ export class Game {
     }
 
     _handleResize() {
-        // Fractional scale so the canvas fills as much of the window as possible
-        // (letterboxing only on aspect-ratio mismatch) instead of jumping between
-        // whole-number steps that leave large black bars.
+        // Fractional scale, uniformly in every state - fills the window fully (no
+        // large letterbox bars from snapping down a whole-number step) and, since
+        // it's the exact same formula everywhere, the scale factor never changes
+        // between states either (no visual jump opening Pause, entering the Menu,
+        // etc.). Trade-off: nearest-neighbor sampling at a fractional scale can
+        // shimmer once Camera.js scrolls - accepted for now, revisit only if that's
+        // actually visible/bothersome once real scrolling gameplay exists.
         const scale = Math.min(
             window.innerWidth / this.width,
             window.innerHeight / this.height

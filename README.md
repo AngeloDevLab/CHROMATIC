@@ -47,7 +47,7 @@ The Prologue proves the reusable system; everything beyond it is content scaling
 
 ## Tech Stack
 
-- **Rendering:** HTML5 Canvas, internal resolution 640×360, fractional window-fill scaling + fullscreen toggle (`image-rendering: pixelated`)
+- **Rendering:** HTML5 Canvas, internal resolution 640×360, fractional window-fill scaling everywhere (no exceptions, avoids state-switch jumps and large letterbox bars) + fullscreen toggle (`image-rendering: pixelated`)
 - **Language:** vanilla JavaScript, ES Modules, OOP with classes and inheritance
 - **Architecture:** state-driven (LoadingState, MenuState, WorldmapState, GameState, BossState, …)
 - **Level design:** Tiled, exported as JSON
