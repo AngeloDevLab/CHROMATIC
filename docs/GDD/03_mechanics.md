@@ -14,6 +14,8 @@ Purely visual feature - no combat bonus for the player and no malus for enemies 
 
 **Exception - Templateboss/Chapterboss fights:** the color mechanic is fully suspended for the duration of the fight (no new colored ground, no reverting either) - see [05_enemies-bosses.md](05_enemies-bosses.md) 6.2.1 for the arena presentation this enables.
 
+**Exception - Main Menu living background:** the demo scene behind the main menu (see [08_menu-flow.md](08_menu-flow.md)) reuses the same color-reveal technique in a decorative, non-permanent mode - the reveal follows the character as a fading bubble that dissolves back to grey after a few seconds, instead of staying colorful forever. Presentation choice for the menu only, not representative of real gameplay behavior.
+
 ## 4.2 Movement & Controls
 
 | Ability | Availability | Controls |

@@ -20,9 +20,20 @@
 | mechanics/ | Combat.js, ColorZone.js, Shield.js, Ability.js (base), DoubleJump, Dash, WallJump, TokenEconomy.js |
 | world/ | World.js, Level.js, Room.js, Checkpoint.js |
 | ui/ | HUD.js, BossHealthBar.js, ShieldBar.js, AbilityUnlock.js, MobileControls.js |
-| utils/ | SaveManager.js, Camera.js, Collision.js |
+| utils/ | SaveManager.js, Camera.js, Collision.js, SpriteAnimation.js |
 
 Inheritance chain: Entity → Enemy → Boss → Templateboss → Chapterboss. Patroller/Charger/Shooter/Sentinel inherit directly from Enemy, Player inherits directly from Entity. Abilities (DoubleJump/Dash/WallJump) are not inheritance, but composition - they're attached to the Player as Ability instances.
+
+### 11.2.1 Assets Folder
+
+| Folder | Content |
+|---|---|
+| assets/images/character/ | Player sprite sheets (e.g. `idle.png`, `running.png`) |
+| assets/images/tilesets/ | Tileset PNGs + their Tiled `.tsx` companion files |
+| assets/images/backgrounds/ | Parallax background images |
+| assets/levels/ | Tiled JSON level exports |
+| assets/fonts/ | Self-hosted font files (see [09_audio-visual.md](09_audio-visual.md) 10.1) |
+| assets/sounds/ | Music, SFX |
 
 ## 11.3 Controls
 
@@ -51,6 +62,8 @@ Levels are built in [Tiled](https://www.mapeditor.org/) and exported as JSON (no
 | Terrain/Collision | Tile layer | Every painted tile is solid - floor, wall, and ceiling are the same layer. Whether a touch means floor, wall (relevant for wall jump), or ceiling is decided by `utils/Collision.js` based on the direction of contact, not the layer |
 | Decoration | Tile layer | Purely visual, never collidable. If a decoration element should block movement (e.g. a desk), that tile belongs in Terrain/Collision instead |
 | Objects | Object layer (Tiled markers, not painted tiles) | Player start, enemy spawns, Secret Room trigger, boss trigger, exit portal, checkpoint, doors - see 11.6.2 |
+
+Tiles in the Terrain/Collision layer must visually fill their full 32x32 cell, opaque edge to edge - a tile that only occupies half its cell (e.g. a thin grass strip with transparent padding above or below) leaves it ambiguous whether collision covers the whole cell or just the visible part, and `Collision.js` doesn't special-case partial tiles. Decorative overhang (taller grass tufts, edge detail poking above the grid line) belongs on the Decoration layer instead, layered on top of a fully solid Terrain/Collision tile.
 
 ### Background vs. Parallax
 
@@ -91,7 +104,7 @@ The loader in `world/Level.js` reads `type` + `properties` and creates the match
 
 ### 11.7.1 Base Resolution
 
-Internal render resolution: **640x360**. Scales as a whole number to all common desktop resolutions:
+Internal render resolution: **640x360**. At common desktop resolutions this lands on a whole-number scale factor:
 
 | Target Resolution | Scale Factor |
 |---|---|
@@ -100,7 +113,9 @@ Internal render resolution: **640x360**. Scales as a whole number to all common 
 | 2560x1440 | 4x |
 | 3840x2160 (4K) | 6x |
 
-The canvas element has two separate sizes: the drawing surface (`canvas.width/height` = 640x360, determines the field of view) and the display size (`canvas.style.width/height`, scaled up by the browser to the target resolution). `image-rendering: pixelated` makes sure this scaling happens via nearest-neighbor (crisp) instead of smooth interpolation (blurry). Mobile uses the same internal resolution, adjusted via CSS; small letterbox bars on screens off 16:9 are fine.
+The canvas element has two separate sizes: the drawing surface (`canvas.width/height` = 640x360, determines the field of view) and the display size (`canvas.style.width/height`, scaled up by the browser to the target resolution). `image-rendering: pixelated` makes sure this scaling happens via nearest-neighbor (crisp) instead of smooth interpolation (blurry).
+
+The game always fills as much of the browser window as possible - scaling is fractional (`min(window.innerWidth/640, window.innerHeight/360)`, recalculated on resize), not restricted to the whole-number steps above. A whole-number match stays the crispest case, but any other window size still fills the screen (small letterbox bars only where the window's aspect ratio isn't 16:9) rather than snapping down to the next lower integer step and leaving large black bars. A dedicated fullscreen toggle (Fullscreen API, `requestFullscreen()`/`exitFullscreen()`) additionally lets the browser chrome (address bar, tabs) hide entirely, on both desktop and mobile.
 
 Deliberately **no** larger field of view on larger screens - otherwise players with a higher resolution would have a visibility advantage (enemies, projectiles, Secret Rooms visible earlier). The field of view stays the same for everyone, only the display size changes.
 
@@ -128,3 +143,9 @@ Prologue/Chap 1 stay at a max of ~35 tiles height without Wall Jump.
 ### 11.7.3 Camera Zoom (Boss Fights)
 
 Boss zoom-outs are a camera parameter, not a change to the base resolution. `Camera.js` normally renders tiles at an effective size of 32px (zoom 1.0). `BossState` sets a reduced zoom value on entry (e.g. 0.75 → effectively 24px per tile), which lets more tiles fit into the same 640x360 buffer (~26-27 instead of 20) - more field of view for the boss arena, without touching the base resolution or screen scaling. Zoom resets when leaving `BossState`.
+
+## 11.8 UI Overlay & Text Rendering
+
+UI text (HUD, menus, dialogue) is not drawn with `fillText()` on the canvas - at 640x360 internal resolution scaled up via `image-rendering: pixelated`, font glyph edges would scale up blocky instead of staying crisp. Instead, a `#ui-overlay` div sits absolutely positioned over the canvas (both inside a `position: relative` container), sized to the same 640x360 internal coordinate system and scaled with the same factor as the canvas (`transform: scale(...); transform-origin: top left;`) - so UI elements are positioned in game-space coordinates without per-resolution recalculation, while the text itself renders through the browser's normal font engine (sharp at any scale).
+
+The overlay defaults to `pointer-events: none` so clicks/touches pass through to the canvas underneath, with `pointer-events: auto` set individually on interactive elements (buttons, mobile controls) so they still receive input.

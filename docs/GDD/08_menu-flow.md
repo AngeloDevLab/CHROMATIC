@@ -6,7 +6,7 @@
 |---|---|
 | LandscapeCheck | Mandatory - prompt on portrait orientation on Mobile |
 | LoadingState | Loading assets |
-| MenuState | New Game / Continue (only if a save exists) / Settings / Credits / Imprint / Privacy |
+| MenuState | New Game / Continue (only if a save exists) / Settings / Credits / Imprint / Privacy. Background is a living demo scene rather than a static image - a small non-interactive slice of the real game (tileset, parallax background, an autopilot-controlled Guardian sprite walking back and forth) leaving a temporary color-reveal bubble behind it that fades back to grey after a few seconds, see [03_mechanics.md](03_mechanics.md) 4.1 exception. Shows the core color mechanic before the game even starts. |
 | CutsceneState | Intro and inter-chapter cutscenes (skippable) |
 | GameState | Main game state |
 | WorldmapState | Chapter/level selection, see 9.2 |
