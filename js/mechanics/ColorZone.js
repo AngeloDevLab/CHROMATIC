@@ -4,13 +4,23 @@ export class ColorZone {
     // color stays permanently). A finite value (e.g. 5) is for decorative uses (the
     // menu living background) where the trail should linger and then dissolve back
     // to grey instead of staying forever.
-    constructor(width, height, revealRadius = 24, { fadeDurationSeconds = Infinity, stampIntervalSeconds = 0.1, greyBrightness = 1 } = {}) {
+    // greyTint: optional { sepia, hueRotate, saturate } cast applied on top of the
+    // neutral grayscale (e.g. a cold blue tone for a more ominous look) - grayscale
+    // alone removes all color, so hue-rotate needs the sepia pass to reintroduce
+    // some chroma to rotate in the first place.
+    constructor(width, height, revealRadius = 24, {
+        fadeDurationSeconds = Infinity,
+        stampIntervalSeconds = 0.1,
+        greyBrightness = 1,
+        greyTint = null,
+    } = {}) {
         this.width = width;
         this.height = height;
         this.revealRadius = revealRadius;
         this.fadeDurationSeconds = fadeDurationSeconds;
         this.stampIntervalSeconds = stampIntervalSeconds;
         this.greyBrightness = greyBrightness;
+        this.greyTint = greyTint;
 
         this.greyTemplateCanvas = document.createElement('canvas');
         this.greyTemplateCanvas.width = width;
@@ -33,7 +43,15 @@ export class ColorZone {
         const templateCtx = this.greyTemplateCanvas.getContext('2d');
         templateCtx.clearRect(0, 0, this.width, this.height);
         templateCtx.save();
-        templateCtx.filter = `grayscale(1) brightness(${this.greyBrightness})`;
+
+        const filters = ['grayscale(1)'];
+        if (this.greyTint) {
+            const { sepia, hueRotate, saturate } = this.greyTint;
+            filters.push(`sepia(${sepia})`, `hue-rotate(${hueRotate}deg)`, `saturate(${saturate})`);
+        }
+        filters.push(`brightness(${this.greyBrightness})`);
+        templateCtx.filter = filters.join(' ');
+
         templateCtx.drawImage(colorSourceCanvas, 0, 0);
         templateCtx.restore();
 

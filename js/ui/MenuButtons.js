@@ -1,9 +1,8 @@
 const MENU_ITEMS = [
-    { id: 'new-game', label: 'New Game' },
     { id: 'continue', label: 'Continue' },
+    { id: 'new-game', label: 'New Game' },
     { id: 'settings', label: 'Settings' },
-    { id: 'credits', label: 'Credits' },
-    { id: 'imprint-privacy', label: 'Imprint' },
+    { id: 'info', label: 'Info' },
 ];
 
 export class MenuButtons {

@@ -6,7 +6,7 @@
 |---|---|
 | LandscapeCheck | Mandatory - prompt on portrait orientation on Mobile |
 | LoadingState | Loading assets |
-| MenuState | New Game / Continue (always visible, disabled/greyed out until a save exists) / Settings / Credits / Imprint. Background is a living demo scene rather than a static image - a small non-interactive slice of the real game (tileset, parallax background, an autopilot-controlled Guardian sprite walking back and forth) leaving a temporary color-reveal bubble behind it that fades back to grey after a few seconds, see [03_mechanics.md](03_mechanics.md) 4.1 exception. Shows the core color mechanic before the game even starts. |
+| MenuState | Continue (always visible, disabled/greyed out until a save exists) / New Game / Settings / Info. Background is a living demo scene rather than a static image - a small non-interactive slice of the real game (tileset, parallax background, an autopilot-controlled Guardian sprite walking back and forth) leaving a temporary color-reveal bubble behind it that fades back to grey after a few seconds, see [03_mechanics.md](03_mechanics.md) 4.1 exception. Shows the core color mechanic before the game even starts. |
 | CutsceneState | Intro and inter-chapter cutscenes (skippable) |
 | GameState | Main game state |
 | WorldmapState | Chapter/level selection, see 9.2 |
@@ -25,8 +25,7 @@ After completing the Prologue: automatic save point (`prologComplete: true`), sh
 
 ## 9.3 Menu Items
 
+- **Continue** - always visible, disabled/greyed out until a save exists, listed above New Game
 - **New Game** - new game incl. difficulty selection
-- **Continue** - always visible, disabled/greyed out until a save exists
 - **Settings** - Audio, Controls, Language (currently English only, see [10_technical-architecture.md](10_technical-architecture.md))
-- **Credits**
-- **Imprint** - covers both imprint and privacy policy content under one button/panel
+- **Info** - single button/panel covering Credits, Legal Notice, and Privacy Policy as separate sections

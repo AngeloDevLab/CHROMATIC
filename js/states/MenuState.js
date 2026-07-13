@@ -11,14 +11,23 @@ const CHARACTER_FRAME_SIZE = 96;
 const BACKGROUND_OVERLAP_PX = 32;
 const CHARACTER_GROUND_OFFSET_PX = 5;
 
-// Settings/Credits/Imprint/Privacy are self-contained (no dependency on states
-// that don't exist yet) so they get real panels now. New Game/Continue are not
-// in here on purpose - they lead to Difficulty selection -> CutsceneState ->
+// Settings/Info are self-contained (no dependency on states that don't exist
+// yet) so they get real panels now. New Game/Continue are not in here on
+// purpose - they lead to Difficulty selection -> CutsceneState ->
 // WorldmapState (08_menu-flow.md 9.2), none of which exist yet.
 const PANEL_CONTENT = {
     settings: { title: 'Settings', body: '<p>Audio, Controls, and Language settings - coming soon.</p>' },
-    credits: { title: 'Credits', body: '<p>Credits - coming soon.</p>' },
-    'imprint-privacy': { title: 'Imprint & Privacy', body: '<p>Imprint and privacy policy - coming soon.</p>' },
+    info: {
+        title: 'Info',
+        body: `
+            <h3>Credits</h3>
+            <p>Credits - coming soon.</p>
+            <h3>Legal Notice</h3>
+            <p>Legal notice - coming soon.</p>
+            <h3>Privacy Policy</h3>
+            <p>Privacy policy - coming soon.</p>
+        `,
+    },
 };
 
 export class MenuState extends State {
@@ -48,7 +57,8 @@ export class MenuState extends State {
 
         this.colorZone = new ColorZone(this.game.width, this.game.height, 55, {
             fadeDurationSeconds: 5,
-            greyBrightness: 0.65,
+            greyBrightness: 0.15,
+            greyTint: { sepia: 0.4, hueRotate: 180, saturate: 2 },
             stampIntervalSeconds: 0.25,
         });
         this.colorZone.paintGreyFrom(this.backgroundCanvas);

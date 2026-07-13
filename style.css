@@ -118,24 +118,25 @@ body {
 
 .menu-buttons {
   position: absolute;
-  top: 100px;
+  top: 105px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .menu-button {
+  width: 150px;
   font-family: 'Jersey 10', sans-serif;
-  font-size: 22px;
-  letter-spacing: 2px;
+  font-size: 16px;
+  letter-spacing: 1px;
   color: #f2f2f2;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 4px;
-  padding: 4px 28px;
+  padding: 3px 0;
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
@@ -184,6 +185,20 @@ body {
 .panel-body {
   font-size: 16px;
   line-height: 1.5;
+}
+
+.panel-body h3 {
+  font-size: 18px;
+  letter-spacing: 1px;
+  margin-top: 16px;
+}
+
+.panel-body h3:first-child {
+  margin-top: 0;
+}
+
+.panel-body p {
+  opacity: 0.8;
 }
 
 .panel-close {
