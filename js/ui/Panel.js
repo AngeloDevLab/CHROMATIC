@@ -5,7 +5,10 @@ export class Panel {
         this._onKeyDown = this._onKeyDown.bind(this);
     }
 
-    open(title, bodyHTML) {
+    // onMount: optional callback receiving the panel's root element, for callers
+    // that need to wire up interactive content inside bodyHTML (e.g. buttons)
+    // instead of just static text.
+    open(title, bodyHTML, { onMount } = {}) {
         this.close();
 
         this.element = document.createElement('div');
@@ -25,6 +28,8 @@ export class Panel {
 
         this.overlayRoot.appendChild(this.element);
         window.addEventListener('keydown', this._onKeyDown);
+
+        onMount?.(this.element);
     }
 
     close() {

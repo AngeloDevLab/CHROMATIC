@@ -19,6 +19,8 @@
 
 LoadingState → MenuState → "New Game" → Difficulty selection (Easy/Normal/Hard, see [04_health-save-system.md](04_health-save-system.md) 5.3) → CutsceneState (Intro: Guardian materializes on the beach in a color explosion) → WorldmapState.
 
+Difficulty selection is an overlay panel (reusing the same panel component as Settings/Info) with a short one-line description per option, so the player knows what they're picking before committing - not just bare labels. CutsceneState and WorldmapState don't exist yet, so picking a difficulty is currently as far as the flow goes.
+
 On the Worldmap: chapter bar at the top of the screen with 6 buttons - Prologue, Chap 1, Chap 2, Chap 3, Chap 4, Epilogue (see [02_game-structure.md](02_game-structure.md) 2.1). At the start of the game only "Prologue" is active, the others show "Coming Soon" until the respective previous chapter is completed.
 
 After completing the Prologue: automatic save point (`prologComplete: true`), short CutsceneState, then "Chap 1" unlocks on the chapter bar.

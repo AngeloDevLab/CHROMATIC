@@ -197,8 +197,141 @@ body {
   margin-top: 0;
 }
 
+.difficulty-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.difficulty-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: #f2f2f2;
+  font-family: 'Jersey 10', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.difficulty-option:hover,
+.difficulty-option:focus-visible {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.difficulty-label {
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+.difficulty-description {
+  font-size: 13px;
+  opacity: 0.75;
+  line-height: 1.4;
+}
+
+.cutscene-text {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 560px;
+  max-width: calc(100% - 40px);
+  text-align: center;
+  font-family: 'Jacquard 24', serif;
+  font-size: 22px;
+  color: #f2f2f2;
+  -webkit-text-stroke: 3px rgba(0, 0, 0, 0.9);
+  paint-order: stroke fill;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.cutscene-skip-button {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 14px;
+  color: #f2f2f2;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.cutscene-skip-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 .panel-body p {
   opacity: 0.8;
+}
+
+.chapter-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.chapter-button {
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: #f2f2f2;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.chapter-button:hover:not(:disabled),
+.chapter-button:focus-visible:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.chapter-button:disabled {
+  color: rgba(242, 242, 242, 0.35);
+  border-color: rgba(255, 255, 255, 0.1);
+  cursor: not-allowed;
+}
+
+.worldmap-placeholder-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Jersey 10', monospace;
+  font-size: 16px;
+  color: rgba(242, 242, 242, 0.5);
+  pointer-events: none;
+}
+
+.gamestate-debug-label {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-family: 'Jersey 10', monospace;
+  font-size: 12px;
+  color: rgba(242, 242, 242, 0.6);
+  pointer-events: none;
 }
 
 .panel-close {

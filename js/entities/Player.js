@@ -12,6 +12,9 @@ export class Player extends Entity {
         this.autopilot = false;
         this._autopilotSpeed = 0;
         this._autopilotBounds = null;
+
+        this.controlled = false;
+        this.grounded = false;
     }
 
     enableAutopilot(speed, bounds) {
@@ -22,10 +25,26 @@ export class Player extends Entity {
         this.currentAnimation = 'running';
     }
 
+    // Real keyboard-driven movement (04_health-save-system.md base abilities:
+    // Run, Jump, Duck) - used by GameState, as opposed to the menu's autopilot.
+    enableControl(input, collision, { moveSpeed = 120, jumpSpeed = 260, gravity = 700 } = {}) {
+        this.controlled = true;
+        this.input = input;
+        this.collision = collision;
+        this.moveSpeed = moveSpeed;
+        this.jumpSpeed = jumpSpeed;
+        this.gravity = gravity;
+    }
+
     update(dt) {
-        if (this.autopilot) this._updateAutopilot();
+        if (this.autopilot) {
+            this._updateAutopilot();
+            super.update(dt);
+        } else if (this.controlled) {
+            this._updateControlled(dt);
+        }
+
         this.animations[this.currentAnimation]?.update(dt);
-        super.update(dt);
     }
 
     _updateAutopilot() {
@@ -39,6 +58,38 @@ export class Player extends Entity {
             this.vx = -this._autopilotSpeed;
             this.facing = -1;
         }
+    }
+
+    _updateControlled(dt) {
+        const left = this.input.isDown('left');
+        const right = this.input.isDown('right');
+        // Ducking has no crouch sprite/hitbox yet - placeholder just locks
+        // movement, reusing the idle animation, until real duck art exists.
+        const ducking = this.input.isDown('duck') && this.grounded;
+
+        if (ducking) {
+            this.vx = 0;
+            this.currentAnimation = 'idle';
+        } else if (left && !right) {
+            this.vx = -this.moveSpeed;
+            this.facing = -1;
+            this.currentAnimation = 'running';
+        } else if (right && !left) {
+            this.vx = this.moveSpeed;
+            this.facing = 1;
+            this.currentAnimation = 'running';
+        } else {
+            this.vx = 0;
+            this.currentAnimation = 'idle';
+        }
+
+        this.vy += this.gravity * dt;
+
+        if (this.input.isDown('jump') && this.grounded && !ducking) {
+            this.vy = -this.jumpSpeed;
+        }
+
+        this.grounded = this.collision.resolve(this, dt);
     }
 
     _drawY(anim) {

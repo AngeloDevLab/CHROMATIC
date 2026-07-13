@@ -17,9 +17,12 @@ export class LoadingState extends State {
                 'guardian-idle': 'assets/images/character/idle.png',
                 'guardian-running': 'assets/images/character/running.png',
                 'menu-parallax-bg': 'assets/images/backgrounds/forest_bg.png',
+                'gamestate-tileset': 'assets/images/tilesets/gamestate-placeholder.png',
+                'cutscene-beach-bg': 'assets/images/backgrounds/beach_bg.png',
             },
             json: {
                 'menu-background-level': 'assets/levels/main-menu.json',
+                'gamestate-test-level': 'assets/levels/gamestate-test.json',
             },
         });
         this.game.stateMachine.change('menu');

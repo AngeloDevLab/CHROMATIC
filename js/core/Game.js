@@ -14,6 +14,7 @@ export class Game {
 
         this.assets = null;
         this.input = null;
+        this.difficulty = null;
 
         this._lastTime = 0;
         this._loop = this._loop.bind(this);

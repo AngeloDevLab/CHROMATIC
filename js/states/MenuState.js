@@ -11,10 +11,18 @@ const CHARACTER_FRAME_SIZE = 96;
 const BACKGROUND_OVERLAP_PX = 32;
 const CHARACTER_GROUND_OFFSET_PX = 5;
 
+// Difficulty scales only incoming damage (04_health-save-system.md 5.3) -
+// enemy HP and the player's own damage stay the same across all three.
+const DIFFICULTIES = [
+    { id: 'easy', label: 'Easy', description: 'Can afford mistakes, survives several hits.' },
+    { id: 'normal', label: 'Normal', description: 'Normal margin for error.' },
+    { id: 'hard', label: 'Hard', description: 'Needs near-perfect play - many hits can be a one-shot.' },
+];
+
 // Settings/Info are self-contained (no dependency on states that don't exist
-// yet) so they get real panels now. New Game/Continue are not in here on
-// purpose - they lead to Difficulty selection -> CutsceneState ->
-// WorldmapState (08_menu-flow.md 9.2), none of which exist yet.
+// yet) so they get real panels now. Continue has no action yet - it stays
+// disabled until a SaveManager exists. New Game opens Difficulty selection
+// below, which continues into CutsceneState -> WorldmapState (08_menu-flow.md 9.2).
 const PANEL_CONTENT = {
     settings: { title: 'Settings', body: '<p>Audio, Controls, and Language settings - coming soon.</p>' },
     info: {
@@ -92,8 +100,36 @@ export class MenuState extends State {
     }
 
     _handleMenuSelect(id) {
+        if (id === 'new-game') {
+            this._openDifficultySelect();
+            return;
+        }
+
         const content = PANEL_CONTENT[id];
         if (content) this.panel.open(content.title, content.body);
+    }
+
+    _openDifficultySelect() {
+        const options = DIFFICULTIES.map((difficulty) => `
+            <button class="difficulty-option" data-id="${difficulty.id}">
+                <span class="difficulty-label">${difficulty.label}</span>
+                <span class="difficulty-description">${difficulty.description}</span>
+            </button>
+        `).join('');
+
+        this.panel.open('Choose Difficulty', `<div class="difficulty-options">${options}</div>`, {
+            onMount: (root) => {
+                for (const button of root.querySelectorAll('.difficulty-option')) {
+                    button.addEventListener('click', () => {
+                        // No SaveManager yet - difficulty just lives on Game for now,
+                        // properly persisted once 04_health-save-system.md 5.4 exists.
+                        this.game.difficulty = button.dataset.id;
+                        this.panel.close();
+                        this.game.stateMachine.change('cutscene');
+                    });
+                }
+            },
+        });
     }
 
     exit() {
