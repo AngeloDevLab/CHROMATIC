@@ -6,7 +6,7 @@ Between levels, the player is on a Worldmap. The Worldmap consists of nodes (lev
 
 A permanent chapter bar sits at the top of the screen with up to 6 buttons: **Prologue, Chap 1, Chap 2, Chap 3, Chap 4, Epilogue**. At the start of the game only the Prologue button is active, the others are greyed out with a "Coming Soon" label and unlock once the previous chapter is completed. Details on the menu flow in [08_menu-flow.md](08_menu-flow.md).
 
-The Worldmap plays into the color mechanic: defeated levels and their connecting paths turn colorful on the Worldmap - the grey world is visibly pushed back.
+The Worldmap plays into the color mechanic: defeated levels and their connecting paths turn colorful on the Worldmap - the Darkness is visibly pushed back.
 
 **Leaving a level**: every level has an exit portal/level end (in boss levels, directly next to the Merchant). Interacting with it ("[E] / Tap") brings the player back to the Worldmap - only there does the respective node and the surrounding path turn colorful, separate from the in-level color explosion during boss fights.
 
@@ -157,7 +157,7 @@ Outside the city. Sprawling. Dark. Threatening. Enemies: all types, Shooter new.
 | 6 | Combat | Clearing, short build-up, cutscene preparation |
 | 7 | Boss (Chapterboss) | **Forest Spirit of Darkness** → 2 Tokens, Merchant appears |
 
-Closing cutscene: the Guardian steps out of the forest - the entire kingdom lies in grey. End of Chap 1, cliffhanger.
+Closing cutscene: the Guardian steps out of the forest - the entire kingdom lies in Darkness. End of Chap 1, cliffhanger.
 
 ## 2.8 Planned Chapters - World Geography
 

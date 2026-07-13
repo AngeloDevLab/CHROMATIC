@@ -4,7 +4,7 @@
 
 The basic cycle the player repeats for the entire playtime:
 
-- Enter an area - everything grey, threatening, drained of color
+- Enter an area - everything dark, threatening, drained of color
 - Explore, leave color behind through movement
 - Fight enemies - dynamic melee/ranged decision (both available from the start)
 - Find a Secret Room, pay with Shield/Prisma to open it - permanent character buff

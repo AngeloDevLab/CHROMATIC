@@ -1,27 +1,27 @@
 # CHROMATIC
 
-> A 2D action platformer about contrast: grey versus color. A drained, desaturated world is reclaimed step by step through the player's movement.
+> A 2D action platformer about contrast: Darkness versus color. A drained, desaturated world is reclaimed step by step through the player's movement.
 
-A browser-based game built in vanilla JavaScript (HTML5 Canvas, OOP / ES Modules). Created as a personal project during a vocational training program — learning focus: clean object-oriented architecture.
+A browser-based game built in vanilla JavaScript (HTML5 Canvas, OOP / ES Modules). Created as a personal project during a vocational training program, with a learning focus on clean object-oriented architecture.
 
 ---
 
 ## The Idea
 
-Aeons ago, an advanced civilization created the **Guardians** — humanoid energy beings with power over color, built to push back a world-devouring Darkness. Now that Darkness reaches the game's world. Moments before everything sinks into grey, the last Guardian materializes on a distant beach — and brings color back with every step.
+Aeons ago, an advanced civilization created the **Guardians**: humanoid energy beings with power over color, built to push back a world-devouring Darkness. Now that Darkness reaches the game's world. Moments before everything sinks into Darkness, the last Guardian materializes on a distant beach, bringing color back with every step.
 
-A medieval-fantasy surface with a sci-fi underpinning: beneath the forests and castles lie the remnants of an ancient network — and answers to who the Guardian really is.
+A medieval-fantasy surface with a sci-fi underpinning: beneath the forests and castles lie the remnants of an ancient network, and answers to who the Guardian really is.
 
 ## Core Mechanic
 
 Color isn't just visual, it's the central mechanic:
 
-- The player leaves a permanent color trail while moving — the grey world is pushed back.
-- Enemies drain traversed areas back to grey.
+- The player leaves a permanent color trail while moving, pushing the Darkness back.
+- Enemies drain traversed areas back to dark.
 - Defeating a boss triggers a level-wide color explosion.
 - The worldmap fills with color as the player progresses.
 
-Implemented with two Canvas layers using `destination-out` compositing — no duplicate asset set for grey/color.
+Implemented with two Canvas layers using `destination-out` compositing, no duplicate asset set needed for grey/color.
 
 ## Current Status
 
@@ -39,8 +39,8 @@ Concept phase complete, implementation underway.
 
 Deliberately kept disciplined:
 
-- **Goal (v1):** a complete **Prologue** — 1 template, 6 levels, including combat system, color mechanic, shield system, boss hierarchy, and token economy.
-- **Stretch goal:** Chapter 1 (3 templates, ~20 levels) — only if time remains after the Prologue.
+- **Goal (v1):** a complete **Prologue**: 1 template, 6 levels, including combat system, color mechanic, shield system, boss hierarchy, and token economy.
+- **Stretch goal:** Chapter 1 (3 templates, ~20 levels), only if time remains after the Prologue.
 - **Timeframe:** 3–5 weeks (3 weeks full-time baseline, realistically 4–5 due to the training running in parallel).
 
 The Prologue proves the reusable system; everything beyond it is content scaling, not new architectural risk.
@@ -69,7 +69,7 @@ The game decides between melee and ranged attacks automatically based on distanc
 
 ## Documentation
 
-The full Game Design Document lives in [`docs/`](./docs) — story, mechanics, balancing, technical architecture, asset list, and milestones.
+The full Game Design Document lives in [`docs/`](./docs): story, mechanics, balancing, technical architecture, asset list, and milestones.
 
 ## Project Context
 
