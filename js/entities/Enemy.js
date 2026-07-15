@@ -3,6 +3,11 @@ import { Entity } from './Entity.js';
 const DEFAULT_PATROL_SPEED = 40;
 const DEFAULT_GRAVITY = 700;
 
+// Patroller behavior (05_enemies-bosses.md), HP bumped up from the GDD's 20
+// (Zone 1 balancing draft) per playtesting feedback - 2 hits felt too fast.
+const DEFAULT_HP = 50;
+const DEFAULT_CONTACT_DAMAGE = 5;
+
 // How far past its own leading edge to probe for "is the way ahead blocked" -
 // small enough to react before actually stepping off, large enough to not
 // trigger on the enemy's own hitbox tiles.
@@ -29,6 +34,18 @@ export class Enemy extends Entity {
 
         this.renderSize = width;
         this.referenceAnim = null;
+
+        this.hp = DEFAULT_HP;
+        this.maxHp = DEFAULT_HP;
+        this.contactDamage = DEFAULT_CONTACT_DAMAGE;
+        this.contactCooldown = 0;
+        this.dead = false;
+    }
+
+    takeDamage(amount) {
+        if (this.dead) return;
+        this.hp = Math.max(0, this.hp - amount);
+        if (this.hp === 0) this.dead = true;
     }
 
     setAnimations(animations, initial = 'running') {
@@ -56,6 +73,7 @@ export class Enemy extends Entity {
     }
 
     update(dt) {
+        if (this.dead) return;
         if (this.patrolling) this._updatePatrol(dt);
         this.animations?.[this.currentAnimation]?.update(dt);
     }
@@ -87,19 +105,36 @@ export class Enemy extends Entity {
         return wallAhead || !floorAhead;
     }
 
+    // Bottom-anchored to the reference animation's ground line (not the raw
+    // hitbox edge) - keeps the visible creature's feet flush with the ground
+    // it's standing on regardless of how much transparent padding its sheet
+    // carries. Shared by render() and visualTopY (HP bar placement).
+    _drawY() {
+        return this.y + this.height - this.referenceAnim.groundLineRatio * this.renderSize;
+    }
+
+    _drawX() {
+        return this.x - (this.renderSize - this.width) / 2;
+    }
+
+    // Topmost visible pixel row in world space, used to sit the HP bar just
+    // above the creature's head instead of above its (possibly padded) hitbox.
+    get visualTopY() {
+        if (!this.referenceAnim) return this.y;
+        return this._drawY() + this.referenceAnim.topRatio * this.renderSize;
+    }
+
     render(ctx) {
+        if (this.dead) return;
+
         const anim = this.animations?.[this.currentAnimation];
         if (!anim || !this.referenceAnim) {
             ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
             return;
         }
 
-        // Bottom-anchored to the reference animation's ground line (not the raw
-        // hitbox edge) and centered over the hitbox width - keeps the visible
-        // creature's feet flush with the ground it's standing on regardless of
-        // how much transparent padding its sheet carries.
-        const drawY = this.y + this.height - this.referenceAnim.groundLineRatio * this.renderSize;
-        const drawX = this.x - (this.renderSize - this.width) / 2;
+        const drawY = this._drawY();
+        const drawX = this._drawX();
 
         ctx.save();
         if (this.facing === -1) {

@@ -9,6 +9,16 @@ const HITBOX_WIDTH = 32;
 const HITBOX_HEIGHT = 64;
 const TARGET_VISIBLE_HEIGHT = 64;
 
+// 04_health-save-system.md 5.1/5.2: both base value 100.
+const MAX_HEALTH = 100;
+const MAX_SHIELD = 100;
+// 03_mechanics.md 4.5: "50 points (1 Secret Room) take about 50 seconds from empty".
+const SHIELD_REGEN_PER_SECOND = 1;
+
+// attack.png frame where the blade reaches full extension - the swing resolves
+// its hit exactly once, here, via consumeAttackImpact() (see Combat.js).
+const ATTACK_IMPACT_FRAME = 4;
+
 export class Player extends Entity {
     constructor(x, y, animations) {
         super(x, y, HITBOX_WIDTH, HITBOX_HEIGHT);
@@ -32,6 +42,34 @@ export class Player extends Entity {
         this.grounded = false;
 
         this.attacking = false;
+        this._attackImpactResolved = false;
+
+        this.maxHealth = MAX_HEALTH;
+        this.health = MAX_HEALTH;
+        this.maxShield = MAX_SHIELD;
+        this.shield = MAX_SHIELD;
+    }
+
+    // 03_mechanics.md 4.5: Prisma absorbs hits first, only once fully depleted
+    // does the remainder carry over to Health.
+    takeDamage(amount) {
+        if (this.shield > 0) {
+            const overflow = amount - this.shield;
+            this.shield = Math.max(0, this.shield - amount);
+            if (overflow > 0) this.health = Math.max(0, this.health - overflow);
+        } else {
+            this.health = Math.max(0, this.health - amount);
+        }
+    }
+
+    // True exactly once per swing, the instant the blade reaches full extension
+    // - callers (GameState, via Combat.js's resolveMeleeAttack) resolve the
+    // actual hit-detection against enemies from here.
+    consumeAttackImpact() {
+        if (!this.attacking || this._attackImpactResolved) return false;
+        if (this.animations.attack.currentFrame < ATTACK_IMPACT_FRAME) return false;
+        this._attackImpactResolved = true;
+        return true;
     }
 
     enableAutopilot(speed, bounds) {
@@ -78,6 +116,8 @@ export class Player extends Entity {
     }
 
     _updateControlled(dt) {
+        this.shield = Math.min(this.maxShield, this.shield + SHIELD_REGEN_PER_SECOND * dt);
+
         // Always drain the click flag, even mid-swing or mid-air - otherwise a
         // click that arrives while unable to act right now would queue up and
         // fire late once the state allows it, instead of being simply missed.
@@ -124,6 +164,7 @@ export class Player extends Entity {
     // and collision keep resolving as normal, only horizontal input is ignored.
     _startAttack() {
         this.attacking = true;
+        this._attackImpactResolved = false;
         this.currentAnimation = 'attack';
         this.animations.attack.reset();
     }

@@ -1,3 +1,8 @@
+// 03_mechanics.md 4.1: "Boss defeated -> the entire level turns colorful -
+// color explosion". Duration of the expanding-circle sweep triggered by
+// triggerFullReveal().
+const FULL_REVEAL_DURATION_SECONDS = 1.5;
+
 export class ColorZone {
     // fadeDurationSeconds: how long a reveal stays visible before fading back to
     // grey. Infinity (default) matches the real game mechanic (03_mechanics.md 4.1 -
@@ -40,6 +45,16 @@ export class ColorZone {
 
         // Permanent mode only: last punched position, see update() below.
         this._lastPermanentPunch = null;
+
+        // Scratch canvas for darken()'s soft-edged grey patch - kept around
+        // instead of allocated per call.
+        this._scratchCanvas = document.createElement('canvas');
+        this._scratchCanvas.width = width;
+        this._scratchCanvas.height = height;
+        this._scratchCtx = this._scratchCanvas.getContext('2d');
+
+        // triggerFullReveal() state - see update() and that method below.
+        this._fullReveal = null;
     }
 
     paintGreyFrom(colorSourceCanvas) {
@@ -66,6 +81,11 @@ export class ColorZone {
     // directly into the persistent overlay (unchanged real-game behavior); fade mode
     // tracks aging stamps and rebuilds the overlay from scratch each frame.
     update(dt, x, y) {
+        if (this._fullReveal) {
+            this._updateFullReveal(dt);
+            return;
+        }
+
         if (this.fadeDurationSeconds === Infinity) {
             // Skip re-stamping an unchanged position (e.g. player standing still):
             // this punches directly into the persistent overlay rather than
@@ -105,12 +125,64 @@ export class ColorZone {
         this._punch(this.overlayCtx, x, y, 1);
     }
 
-    _punch(ctx, x, y, strength) {
+    // 03_mechanics.md 4.1: "Enemy crosses a colored area -> the area turns back
+    // to dark". The inverse of _punch: instead of erasing the overlay
+    // (revealing color), this repaints the grey template back onto the overlay
+    // in a soft-edged patch, restoring grey there regardless of how it got
+    // revealed in the first place.
+    darken(x, y, radius = this.revealRadius) {
+        const gradient = this._scratchCtx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+        gradient.addColorStop(0.55, 'rgba(0, 0, 0, 1)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+        this._scratchCtx.clearRect(0, 0, this.width, this.height);
+        this._scratchCtx.drawImage(this.greyTemplateCanvas, 0, 0);
+        this._scratchCtx.globalCompositeOperation = 'destination-in';
+        this._scratchCtx.fillStyle = gradient;
+        this._scratchCtx.beginPath();
+        this._scratchCtx.arc(x, y, radius, 0, Math.PI * 2);
+        this._scratchCtx.fill();
+        this._scratchCtx.globalCompositeOperation = 'source-over';
+
+        this.overlayCtx.drawImage(this._scratchCanvas, 0, 0);
+    }
+
+    // 03_mechanics.md 4.1: "Boss defeated -> the entire level turns colorful -
+    // color explosion". Standing in for that here since Lv_1 has no boss yet -
+    // GameState triggers this once all of the level's enemies are dead. Expands
+    // a full-strength reveal circle from (originX, originY) out past the whole
+    // canvas over FULL_REVEAL_DURATION_SECONDS, then clears the overlay outright
+    // to guarantee full coverage (a growing circle never quite reaches the
+    // canvas's corners).
+    triggerFullReveal(originX, originY) {
+        this._fullReveal = {
+            originX,
+            originY,
+            elapsed: 0,
+            maxRadius: Math.hypot(this.width, this.height),
+        };
+    }
+
+    _updateFullReveal(dt) {
+        this._fullReveal.elapsed += dt;
+        const progress = Math.min(1, this._fullReveal.elapsed / FULL_REVEAL_DURATION_SECONDS);
+
+        if (progress >= 1) {
+            this.overlayCtx.clearRect(0, 0, this.width, this.height);
+            this._fullReveal = null;
+            return;
+        }
+
+        this._punch(this.overlayCtx, this._fullReveal.originX, this._fullReveal.originY, 1, this._fullReveal.maxRadius * progress);
+    }
+
+    _punch(ctx, x, y, strength, radius = this.revealRadius) {
         // Radial gradient instead of a flat fill: fully erases (reveals color) up to
         // 55% of the radius, then fades back to no effect at the edge - a soft
         // color/grey transition instead of a hard circle outline. `strength` additionally
         // scales the whole effect down as a fade-mode stamp ages.
-        const gradient = ctx.createRadialGradient(x, y, 0, x, y, this.revealRadius);
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
         gradient.addColorStop(0, `rgba(0, 0, 0, ${strength})`);
         gradient.addColorStop(0.55, `rgba(0, 0, 0, ${strength})`);
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
@@ -119,7 +191,7 @@ export class ColorZone {
         ctx.globalCompositeOperation = 'destination-out';
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(x, y, this.revealRadius, 0, Math.PI * 2);
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
     }
