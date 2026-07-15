@@ -5,6 +5,7 @@ import { Enemy } from '../entities/Enemy.js';
 import { Collision } from '../utils/Collision.js';
 import { Camera } from '../utils/Camera.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
+import { ColorZone } from '../mechanics/ColorZone.js';
 
 const CHARACTER_FRAME_SIZE = 96;
 const FALLBACK_SPAWN = { x: 64, y: 0 };
@@ -27,6 +28,36 @@ export class GameState extends State {
         // above (see utils/Collision.js).
         this.collision = new Collision(this.level, 'terrain', { oneWay: true });
         this.camera = new Camera(this.game.width, this.game.height);
+
+        this.levelCanvas = document.createElement('canvas');
+        this.levelCanvas.width = this.level.pixelWidth;
+        this.levelCanvas.height = this.level.pixelHeight;
+        const levelCtx = this.levelCanvas.getContext('2d');
+
+        // Test: reuse the main menu's parallax image as a level backdrop, tiled
+        // across the full level width and cover-fit to its height - real
+        // per-level background art (10_technical-architecture.md 11.6.1) replaces
+        // this once ready.
+        const parallax = this.game.assets.getImage('menu-parallax-bg');
+        const parallaxScale = this.level.pixelHeight / parallax.height;
+        const parallaxWidth = parallax.width * parallaxScale;
+        for (let x = 0; x < this.level.pixelWidth; x += parallaxWidth) {
+            levelCtx.drawImage(parallax, 0, 0, parallax.width, parallax.height, x, 0, parallaxWidth, this.level.pixelHeight);
+        }
+
+        this.level.drawAllLayers(levelCtx);
+
+        // Color mechanic (03_mechanics.md 4.1): the player leaves a permanent
+        // color trail while moving (fadeDurationSeconds stays Infinity, the
+        // ColorZone default) - unlike MenuState's decorative fading-bubble variant
+        // of the same technique, real gameplay never reverts on its own. Grey
+        // treatment matches the menu's tuned "Darkness" look for visual
+        // consistency between the two scenes.
+        this.colorZone = new ColorZone(this.level.pixelWidth, this.level.pixelHeight, 55, {
+            greyBrightness: 0.15,
+            greyTint: { sepia: 0.4, hueRotate: 180, saturate: 2 },
+        });
+        this.colorZone.paintGreyFrom(this.levelCanvas);
 
         const animations = {
             idle: new SpriteAnimation(this.game.assets.getImage('guardian-idle'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 9, 8),
@@ -56,13 +87,15 @@ export class GameState extends State {
     update(dt) {
         this.player.update(dt);
         this.camera.follow(this.player, this.level.pixelWidth, this.level.pixelHeight);
+        this.colorZone.update(dt, this.player.centerX, this.player.visualCenterY);
     }
 
     render(ctx) {
         ctx.save();
         ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
 
-        this.level.drawAllLayers(ctx);
+        ctx.drawImage(this.levelCanvas, 0, 0);
+        this.colorZone.render(ctx);
         for (const enemy of this.enemies) enemy.render(ctx);
         this.player.render(ctx);
 

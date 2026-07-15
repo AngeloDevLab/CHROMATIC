@@ -27,10 +27,26 @@ export class Collision {
     resolve(entity, dt) {
         entity.x += entity.vx * dt;
         this._resolveX(entity);
+        this._clampToLevelX(entity);
 
         const previousBottom = entity.y + entity.height;
         entity.y += entity.vy * dt;
         return this._resolveY(entity, previousBottom);
+    }
+
+    // Keeps the entity inside the level's pixel width regardless of oneWay -
+    // one-way terrain deliberately never blocks sideways movement (see
+    // _resolveX), so without this the player could walk straight past the
+    // level's left/right edge into the void.
+    _clampToLevelX(entity) {
+        const maxX = this.level.pixelWidth - entity.width;
+        if (entity.x < 0) {
+            entity.x = 0;
+            if (entity.vx < 0) entity.vx = 0;
+        } else if (entity.x > maxX) {
+            entity.x = maxX;
+            if (entity.vx > 0) entity.vx = 0;
+        }
     }
 
     _resolveX(entity) {

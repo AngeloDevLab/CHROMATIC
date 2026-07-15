@@ -37,6 +37,9 @@ export class ColorZone {
         // over many frames).
         this._stamps = [];
         this._timeSinceLastStamp = Infinity;
+
+        // Permanent mode only: last punched position, see update() below.
+        this._lastPermanentPunch = null;
     }
 
     paintGreyFrom(colorSourceCanvas) {
@@ -64,7 +67,18 @@ export class ColorZone {
     // tracks aging stamps and rebuilds the overlay from scratch each frame.
     update(dt, x, y) {
         if (this.fadeDurationSeconds === Infinity) {
-            this._punch(this.overlayCtx, x, y, 1);
+            // Skip re-stamping an unchanged position (e.g. player standing still):
+            // this punches directly into the persistent overlay rather than
+            // rebuilding from the grey template like fade mode does, so punching
+            // the same soft-edged gradient there every single frame compounds
+            // destination-out alpha in the outer fade ring toward fully erased -
+            // the intended soft falloff collapses into a hard cutoff after enough
+            // repeated frames at the same spot.
+            const last = this._lastPermanentPunch;
+            if (!last || last.x !== x || last.y !== y) {
+                this._punch(this.overlayCtx, x, y, 1);
+                this._lastPermanentPunch = { x, y };
+            }
             return;
         }
 
