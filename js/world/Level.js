@@ -15,12 +15,37 @@ export class Level {
 
         this.layers = {};
         this.layerOrder = [];
+        this.objects = [];
         for (const layer of data.layers) {
             if (layer.type === 'tilelayer') {
                 this.layers[layer.name] = layer.data;
                 this.layerOrder.push(layer.name);
+            } else if (layer.type === 'objectgroup') {
+                for (const obj of layer.objects) {
+                    // Tiled's "properties" is an array of { name, type, value } -
+                    // flatten to a plain object (e.g. enemyType) for easy lookup,
+                    // matching 10_technical-architecture.md 11.6.2.
+                    const properties = {};
+                    for (const prop of obj.properties ?? []) {
+                        properties[prop.name] = prop.value;
+                    }
+                    this.objects.push({
+                        id: obj.id,
+                        type: obj.type,
+                        name: obj.name,
+                        x: obj.x,
+                        y: obj.y,
+                        width: obj.width,
+                        height: obj.height,
+                        properties,
+                    });
+                }
             }
         }
+    }
+
+    getObjectsByType(type) {
+        return this.objects.filter((obj) => obj.type === type);
     }
 
     static load(assetLoader, jsonKey, tilesetKey) {

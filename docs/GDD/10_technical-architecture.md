@@ -59,11 +59,13 @@ Levels are built in [Tiled](https://www.mapeditor.org/) and exported as JSON (no
 | Layer | Type | Purpose |
 |---|---|---|
 | Background | Tile layer | Purely visual, no collision |
-| Terrain/Collision | Tile layer | Every painted tile is solid - floor, wall, and ceiling are the same layer. Whether a touch means floor, wall (relevant for wall jump), or ceiling is decided by `utils/Collision.js` based on the direction of contact, not the layer |
-| Decoration | Tile layer | Purely visual, never collidable. If a decoration element should block movement (e.g. a desk), that tile belongs in Terrain/Collision instead |
+| terrain | Tile layer | Solid ground - see one-way behavior below. `utils/Collision.js` takes the exact layer name per level (not hardcoded), so this can vary per level if needed |
+| Decoration | Tile layer | Purely visual, never collidable. If a decoration element should block movement (e.g. a desk), that tile belongs in terrain instead |
 | Objects | Object layer (Tiled markers, not painted tiles) | Player start, enemy spawns, Secret Room trigger, boss trigger, exit portal, checkpoint, doors - see 11.6.2 |
 
-Tiles in the Terrain/Collision layer must visually fill their full 32x32 cell, opaque edge to edge - a tile that only occupies half its cell (e.g. a thin grass strip with transparent padding above or below) leaves it ambiguous whether collision covers the whole cell or just the visible part, and `Collision.js` doesn't special-case partial tiles. Decorative overhang (taller grass tufts, edge detail poking above the grid line) belongs on the Decoration layer instead, layered on top of a fully solid Terrain/Collision tile.
+Tiles in the terrain layer must visually fill their full 32x32 cell, opaque edge to edge - a tile that only occupies half its cell (e.g. a thin grass strip with transparent padding above or below) leaves it ambiguous whether collision covers the whole cell or just the visible part, and `Collision.js` doesn't special-case partial tiles. Decorative overhang (taller grass tufts, edge detail poking above the grid line) belongs on the Decoration layer instead, layered on top of a fully solid terrain tile.
+
+**One-way by default:** levels built from several stacked walkable floors (Prologue Level 1 and onward, unless a level specifically needs solid walls) use `terrain` as a one-way platform - it only blocks when the player lands on it from above (falling onto it), and is otherwise fully passable (jumping up through it from below, walking through it sideways). `Collision.js`'s `oneWay` option controls this per level; a level that needs real solid walls (e.g. once Wall Jump unlocks in Chap 2, see [03_mechanics.md](03_mechanics.md) 4.2) sets `oneWay: false` instead, which restores full solid-from-every-side blocking - so the two collision styles coexist per level rather than being a single global rule.
 
 ### Background vs. Parallax
 
@@ -128,7 +130,7 @@ Deliberately **no** larger field of view on larger screens - otherwise players w
 - Tile size: 32x32 (already fixed by the existing tileset)
 - Field of view at zoom 1.0: 20x11.25 tiles (640x360 ÷ 32)
 - Object/sprite dimensions always as multiples of 32, otherwise pixel-snapping issues when placing in Tiled
-- Player: 64x64 sprite canvas (2x2 tiles) - larger than the tile grid to allow more animation detail; the collision box stays narrower than the full sprite (roughly the previous 32x64 footprint) so hitbox/gameplay feel doesn't change
+- Player: 32x64 collision hitbox (1x2 tiles). The sprite itself is drawn larger and centered over that hitbox - render size is computed at runtime from how much transparent padding the current sprite sheet carries (`Player.js`), so the *visible* character measures roughly 64px tall regardless of how much padding any given animation's frame has, instead of the hitbox growing/shrinking with it
 - Enemy: 32x32 up to 64x64 depending on type (multiples of 32)
 - Door: 32x64
 - Tilemap size is not limited by the canvas - the map can be arbitrarily large, `Camera.js` scrolls with the player. Width guidelines: Combat level ~30-40 tiles, Exploration level with Secret Rooms ~80-120 tiles

@@ -16,13 +16,18 @@ export class LoadingState extends State {
                 'menu-tileset': 'assets/images/tilesets/tileset-grass.png',
                 'guardian-idle': 'assets/images/character/idle.png',
                 'guardian-running': 'assets/images/character/running.png',
+                'guardian-jump': 'assets/images/character/jump.png',
                 'menu-parallax-bg': 'assets/images/backgrounds/forest_bg.png',
                 'gamestate-tileset': 'assets/images/tilesets/gamestate-placeholder.png',
                 'cutscene-beach-bg': 'assets/images/backgrounds/beach_bg.png',
+                'worldmap-prologue-bg': 'assets/images/backgrounds/worldmap_prolog.png',
+                'lv1-tileset': 'assets/images/tilesets/tileset_grass.png',
+                'enemy-maggot': 'assets/images/enemys/maggot.png',
             },
             json: {
                 'menu-background-level': 'assets/levels/main-menu.json',
                 'gamestate-test-level': 'assets/levels/gamestate-test.json',
+                'lv1-level': 'assets/levels/Lv_1.json',
             },
         });
         this.game.stateMachine.change('menu');
