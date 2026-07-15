@@ -70,9 +70,18 @@ export class GameState extends State {
         this.player.enableControl(this.game.input, this.collision);
 
         const maggotSprite = this.game.assets.getImage('enemy-maggot');
-        this.enemies = this.level.getObjectsByType('EnemySpawn').map(
-            (spawn) => new Enemy(spawn.x, spawn.y, maggotSprite)
-        );
+        const maggotRunningImage = this.game.assets.getImage('enemy-maggot-running');
+        this.enemies = this.level.getObjectsByType('EnemySpawn').map((spawn) => {
+            const enemy = new Enemy(spawn.x, spawn.y, maggotSprite);
+            // Own SpriteAnimation instance per enemy - sharing one across all of
+            // them would advance its frame timer once per enemy per game frame
+            // (animation playing N times too fast for N enemies).
+            enemy.setAnimations({
+                running: new SpriteAnimation(maggotRunningImage, CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 9, 10),
+            });
+            enemy.enablePatrol(this.collision);
+            return enemy;
+        });
 
         this.debugLabel = document.createElement('div');
         this.debugLabel.className = 'gamestate-debug-label';
@@ -86,6 +95,7 @@ export class GameState extends State {
 
     update(dt) {
         this.player.update(dt);
+        for (const enemy of this.enemies) enemy.update(dt);
         this.camera.follow(this.player, this.level.pixelWidth, this.level.pixelHeight);
         this.colorZone.update(dt, this.player.centerX, this.player.visualCenterY);
     }

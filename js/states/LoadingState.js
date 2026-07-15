@@ -23,6 +23,7 @@ export class LoadingState extends State {
                 'worldmap-prologue-bg': 'assets/images/backgrounds/worldmap_prolog.png',
                 'lv1-tileset': 'assets/images/tilesets/tileset_grass.png',
                 'enemy-maggot': 'assets/images/enemys/maggot.png',
+                'enemy-maggot-running': 'assets/images/enemys/maggot_running.png',
             },
             json: {
                 'menu-background-level': 'assets/levels/main-menu.json',
