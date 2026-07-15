@@ -281,6 +281,7 @@ body {
   top: 0;
   left: 0;
   width: 100%;
+  z-index: 10;
   display: flex;
   justify-content: center;
   gap: 8px;
@@ -313,15 +314,100 @@ body {
   cursor: not-allowed;
 }
 
-.worldmap-placeholder-label {
+.worldmap-nodes {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-family: 'Jersey 10', monospace;
-  font-size: 16px;
-  color: rgba(242, 242, 242, 0.5);
+  inset: 0;
   pointer-events: none;
+}
+
+.worldmap-node {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border: none;
+  background-color: transparent;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.worldmap-node:disabled {
+  cursor: not-allowed;
+}
+
+.worldmap-node::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/icons/wm_btn_locked.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.worldmap-node.locked::before {
+  opacity: 1;
+}
+
+.worldmap-node::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('assets/icons/wm_btn_selected.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.worldmap-node.selected::after {
+  opacity: 1;
+}
+
+.worldmap-info-card {
+  position: absolute;
+  min-width: 150px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  padding: 10px 14px;
+  color: #f2f2f2;
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 14px;
+  pointer-events: auto;
+}
+
+.worldmap-info-title {
+  font-size: 18px;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.worldmap-info-type,
+.worldmap-info-secrets {
+  opacity: 0.8;
+  margin-bottom: 2px;
+}
+
+.worldmap-info-start {
+  width: 100%;
+  margin-top: 8px;
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 16px;
+  color: #f2f2f2;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+
+.worldmap-info-start:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .gamestate-debug-label {

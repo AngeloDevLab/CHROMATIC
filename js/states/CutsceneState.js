@@ -6,6 +6,8 @@ const DARKEN_DURATION = 10;
 const FLASH_DURATION = 0.6;
 const REVEAL_DURATION = 2;
 const IRIS_BLOB_COUNT = 8;
+const DARKEN_COLOR = '6, 10, 18';
+const DARKEN_MAX_ALPHA = 0.88;
 const TEXT_CHARS_PER_SECOND = 10;
 
 const DARKENING_TEXT = 'The Darkness reaches this world too.<br> It spreads, devouring land and color.';
@@ -147,7 +149,20 @@ export class CutsceneState extends State {
         return blobs;
     }
 
+    // Blobs are drawn fully opaque onto a separate mask canvas first (so their
+    // overlaps just union the covered shape), then the whole mask is composited
+    // onto the scene once with a single capped alpha - drawing each blob
+    // straight onto the scene at DARKEN_MAX_ALPHA would let overlapping blobs
+    // stack past that cap and wash out to solid black in the center anyway.
     _drawIris(ctx, w, h, t) {
+        if (!this._irisMaskCanvas) {
+            this._irisMaskCanvas = document.createElement('canvas');
+            this._irisMaskCanvas.width = w;
+            this._irisMaskCanvas.height = h;
+        }
+        const maskCtx = this._irisMaskCanvas.getContext('2d');
+        maskCtx.clearRect(0, 0, w, h);
+
         const cx = w / 2;
         const cy = h / 2;
         const originDistance = Math.max(w, h) * 0.6;
@@ -160,19 +175,24 @@ export class CutsceneState extends State {
             const originX = cx + Math.cos(blob.angle) * originDistance;
             const originY = cy + Math.sin(blob.angle) * originDistance;
 
-            const gradient = ctx.createRadialGradient(originX, originY, 0, originX, originY, radius);
-            gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
-            gradient.addColorStop(0.7, 'rgba(0, 0, 0, 1)');
-            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            const gradient = maskCtx.createRadialGradient(originX, originY, 0, originX, originY, radius);
+            gradient.addColorStop(0, `rgba(${DARKEN_COLOR}, 1)`);
+            gradient.addColorStop(0.7, `rgba(${DARKEN_COLOR}, 1)`);
+            gradient.addColorStop(1, `rgba(${DARKEN_COLOR}, 0)`);
 
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, w, h);
+            maskCtx.fillStyle = gradient;
+            maskCtx.fillRect(0, 0, w, h);
         }
 
         if (t >= 0.95) {
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(0, 0, w, h);
+            maskCtx.fillStyle = `rgba(${DARKEN_COLOR}, 1)`;
+            maskCtx.fillRect(0, 0, w, h);
         }
+
+        ctx.save();
+        ctx.globalAlpha = DARKEN_MAX_ALPHA;
+        ctx.drawImage(this._irisMaskCanvas, 0, 0);
+        ctx.restore();
     }
 
     _drawGuardian(ctx, w, h) {
