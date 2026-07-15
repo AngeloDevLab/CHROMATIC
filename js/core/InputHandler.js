@@ -6,7 +6,7 @@ const KEY_MAP = {
 };
 
 export class InputHandler {
-    constructor() {
+    constructor(canvas) {
         this.actions = { left: false, right: false, jump: false, duck: false };
         // Attack is a discrete click, not a held state like the movement keys -
         // tracked separately as an edge-triggered flag consumed (and cleared) by
@@ -20,7 +20,11 @@ export class InputHandler {
 
         window.addEventListener('keydown', this._onKeyDown);
         window.addEventListener('keyup', this._onKeyUp);
-        window.addEventListener('mousedown', this._onMouseDown);
+        // Scoped to the game canvas, not window - a click on a UI button
+        // (worldmap "Start Level", menu panels, ...) would otherwise also queue
+        // up an attack that fires the instant GameState's Player exists on the
+        // very next frame, since nothing had consumed it yet.
+        canvas.addEventListener('mousedown', this._onMouseDown);
     }
 
     _onKeyDown(e) {

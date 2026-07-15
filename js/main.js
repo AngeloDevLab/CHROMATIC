@@ -9,7 +9,7 @@ import { GameState } from './states/GameState.js';
 
 const game = new Game('game-canvas', 'ui-overlay');
 game.assets = new AssetLoader();
-game.input = new InputHandler();
+game.input = new InputHandler(game.canvas);
 
 game.stateMachine.register('loading', new LoadingState(game));
 game.stateMachine.register('menu', new MenuState(game));
