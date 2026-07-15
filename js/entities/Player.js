@@ -30,6 +30,8 @@ export class Player extends Entity {
 
         this.controlled = false;
         this.grounded = false;
+
+        this.attacking = false;
     }
 
     enableAutopilot(speed, bounds) {
@@ -76,13 +78,21 @@ export class Player extends Entity {
     }
 
     _updateControlled(dt) {
-        const left = this.input.isDown('left');
-        const right = this.input.isDown('right');
+        // Always drain the click flag, even mid-swing or mid-air - otherwise a
+        // click that arrives while unable to act right now would queue up and
+        // fire late once the state allows it, instead of being simply missed.
+        const attackPressed = this.input.consumeAttackPress();
+        if (attackPressed && !this.attacking && this.animations.attack) {
+            this._startAttack();
+        }
+
+        const left = !this.attacking && this.input.isDown('left');
+        const right = !this.attacking && this.input.isDown('right');
         // Ducking has no crouch sprite/hitbox yet - placeholder just locks
         // movement, reusing the idle animation, until real duck art exists.
-        const ducking = this.input.isDown('duck') && this.grounded;
+        const ducking = !this.attacking && this.input.isDown('duck') && this.grounded;
 
-        if (ducking) {
+        if (this.attacking || ducking) {
             this.vx = 0;
         } else if (left && !right) {
             this.vx = -this.moveSpeed;
@@ -96,13 +106,26 @@ export class Player extends Entity {
 
         this.vy += this.gravity * dt;
 
-        if (this.input.isDown('jump') && this.grounded && !ducking) {
+        if (!this.attacking && this.input.isDown('jump') && this.grounded && !ducking) {
             this.vy = -this.jumpSpeed;
         }
 
         this.grounded = this.collision.resolve(this, dt);
 
+        if (this.attacking && this.animations.attack.finished) {
+            this.attacking = false;
+        }
+
         this._updateAnimationState(ducking);
+    }
+
+    // Locks movement for the swing's duration (base Attack, as opposed to the
+    // later Air Attack/Slide+Attack unlockables - 03_mechanics.md 4.2) - gravity
+    // and collision keep resolving as normal, only horizontal input is ignored.
+    _startAttack() {
+        this.attacking = true;
+        this.currentAnimation = 'attack';
+        this.animations.attack.reset();
     }
 
     // Airborne takes priority over running/idle regardless of horizontal
@@ -111,7 +134,9 @@ export class Player extends Entity {
     // frame idle/running happened to be on last.
     _updateAnimationState(ducking) {
         let nextAnimation;
-        if (!this.grounded) {
+        if (this.attacking) {
+            nextAnimation = 'attack';
+        } else if (!this.grounded) {
             nextAnimation = 'jump';
         } else if (ducking || this.vx === 0) {
             nextAnimation = 'idle';

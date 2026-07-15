@@ -7,7 +7,12 @@ const KEY_MAP = {
 
 export class InputHandler {
     constructor() {
-        this.actions = { left: false, right: false, jump: false, duck: false, attack: false };
+        this.actions = { left: false, right: false, jump: false, duck: false };
+        // Attack is a discrete click, not a held state like the movement keys -
+        // tracked separately as an edge-triggered flag consumed (and cleared) by
+        // consumeAttackPress(), so a click fires the swing exactly once instead of
+        // every frame the mouse button happens to still be down.
+        this._attackPressed = false;
 
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onKeyUp = this._onKeyUp.bind(this);
@@ -29,10 +34,19 @@ export class InputHandler {
     }
 
     _onMouseDown() {
-        this.actions.attack = true;
+        this._attackPressed = true;
     }
 
     isDown(action) {
         return !!this.actions[action];
+    }
+
+    // Returns true at most once per click - call this every frame regardless of
+    // whether the caller is currently able to act on it, so a click during an
+    // ongoing attack doesn't queue up and fire late once the swing ends.
+    consumeAttackPress() {
+        if (!this._attackPressed) return false;
+        this._attackPressed = false;
+        return true;
     }
 }

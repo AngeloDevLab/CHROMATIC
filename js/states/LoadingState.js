@@ -17,6 +17,7 @@ export class LoadingState extends State {
                 'guardian-idle': 'assets/images/character/idle.png',
                 'guardian-running': 'assets/images/character/running.png',
                 'guardian-jump': 'assets/images/character/jump.png',
+                'guardian-attack': 'assets/images/character/attack.png',
                 'menu-parallax-bg': 'assets/images/backgrounds/forest_bg.png',
                 'gamestate-tileset': 'assets/images/tilesets/gamestate-placeholder.png',
                 'cutscene-beach-bg': 'assets/images/backgrounds/beach_bg.png',

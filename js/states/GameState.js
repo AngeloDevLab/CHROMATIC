@@ -63,6 +63,10 @@ export class GameState extends State {
             idle: new SpriteAnimation(this.game.assets.getImage('guardian-idle'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 9, 8),
             running: new SpriteAnimation(this.game.assets.getImage('guardian-running'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 12, 14),
             jump: new SpriteAnimation(this.game.assets.getImage('guardian-jump'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 13, 12),
+            // Plays once per swing rather than looping (SpriteAnimation's loop:
+            // false) - Player watches its `finished` flag to know when to hand
+            // control back to normal locomotion.
+            attack: new SpriteAnimation(this.game.assets.getImage('guardian-attack'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 8, 16, { loop: false }),
         };
 
         const playerStart = this.level.getObjectsByType('PlayerStart')[0] ?? FALLBACK_SPAWN;
@@ -85,7 +89,7 @@ export class GameState extends State {
 
         this.debugLabel = document.createElement('div');
         this.debugLabel.className = 'gamestate-debug-label';
-        this.debugLabel.textContent = `Lvl 1 (${chapterId ?? '?'}) - Arrows/WASD to move, Space/W to jump, S to duck`;
+        this.debugLabel.textContent = `Lvl 1 (${chapterId ?? '?'}) - Arrows/WASD to move, Space/W to jump, S to duck, Click to attack`;
         this.game.overlay.appendChild(this.debugLabel);
     }
 

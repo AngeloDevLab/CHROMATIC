@@ -1,13 +1,18 @@
 export class SpriteAnimation {
-    constructor(image, frameWidth, frameHeight, frameCount, fps = 10) {
+    constructor(image, frameWidth, frameHeight, frameCount, fps = 10, { loop = true } = {}) {
         this.image = image;
         this.frameWidth = frameWidth;
         this.frameHeight = frameHeight;
         this.frameCount = frameCount;
         this.frameDuration = 1 / fps;
+        this.loop = loop;
 
         this.elapsed = 0;
         this.currentFrame = 0;
+        // Non-looping only: true once the last frame has been held for its full
+        // duration, so callers (e.g. Player's attack state) know when to switch
+        // back to normal locomotion instead of guessing from elapsed time.
+        this.finished = false;
 
         // Sprite sheets typically carry transparent padding around each frame (room
         // for the animation to move within a fixed canvas). groundLineRatio/topRatio
@@ -56,13 +61,25 @@ export class SpriteAnimation {
     reset() {
         this.elapsed = 0;
         this.currentFrame = 0;
+        this.finished = false;
     }
 
     update(dt) {
+        if (this.finished) return;
+
         this.elapsed += dt;
         while (this.elapsed >= this.frameDuration) {
             this.elapsed -= this.frameDuration;
-            this.currentFrame = (this.currentFrame + 1) % this.frameCount;
+
+            if (this.currentFrame + 1 < this.frameCount) {
+                this.currentFrame++;
+            } else if (this.loop) {
+                this.currentFrame = 0;
+            } else {
+                this.finished = true;
+                this.elapsed = 0;
+                break;
+            }
         }
     }
 
