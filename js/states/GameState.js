@@ -20,6 +20,13 @@ const ATTACK_FRAME_WIDTH = 150;
 const ATTACK_FRAME_HEIGHT = 96;
 const FALLBACK_SPAWN = { x: 64, y: 0 };
 
+// Sizes are independent of each other - the player's own live glow (render()
+// below) always shows their immediate area as revealed regardless of what an
+// enemy's darken() does to the persistent overlay there, so this doesn't need
+// to stay smaller just to avoid getting overwritten near the player.
+const PLAYER_REVEAL_RADIUS = 55;
+const ENEMY_DARKEN_RADIUS = 65;
+
 // Real Prologue Level 1 (assets/levels/Lv_1.json), built in Tiled. Player/enemy
 // spawn positions come from the Objects layer (PlayerStart/EnemySpawn) per
 // 10_technical-architecture.md 11.6.2 - enemies are all "maggot" for now since
@@ -63,7 +70,7 @@ export class GameState extends State {
         // of the same technique, real gameplay never reverts on its own. Grey
         // treatment matches the menu's tuned "Darkness" look for visual
         // consistency between the two scenes.
-        this.colorZone = new ColorZone(this.level.pixelWidth, this.level.pixelHeight, 55, {
+        this.colorZone = new ColorZone(this.level.pixelWidth, this.level.pixelHeight, PLAYER_REVEAL_RADIUS, {
             greyBrightness: 0.15,
             greyTint: { sepia: 0.4, hueRotate: 180, saturate: 2 },
         });
@@ -135,7 +142,7 @@ export class GameState extends State {
         // back to dark" - every living enemy continuously erases color around
         // itself as it patrols, independent of the player's own reveal below.
         for (const enemy of this.enemies) {
-            if (!enemy.dead) this.colorZone.darken(enemy.centerX, enemy.centerY);
+            if (!enemy.dead) this.colorZone.darken(enemy.centerX, enemy.centerY, ENEMY_DARKEN_RADIUS);
         }
 
         // Standing in for "Boss defeated" (03_mechanics.md 4.1) since Lv_1 has
@@ -159,7 +166,11 @@ export class GameState extends State {
         ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
 
         ctx.drawImage(this.levelCanvas, 0, 0);
-        this.colorZone.render(ctx);
+        this.colorZone.render(ctx, {
+            x: this.player.centerX,
+            y: this.player.visualCenterY,
+            radius: PLAYER_REVEAL_RADIUS,
+        });
         for (const enemy of this.enemies) {
             enemy.render(ctx);
             this.hud.renderEnemyBar(ctx, enemy);

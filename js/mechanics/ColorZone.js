@@ -93,7 +93,10 @@ export class ColorZone {
             // the same soft-edged gradient there every single frame compounds
             // destination-out alpha in the outer fade ring toward fully erased -
             // the intended soft falloff collapses into a hard cutoff after enough
-            // repeated frames at the same spot.
+            // repeated frames at the same spot. Staying colorful right around the
+            // player regardless of what else touches the overlay (e.g. an enemy's
+            // darken()) is render()'s liveGlow instead - see below - so this can
+            // stay a simple skip with no exceptions.
             const last = this._lastPermanentPunch;
             if (!last || last.x !== x || last.y !== y) {
                 this._punch(this.overlayCtx, x, y, 1);
@@ -196,7 +199,22 @@ export class ColorZone {
         ctx.restore();
     }
 
-    render(ctx) {
-        ctx.drawImage(this.overlayCanvas, 0, 0);
+    // liveGlow: optional { x, y, radius } - punches an extra hole for this
+    // frame's render only, on a scratch copy, never written back into
+    // overlayCanvas. This is how the player's immediate area always reads as
+    // revealed (03_mechanics.md 4.1 flavor: their own presence pushes back the
+    // Darkness) regardless of what an enemy's darken() did to the persistent
+    // overlay right there - recomputed identically from scratch every frame,
+    // so unlike punching the real overlay repeatedly, it can never erode.
+    render(ctx, liveGlow = null) {
+        if (!liveGlow) {
+            ctx.drawImage(this.overlayCanvas, 0, 0);
+            return;
+        }
+
+        this._scratchCtx.clearRect(0, 0, this.width, this.height);
+        this._scratchCtx.drawImage(this.overlayCanvas, 0, 0);
+        this._punch(this._scratchCtx, liveGlow.x, liveGlow.y, 1, liveGlow.radius ?? this.revealRadius);
+        ctx.drawImage(this._scratchCanvas, 0, 0);
     }
 }

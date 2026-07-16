@@ -202,11 +202,12 @@ export class MenuState extends State {
 
     render(ctx) {
         ctx.drawImage(this.backgroundCanvas, 0, 0);
-        this.colorZone.render(ctx);
         if (this.phase === 'player') {
+            this.colorZone.render(ctx, { x: this.player.centerX, y: this.player.visualCenterY, radius: REVEAL_RADIUS });
             this.player.render(ctx);
-        } else if (this.phase === 'enemy') {
-            this.enemy.render(ctx);
+        } else {
+            this.colorZone.render(ctx);
+            if (this.phase === 'enemy') this.enemy.render(ctx);
         }
     }
 }
