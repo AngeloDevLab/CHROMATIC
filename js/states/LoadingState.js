@@ -13,7 +13,7 @@ export class LoadingState extends State {
     async _load() {
         await this.game.assets.loadManifest({
             images: {
-                'menu-tileset': 'assets/images/tilesets/tileset-grass.png',
+                'menu-tileset': 'assets/images/tilesets/tileset_grass.png',
                 'guardian-idle': 'assets/images/character/idle.png',
                 'guardian-running': 'assets/images/character/running.png',
                 'guardian-jump': 'assets/images/character/jump.png',
@@ -26,7 +26,7 @@ export class LoadingState extends State {
                 'enemy-maggot-running': 'assets/images/enemys/maggot_running.png',
             },
             json: {
-                'menu-background-level': 'assets/levels/main-menu.json',
+                'menu-background-level': 'assets/levels/mainMenu.json',
                 'lv1-level': 'assets/levels/Lv_1.json',
             },
         });
