@@ -198,18 +198,17 @@ export class Player extends Entity {
     // floats above the ground, or sinks through a ceiling it's not actually
     // touching, relative to the real hitbox). One fixed reference keeps the
     // visible sprite stable regardless of pose.
-    _drawY() {
-        const referenceAnim = this.animations.idle;
+    _drawY(referenceAnim = this.animations.idle, renderSize = this.renderSize) {
         const groundSurfaceY = this.y + this.height;
-        return groundSurfaceY - referenceAnim.groundLineRatio * this.renderSize;
+        return groundSurfaceY - referenceAnim.groundLineRatio * renderSize;
     }
 
     // The sprite is drawn wider/taller than the hitbox (renderSize vs
     // width/height) - center it horizontally over the narrower hitbox instead
     // of aligning their left edges, or the character would visibly lean to one
     // side of its own collision box.
-    _drawX() {
-        return this.x - (this.renderSize - this.width) / 2;
+    _drawX(renderWidth = this.renderSize) {
+        return this.x - (renderWidth - this.width) / 2;
     }
 
     // The true visual middle of the character (accounting for sprite padding),
@@ -228,16 +227,36 @@ export class Player extends Entity {
         const anim = this.animations[this.currentAnimation];
         if (!anim) return;
 
-        const drawX = this._drawX();
-        const drawY = this._drawY();
+        // Idle/running/jump share idle's own render size and ground line (see
+        // _drawY's default params) so switching between those looping poses
+        // never jitters vertically. Attack is a distinct one-shot pose that can
+        // use a differently-sized/padded sheet - including non-square, e.g.
+        // extra side padding for the sword to swing past the body without
+        // needing extra vertical padding too - without throwing that off, so
+        // it's anchored to and scaled from its own bounds instead. Scaled by
+        // height only, then width follows the frame's own aspect ratio, or a
+        // non-square frame would stretch/squash instead of just having more
+        // padding.
+        const isAttacking = this.currentAnimation === 'attack';
+        let renderWidth;
+        let renderHeight;
+        if (isAttacking) {
+            renderHeight = TARGET_VISIBLE_HEIGHT / (anim.groundLineRatio - anim.topRatio);
+            renderWidth = renderHeight * (anim.frameWidth / anim.frameHeight);
+        } else {
+            renderWidth = this.renderSize;
+            renderHeight = this.renderSize;
+        }
+        const drawX = this._drawX(renderWidth);
+        const drawY = isAttacking ? this._drawY(anim, renderHeight) : this._drawY();
 
         ctx.save();
         if (this.facing === -1) {
-            ctx.translate(drawX + this.renderSize, drawY);
+            ctx.translate(drawX + renderWidth, drawY);
             ctx.scale(-1, 1);
-            anim.draw(ctx, 0, 0, this.renderSize, this.renderSize);
+            anim.draw(ctx, 0, 0, renderWidth, renderHeight);
         } else {
-            anim.draw(ctx, drawX, drawY, this.renderSize, this.renderSize);
+            anim.draw(ctx, drawX, drawY, renderWidth, renderHeight);
         }
         ctx.restore();
     }

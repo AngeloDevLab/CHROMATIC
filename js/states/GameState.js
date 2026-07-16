@@ -11,6 +11,13 @@ import { HUD, HEALTH_BAR, SHIELD_BAR } from '../ui/HUD.js';
 import { DamageNumbers } from '../ui/DamageNumbers.js';
 
 const CHARACTER_FRAME_SIZE = 96;
+// Bigger canvas than the other sheets, deliberately - gives the sword extra
+// room to swing past the body without clipping the frame edge. Doesn't need
+// to be square - Player.js scales the attack frame by its own aspect ratio,
+// so e.g. more side padding than vertical padding works fine too. Match
+// these to whatever attack.png actually is.
+const ATTACK_FRAME_WIDTH = 150;
+const ATTACK_FRAME_HEIGHT = 96;
 const FALLBACK_SPAWN = { x: 64, y: 0 };
 
 // Real Prologue Level 1 (assets/levels/Lv_1.json), built in Tiled. Player/enemy
@@ -69,7 +76,7 @@ export class GameState extends State {
             // Plays once per swing rather than looping (SpriteAnimation's loop:
             // false) - Player watches its `finished` flag to know when to hand
             // control back to normal locomotion.
-            attack: new SpriteAnimation(this.game.assets.getImage('guardian-attack'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 8, 16, { loop: false }),
+            attack: new SpriteAnimation(this.game.assets.getImage('guardian-attack'), ATTACK_FRAME_WIDTH, ATTACK_FRAME_HEIGHT, 8, 16, { loop: false }),
         };
 
         const playerStart = this.level.getObjectsByType('PlayerStart')[0] ?? FALLBACK_SPAWN;
