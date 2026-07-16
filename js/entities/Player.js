@@ -38,6 +38,8 @@ export class Player extends Entity {
         this._autopilotSpeed = 0;
         this._autopilotBounds = null;
 
+        this.freeRun = false;
+
         this.controlled = false;
         this.grounded = false;
 
@@ -80,6 +82,18 @@ export class Player extends Entity {
         this.currentAnimation = 'running';
     }
 
+    // Scripted, physics-free constant-velocity run (menu living background,
+    // 08_menu-flow.md) - unlike enableAutopilot there's no bounds/bounce, and
+    // unlike enableControl there's no gravity/collision; the caller drives
+    // entrances/exits itself (e.g. starting off-screen, ending the pass once
+    // it's fully exited the other side).
+    enableFreeRun(vx) {
+        this.freeRun = true;
+        this.vx = vx;
+        this.facing = vx >= 0 ? 1 : -1;
+        this.currentAnimation = 'running';
+    }
+
     // Real keyboard-driven movement (04_health-save-system.md base abilities:
     // Run, Jump, Duck) - used by GameState, as opposed to the menu's autopilot.
     enableControl(input, collision, { moveSpeed = 150, jumpSpeed = 360, gravity = 700 } = {}) {
@@ -97,6 +111,8 @@ export class Player extends Entity {
             super.update(dt);
         } else if (this.controlled) {
             this._updateControlled(dt);
+        } else if (this.freeRun) {
+            super.update(dt);
         }
 
         this.animations[this.currentAnimation]?.update(dt);

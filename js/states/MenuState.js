@@ -1,15 +1,19 @@
 import { State } from './State.js';
 import { Level } from '../world/Level.js';
 import { Player } from '../entities/Player.js';
+import { Enemy } from '../entities/Enemy.js';
 import { ColorZone } from '../mechanics/ColorZone.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 import { MenuButtons } from '../ui/MenuButtons.js';
 import { Panel } from '../ui/Panel.js';
 
 const PLAYER_SPEED = 60;
+const ENEMY_SPEED = 70;
+const REVEAL_RADIUS = 55;
+const DARKEN_RADIUS = 65;
+const PASS_DELAY_SECONDS = 1;
 const CHARACTER_FRAME_SIZE = 96;
 const BACKGROUND_OVERLAP_PX = 32;
-const CHARACTER_GROUND_OFFSET_PX = 5;
 
 // Difficulty scales only incoming damage (04_health-save-system.md 5.3) -
 // enemy HP and the player's own damage stay the same across all three.
@@ -63,25 +67,68 @@ export class MenuState extends State {
 
         this.level.drawAllLayers(bgCtx);
 
-        this.colorZone = new ColorZone(this.game.width, this.game.height, 55, {
-            fadeDurationSeconds: 5,
+        // Permanent reveal now (same mode as real gameplay, 03_mechanics.md 4.1)
+        // instead of the old decorative fading-bubble variant - the maggot pass
+        // below is what erases it instead, previewing the real
+        // reveal/darken exchange rather than a separate menu-only effect.
+        this.colorZone = new ColorZone(this.game.width, this.game.height, REVEAL_RADIUS, {
             greyBrightness: 0.15,
             greyTint: { sepia: 0.4, hueRotate: 180, saturate: 2 },
-            stampIntervalSeconds: 0.25,
         });
         this.colorZone.paintGreyFrom(this.backgroundCanvas);
 
-        const groundY = groundSurfaceY - 64 + CHARACTER_GROUND_OFFSET_PX;
+        const groundY = groundSurfaceY - 64;
 
         const animations = {
             idle: new SpriteAnimation(this.game.assets.getImage('guardian-idle'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 9, 8),
             running: new SpriteAnimation(this.game.assets.getImage('guardian-running'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 12, 14),
         };
-
         this.player = new Player(0, groundY, animations);
-        this.player.enableAutopilot(PLAYER_SPEED, { minX: 0, maxX: this.game.width - this.player.width });
+
+        const maggotSprite = this.game.assets.getImage('enemy-maggot');
+        this.enemy = new Enemy(0, groundSurfaceY - maggotSprite.height, maggotSprite);
+        this.enemy.setAnimations({
+            running: new SpriteAnimation(this.game.assets.getImage('enemy-maggot-running'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 9, 10),
+        });
+
+        // Living background choreography: the player runs across leaving a
+        // permanent trail, then once they've fully exited, a maggot runs
+        // across erasing it, then it repeats - see _startPlayerPass()/
+        // _startEnemyPass()/update().
+        this._startPlayerPass();
 
         this._buildOverlay();
+    }
+
+    // Random direction each pass (03_mechanics.md 4.1's living-background
+    // demo) so the loop doesn't always run the same way - starts off the
+    // canvas edge on the entering side, ends once fully off the far edge
+    // (see _hasExited()).
+    _startPlayerPass() {
+        const direction = Math.random() < 0.5 ? 1 : -1;
+        this.player.x = direction === 1 ? -this.player.width : this.game.width;
+        this.player.enableFreeRun(direction * PLAYER_SPEED);
+        this.phase = 'player';
+    }
+
+    _startEnemyPass() {
+        const direction = Math.random() < 0.5 ? 1 : -1;
+        this.enemy.x = direction === 1 ? -this.enemy.width : this.game.width;
+        this.enemy.enableFreeRun(direction * ENEMY_SPEED);
+        this.phase = 'enemy';
+    }
+
+    _hasExited(entity) {
+        return entity.vx >= 0 ? entity.x > this.game.width : entity.x + entity.width < 0;
+    }
+
+    // Beat between passes so the next entrance doesn't feel instant/glued to
+    // the previous exit - both are off-screen and nothing renders/updates
+    // color during this phase, see update()/render().
+    _startDelay(nextPass) {
+        this.phase = 'delay';
+        this._delayTimer = PASS_DELAY_SECONDS;
+        this._nextPass = nextPass;
     }
 
     _buildOverlay() {
@@ -139,13 +186,27 @@ export class MenuState extends State {
     }
 
     update(dt) {
-        this.player.update(dt);
-        this.colorZone.update(dt, this.player.centerX, this.player.visualCenterY);
+        if (this.phase === 'player') {
+            this.player.update(dt);
+            this.colorZone.update(dt, this.player.centerX, this.player.visualCenterY);
+            if (this._hasExited(this.player)) this._startDelay(() => this._startEnemyPass());
+        } else if (this.phase === 'enemy') {
+            this.enemy.update(dt);
+            this.colorZone.darken(this.enemy.centerX, this.enemy.centerY, DARKEN_RADIUS);
+            if (this._hasExited(this.enemy)) this._startDelay(() => this._startPlayerPass());
+        } else {
+            this._delayTimer -= dt;
+            if (this._delayTimer <= 0) this._nextPass();
+        }
     }
 
     render(ctx) {
         ctx.drawImage(this.backgroundCanvas, 0, 0);
         this.colorZone.render(ctx);
-        this.player.render(ctx);
+        if (this.phase === 'player') {
+            this.player.render(ctx);
+        } else if (this.phase === 'enemy') {
+            this.enemy.render(ctx);
+        }
     }
 }

@@ -32,6 +32,8 @@ export class Enemy extends Entity {
         this.gravity = 0;
         this.grounded = false;
 
+        this.freeRun = false;
+
         this.renderSize = width;
         this.referenceAnim = null;
 
@@ -72,9 +74,19 @@ export class Enemy extends Entity {
         this.gravity = gravity;
     }
 
+    // Scripted, physics-free constant-velocity run (menu living background) -
+    // no gravity/collision, no ledge/wall turning like enablePatrol. The
+    // caller drives entrances/exits itself.
+    enableFreeRun(vx) {
+        this.freeRun = true;
+        this.vx = vx;
+        this.facing = vx >= 0 ? 1 : -1;
+    }
+
     update(dt) {
         if (this.dead) return;
         if (this.patrolling) this._updatePatrol(dt);
+        else if (this.freeRun) super.update(dt);
         this.animations?.[this.currentAnimation]?.update(dt);
     }
 
