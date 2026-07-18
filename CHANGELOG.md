@@ -4,6 +4,29 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-18
+
+### Added
+- Player invincibility frames after taking damage, independent of any single enemy's own contact cooldown - stops multiple overlapping enemies (or one lingering enemy) from stacking damage every frame.
+- Hit-flash (white tint) on enemy/player damage, done via canvas compositing on a scratch canvas rather than baked into sprite frames.
+- Difficulty now actually affects incoming damage (Easy -50%, Hard +100%) - previously selected but never read anywhere. Stated directly in the difficulty selection panel's descriptions.
+- Player death sequence: the screen fully darkens (inverse of the victory color-explosion) while a ghost sprite rises from the death spot and fades out, then a Game Over panel offers Retry/Main Menu.
+- Enemy death now reveals color back at the spot it had been darkening while patrolling (plus a bit more), instead of just leaving a dark patch behind.
+- Pause menu (Escape) and the Game Over panel share the same overlay `Panel` component and option-list styling - no separate PauseState/GameOverState, just a paused flag and a panel on top of the frozen game screen.
+
+### Changed
+- Attack no longer roots the player in place while airborne - it only locks horizontal movement while grounded, so momentum and direction changes keep working normally mid-air during a swing.
+- Maggot (Patroller) contact damage raised from 5 to 10, so the difficulty multiplier's effect is actually noticeable during a hit.
+- Easy difficulty multiplier changed from ×0.66 to ×0.5 for cleaner, easier-to-state round numbers (-50%/+100%).
+- GDD: Secret Rooms split into Buff-Secret (Prisma cost, rare, permanent stat buff) and Lore-Secret (free/cheap, more frequent, story only); documented Terminal/Letters/Environmental as the three lore-delivery devices; parked "custom Secret Room enemies" and "minigame/terminal puzzles" as rejected-for-v1 ideas in `_ideas-inbox.md`.
+
+### Fixed
+- `dt` clamped to a 50ms max in the render loop, guarding against a stutter/GC pause/tab-switch producing one huge oversized physics step.
+- Cutscene text outline now uses a `text-shadow` stack instead of relying solely on `-webkit-text-stroke`, fixing missing outlines outside Chromium.
+- Attack animation firing immediately on entering/retrying a level, from a stale click queued up while navigating the Worldmap background (the canvas-scoped mousedown listener still catches background clicks there).
+- A dead player ("ghost") no longer keeps dealing contact damage to enemies it happens to be overlapping at its frozen death position.
+- A colored hole no longer punches through at the death spot right after the death sequence's full-darken effect finishes.
+
 ## [0.5.0] - 2026-07-16
 
 ### Added
