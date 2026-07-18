@@ -29,6 +29,35 @@ const INVINCIBILITY_SECONDS = 0.5;
 // rather than a "still invincible" indicator.
 const HIT_FLASH_SECONDS = 0.15;
 
+// Jump feel (game-feel pass): how long after walking off a ledge a jump still
+// counts as "grounded" (coyote time), and how long a jump press pressed
+// slightly before landing is still honored once grounded (jump buffering).
+// Both mask the exact single-frame window a rigid grounded-check would
+// otherwise require, which reads as unresponsive on a keyboard.
+const COYOTE_TIME_SECONDS = 0.1;
+const JUMP_BUFFER_SECONDS = 0.12;
+// Variable jump height: releasing jump early while still rising clamps vy
+// down to this fraction of a full jump's takeoff speed, for a short hop
+// instead of always launching to full height regardless of tap-vs-hold.
+const SHORT_HOP_VY_FRACTION = 0.45;
+
+// Movement feel: ramps vx toward the target speed instead of snapping
+// instantly, so starting/stopping has a touch of weight - deceleration is
+// faster than acceleration so stopping still reads as responsive.
+const ACCELERATION = 1800;
+const DECELERATION = 2600;
+
+// How long a knockback push overrides normal horizontal control for - without
+// this, the accel/decel movement code would immediately pull vx back toward
+// whatever direction is held (or 0), making the hit invisible.
+const KNOCKBACK_LOCK_SECONDS = 0.15;
+
+function moveToward(current, target, maxDelta) {
+    if (current < target) return Math.min(current + maxDelta, target);
+    if (current > target) return Math.max(current - maxDelta, target);
+    return current;
+}
+
 export class Player extends Entity {
     constructor(x, y, animations) {
         super(x, y, HITBOX_WIDTH, HITBOX_HEIGHT);
@@ -52,6 +81,9 @@ export class Player extends Entity {
 
         this.controlled = false;
         this.grounded = false;
+        this.coyoteTimer = 0;
+        this.jumpBufferTimer = 0;
+        this.knockbackTimer = 0;
 
         this.attacking = false;
         this._attackImpactResolved = false;
@@ -65,6 +97,16 @@ export class Player extends Entity {
         this.health = MAX_HEALTH;
         this.maxShield = MAX_SHIELD;
         this.shield = MAX_SHIELD;
+    }
+
+    // Instant kill bypassing Shield/invincibility entirely - falling out of the
+    // level (GameState's kill plane) shouldn't be survivable just because the
+    // player happens to be mid-i-frames or still has Prisma up.
+    die() {
+        if (this.dead) return;
+        this.shield = 0;
+        this.health = 0;
+        this.dead = true;
     }
 
     // 03_mechanics.md 4.5: Prisma absorbs hits first, only once fully depleted
@@ -84,6 +126,13 @@ export class Player extends Entity {
 
         this.invincibleTimer = INVINCIBILITY_SECONDS;
         this.hitFlashTimer = HIT_FLASH_SECONDS;
+    }
+
+    // Combat feel: getting hit shoves the player back briefly instead of
+    // damage just being a number - see Combat.js callers.
+    applyKnockback(vx) {
+        this.vx = vx;
+        this.knockbackTimer = KNOCKBACK_LOCK_SECONDS;
     }
 
     // True exactly once per swing, the instant the blade reaches full extension
@@ -118,7 +167,11 @@ export class Player extends Entity {
 
     // Real keyboard-driven movement (04_health-save-system.md base abilities:
     // Run, Jump, Duck) - used by GameState, as opposed to the menu's autopilot.
-    enableControl(input, collision, { moveSpeed = 150, jumpSpeed = 360, gravity = 700 } = {}) {
+    // jumpSpeed 379 (up from 360) gives a max apex of ~102.5px instead of
+    // ~92.5px (maxHeight = jumpSpeed^2 / (2*gravity)) - ~10px of extra safety
+    // margin on top of the fixed-timestep fix (Game.js), for level geometry
+    // that's close to the old ceiling.
+    enableControl(input, collision, { moveSpeed = 150, jumpSpeed = 379, gravity = 700 } = {}) {
         this.controlled = true;
         this.input = input;
         this.collision = collision;
@@ -179,22 +232,44 @@ export class Player extends Entity {
         // movement, reusing the idle animation, until real duck art exists.
         const ducking = !this.attacking && this.input.isDown('duck') && this.grounded;
 
-        if (groundedAttack || ducking) {
-            this.vx = 0;
-        } else if (left && !right) {
-            this.vx = -this.moveSpeed;
-            this.facing = -1;
-        } else if (right && !left) {
-            this.vx = this.moveSpeed;
-            this.facing = 1;
-        } else {
-            this.vx = 0;
+        // Coyote time: this.grounded still reflects last frame's collision
+        // result at this point (this frame's own resolve() happens below), so
+        // walking off a ledge doesn't instantly close the jump window.
+        this.coyoteTimer = this.grounded ? COYOTE_TIME_SECONDS : Math.max(0, this.coyoteTimer - dt);
+
+        // Jump buffering: queue a press for JUMP_BUFFER_SECONDS so a tap
+        // slightly before landing still fires once grounded, instead of being
+        // silently dropped for arriving a frame or two too early.
+        if (this.input.consumeJumpPress()) this.jumpBufferTimer = JUMP_BUFFER_SECONDS;
+        else this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - dt);
+
+        if (this.knockbackTimer > 0) this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
+        const inKnockback = this.knockbackTimer > 0;
+
+        let targetVx = 0;
+        if (!inKnockback && !(groundedAttack || ducking)) {
+            if (left && !right) {
+                targetVx = -this.moveSpeed;
+                this.facing = -1;
+            } else if (right && !left) {
+                targetVx = this.moveSpeed;
+                this.facing = 1;
+            }
         }
+        const accelRate = targetVx === 0 ? DECELERATION : ACCELERATION;
+        this.vx = inKnockback ? this.vx : ((groundedAttack || ducking) ? 0 : moveToward(this.vx, targetVx, accelRate * dt));
 
         this.vy += this.gravity * dt;
 
-        if (!this.attacking && this.input.isDown('jump') && this.grounded && !ducking) {
+        if (!this.attacking && this.jumpBufferTimer > 0 && this.coyoteTimer > 0 && !ducking) {
             this.vy = -this.jumpSpeed;
+            this.jumpBufferTimer = 0;
+            this.coyoteTimer = 0;
+        } else if (this.vy < 0 && !this.input.isDown('jump')) {
+            // Variable jump height: released early while still rising, so cut
+            // the ascent short instead of always launching to full height
+            // regardless of a quick tap vs. a held press.
+            this.vy = Math.max(this.vy, -this.jumpSpeed * SHORT_HOP_VY_FRACTION);
         }
 
         this.grounded = this.collision.resolve(this, dt);

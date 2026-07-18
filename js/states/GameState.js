@@ -2,11 +2,19 @@ import { State } from './State.js';
 import { Level } from '../world/Level.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
+import { Projectile } from '../entities/Projectile.js';
 import { Collision } from '../utils/Collision.js';
 import { Camera } from '../utils/Camera.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 import { ColorZone } from '../mechanics/ColorZone.js';
-import { resolveMeleeAttack, resolveContactDamage } from '../mechanics/Combat.js';
+import {
+    resolveMeleeAttack,
+    resolveContactDamage,
+    resolveProjectileHits,
+    findNearestEnemy,
+    isWithinMeleeRange,
+    PLAYER_ATTACK_DAMAGE,
+} from '../mechanics/Combat.js';
 import { HUD, HEALTH_BAR, SHIELD_BAR } from '../ui/HUD.js';
 import { DamageNumbers } from '../ui/DamageNumbers.js';
 import { Panel } from '../ui/Panel.js';
@@ -24,6 +32,18 @@ const FALLBACK_SPAWN = { x: 64, y: 0 };
 const GHOST_FRAME_SIZE = 64;
 const GHOST_RISE_SPEED = 25;
 const GHOST_FADE_DURATION_SECONDS = 2.5;
+
+// How far below the level's bottom edge the player has to fall before it
+// counts as "into a pit" - a bit of slack past the visible bottom rather than
+// killing the instant they cross it, so a platform flush with the level edge
+// doesn't feel like an unfair instant death.
+const FALL_DEATH_MARGIN_PX = 64;
+
+// Combat feel: a brief total freeze the instant a hit lands (melee or
+// contact), before anything reacts to it - update() early-returns while this
+// is running (render() keeps drawing the last frame), same mechanism as the
+// Pause early-return below. Short enough to read as "impact" rather than lag.
+const HIT_STOP_SECONDS = 0.06;
 
 // Sizes are independent of each other - the player's own live glow (render()
 // below) always shows their immediate area as revealed regardless of what an
@@ -101,6 +121,7 @@ export class GameState extends State {
 
         this.game.input.clearAttackPress();
         this.game.input.clearPausePress();
+        this.game.input.clearJumpPress();
 
         this.paused = false;
         this.panel = new Panel(this.game.overlay);
@@ -130,6 +151,10 @@ export class GameState extends State {
         this.shieldValueEl = this._createHudValueLabel(SHIELD_BAR);
 
         this._levelFullyRevealed = false;
+        this._hitStopTimer = 0;
+
+        this.thrownSwordSprite = this.game.assets.getImage('thrown-sword');
+        this.projectiles = [];
     }
 
     _createHudValueLabel(bar) {
@@ -156,14 +181,47 @@ export class GameState extends State {
         if (pausePressed && !this._deathSequence) this._togglePause();
         if (this.paused) return;
 
+        if (this._hitStopTimer > 0) {
+            this._hitStopTimer = Math.max(0, this._hitStopTimer - dt);
+            return;
+        }
+
         this.player.update(dt);
         for (const enemy of this.enemies) enemy.update(dt);
 
-        const hits = this.player.consumeAttackImpact() ? resolveMeleeAttack(this.player, this.enemies) : [];
+        // Jump & Run gaps with no floor below (10_technical-architecture.md
+        // Platform level type) currently let the player fall forever and keep
+        // controlling mid-air - treat crossing the kill plane as death instead.
+        if (!this.player.dead && this.player.y > this.level.pixelHeight + FALL_DEATH_MARGIN_PX) {
+            this.player.die();
+        }
+
+        // 03_mechanics.md 4.3: melee if the nearest enemy is in reach, a
+        // thrown-sword projectile otherwise - both share the same swing
+        // animation/timing (Player.js is untouched), only what happens at the
+        // swing's impact frame differs.
+        let hits = [];
+        if (this.player.consumeAttackImpact()) {
+            const nearest = findNearestEnemy(this.player, this.enemies);
+            if (nearest && !isWithinMeleeRange(this.player, nearest)) {
+                this.player.facing = nearest.centerX >= this.player.centerX ? 1 : -1;
+                const direction = this.player.facing;
+                const spawnCenterX = direction === 1 ? this.player.x + this.player.width : this.player.x;
+                this.projectiles.push(new Projectile(spawnCenterX, this.player.centerY, direction, this.thrownSwordSprite, PLAYER_ATTACK_DAMAGE));
+            } else {
+                hits = resolveMeleeAttack(this.player, this.enemies);
+            }
+        }
+
+        for (const projectile of this.projectiles) projectile.update(dt, this.collision);
+        hits.push(...resolveProjectileHits(this.projectiles, this.enemies));
+        this.projectiles = this.projectiles.filter((projectile) => !projectile.dead);
+
         hits.push(...resolveContactDamage(dt, this.player, this.enemies, this.game.difficulty));
         for (const hit of hits) {
             this.damageNumbers.spawn(hit.enemy.centerX, hit.enemy.visualTopY, hit.amount);
         }
+        if (hits.length > 0) this._hitStopTimer = HIT_STOP_SECONDS;
 
         // 03_mechanics.md 4.1: "Enemy crosses a colored area -> the area turns
         // back to dark" - every living enemy continuously erases color around
@@ -209,9 +267,15 @@ export class GameState extends State {
     // ghost rises from the death spot and fades out, then the Game Over panel
     // (same Panel/mechanism as Pause, see _togglePause()) offers Retry/Main Menu.
     _startDeathSequence() {
+        // Falling into a pit (the kill plane above) can put the actual death
+        // position below what Camera.js ever scrolls to (it clamps to the
+        // level's bottom edge) - pin the ghost to the visible bottom edge of
+        // the screen instead of spawning it off-screen where the rise-and-fade
+        // would never be seen.
+        const visibleBottom = this.camera.y + this.game.height - GHOST_FRAME_SIZE / 2;
         this._deathSequence = {
             x: this.player.centerX,
-            y: this.player.visualCenterY,
+            y: Math.min(this.player.visualCenterY, visibleBottom),
             elapsed: 0,
             gameOverShown: false,
         };
@@ -320,6 +384,7 @@ export class GameState extends State {
             enemy.render(ctx);
             this.hud.renderEnemyBar(ctx, enemy);
         }
+        for (const projectile of this.projectiles) projectile.render(ctx);
         if (this._deathSequence) {
             this._renderGhost(ctx);
         } else {

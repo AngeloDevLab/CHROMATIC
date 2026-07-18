@@ -19,6 +19,7 @@ export class LoadingState extends State {
                 'guardian-jump': 'assets/images/character/jump.png',
                 'guardian-attack': 'assets/images/character/attack.png',
                 'guardian-dead-ghost': 'assets/images/character/dead-ghost.png',
+                'thrown-sword': 'assets/images/character/thrown_sword.png',
                 'menu-parallax-bg': 'assets/images/backgrounds/forest_bg.png',
                 'cutscene-beach-bg': 'assets/images/backgrounds/beach_bg.png',
                 'worldmap-prologue-bg': 'assets/images/backgrounds/worldmap_prolog.png',

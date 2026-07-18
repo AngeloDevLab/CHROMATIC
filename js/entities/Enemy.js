@@ -7,6 +7,11 @@ const DEFAULT_GRAVITY = 700;
 // (see SpriteAnimation.draw's flashAmount).
 const HIT_FLASH_SECONDS = 0.15;
 
+// How long a knockback push overrides the normal patrol vx assignment for -
+// without this, _updatePatrol would stomp the pushed-back vx with
+// patrolSpeed * facing on the very next frame, making the hit invisible.
+const KNOCKBACK_LOCK_SECONDS = 0.15;
+
 // Patroller behavior (05_enemies-bosses.md), HP bumped up from the GDD's 20
 // (Zone 1 balancing draft) per playtesting feedback - 2 hits felt too fast.
 const DEFAULT_HP = 50;
@@ -54,6 +59,7 @@ export class Enemy extends Entity {
         this.colorRevealed = false;
 
         this.hitFlashTimer = 0;
+        this.knockbackTimer = 0;
     }
 
     takeDamage(amount) {
@@ -61,6 +67,13 @@ export class Enemy extends Entity {
         this.hp = Math.max(0, this.hp - amount);
         if (this.hp === 0) this.dead = true;
         this.hitFlashTimer = HIT_FLASH_SECONDS;
+    }
+
+    // Combat feel: a hit shoves the enemy back briefly instead of it just
+    // absorbing damage in place - see Combat.js callers.
+    applyKnockback(vx) {
+        this.vx = vx;
+        this.knockbackTimer = KNOCKBACK_LOCK_SECONDS;
     }
 
     setAnimations(animations, initial = 'running') {
@@ -107,12 +120,17 @@ export class Enemy extends Entity {
     _updatePatrol(dt) {
         this.vy += this.gravity * dt;
 
-        // Only reconsider direction while grounded - mid-air (e.g. right after
-        // spawning above its floor) there's nothing meaningful to react to yet.
-        if (this.grounded && this._blockedAhead()) {
-            this.facing *= -1;
+        if (this.knockbackTimer > 0) {
+            this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
+        } else {
+            // Only reconsider direction while grounded - mid-air (e.g. right
+            // after spawning above its floor) there's nothing meaningful to
+            // react to yet.
+            if (this.grounded && this._blockedAhead()) {
+                this.facing *= -1;
+            }
+            this.vx = this.patrolSpeed * this.facing;
         }
-        this.vx = this.patrolSpeed * this.facing;
 
         this.grounded = this.collision.resolve(this, dt);
     }

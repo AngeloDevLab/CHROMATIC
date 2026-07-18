@@ -1,5 +1,15 @@
 import { StateMachine } from './StateMachine.js';
 
+// Gameplay updates run in fixed 1/60s steps regardless of the display's
+// actual refresh rate/frame timing (TODO.md "Jump apex ~5px short on another
+// machine/browser") - semi-implicit Euler integration (vy += gravity*dt; y +=
+// vy*dt, see Player.js) is step-size sensitive, so a variable per-frame dt
+// produced a slightly different arc on every machine. A fixed step makes
+// every velocity-driven motion identical everywhere; only rendering still
+// happens once per requestAnimationFrame call, so visuals stay as smooth as
+// the display allows.
+const FIXED_DT = 1 / 60;
+
 export class Game {
     constructor(canvasId, overlayId) {
         this.canvas = document.getElementById(canvasId);
@@ -17,6 +27,7 @@ export class Game {
         this.difficulty = null;
 
         this._lastTime = 0;
+        this._accumulator = 0;
         this._loop = this._loop.bind(this);
         this._handleResize = this._handleResize.bind(this);
 
@@ -47,10 +58,19 @@ export class Game {
     }
 
     _loop(timestamp) {
-        const dt = Math.min(this._lastTime ? (timestamp - this._lastTime) / 1000 : 0, 0.05);
+        // Still clamped the same as before - now bounds how many catch-up
+        // steps a single frame can inject into the accumulator below, instead
+        // of bounding the size of one physics step directly (a stutter/GC
+        // pause/tab-switch produces a few extra fixed steps in a row instead
+        // of one oversized one).
+        const frameTime = Math.min(this._lastTime ? (timestamp - this._lastTime) / 1000 : 0, 0.05);
         this._lastTime = timestamp;
+        this._accumulator += frameTime;
 
-        this.stateMachine.update(dt);
+        while (this._accumulator >= FIXED_DT) {
+            this.stateMachine.update(FIXED_DT);
+            this._accumulator -= FIXED_DT;
+        }
 
         this.ctx.clearRect(0, 0, this.width, this.height);
         this.stateMachine.render(this.ctx);

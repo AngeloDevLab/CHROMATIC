@@ -18,6 +18,12 @@ export class InputHandler {
         // press instead of every frame it happens to still be held.
         this._pausePressed = false;
 
+        // Edge-triggered jump press, alongside the held state in `actions.jump`
+        // (Player.js uses the held state for variable jump height, and this for
+        // jump buffering) - guarded against the browser's own keydown auto-repeat
+        // in _onKeyDown, or holding the key would re-trigger this every repeat tick.
+        this._jumpPressed = false;
+
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onKeyUp = this._onKeyUp.bind(this);
         this._onMouseDown = this._onMouseDown.bind(this);
@@ -38,7 +44,9 @@ export class InputHandler {
         }
 
         const action = KEY_MAP[e.code];
-        if (action) this.actions[action] = true;
+        if (!action) return;
+        if (action === 'jump' && !this.actions.jump) this._jumpPressed = true;
+        this.actions[action] = true;
     }
 
     _onKeyUp(e) {
@@ -68,6 +76,20 @@ export class InputHandler {
     // mousedown) so it doesn't fire an attack the instant a new Player exists.
     clearAttackPress() {
         this._attackPressed = false;
+    }
+
+    // Same "at most once per press" contract as consumeAttackPress() - callers
+    // poll every frame regardless of whether a jump can currently be taken, so
+    // Player.js can stash it into its own jump-buffer window instead of losing
+    // a press that arrived a few frames before landing.
+    consumeJumpPress() {
+        if (!this._jumpPressed) return false;
+        this._jumpPressed = false;
+        return true;
+    }
+
+    clearJumpPress() {
+        this._jumpPressed = false;
     }
 
     consumePausePress() {

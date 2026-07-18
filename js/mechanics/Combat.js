@@ -16,6 +16,13 @@ export const PLAYER_ATTACK_DAMAGE = 10;
 // doesn't deal damage every single frame.
 const CONTACT_DAMAGE_COOLDOWN_SECONDS = 1;
 
+// Combat feel: knockback speed applied away from whoever landed the hit -
+// both entities' own knockback lock (Player.js/Enemy.js) briefly overrides
+// normal movement so the push is actually visible instead of being stomped
+// by input/patrol logic the very next frame.
+const ENEMY_KNOCKBACK_SPEED = 220;
+const PLAYER_KNOCKBACK_SPEED = 180;
+
 // 04_health-save-system.md 5.3: difficulty scales only incoming damage, enemy
 // HP and the player's own damage stay the same across all three. Deliberately
 // round (-50%/+100%) rather than an odd fraction, so it's easy to state as a
@@ -27,6 +34,32 @@ const DIFFICULTY_DAMAGE_MULTIPLIERS = { easy: 0.5, normal: 1, hard: 2 };
 function rectsOverlap(a, b) {
     return a.x < b.x + b.width && a.x + a.width > b.x
         && a.y < b.y + b.height && a.y + a.height > b.y;
+}
+
+// Auto-targeting (03_mechanics.md 4.3: Mobile's "automatic targeting of the
+// nearest enemy", reused for Desktop too instead of real mouse-direction aim
+// - the whole game is otherwise strictly left/right-facing, no entity has
+// ever had a vertical or angled orientation) - nearest living enemy by
+// horizontal distance, either side of the player.
+export function findNearestEnemy(player, enemies) {
+    let nearest = null;
+    let nearestDist = Infinity;
+    for (const enemy of enemies) {
+        if (enemy.dead) continue;
+        const dist = Math.abs(enemy.centerX - player.centerX);
+        if (dist < nearestDist) {
+            nearest = enemy;
+            nearestDist = dist;
+        }
+    }
+    return nearest;
+}
+
+// Mode-decision only - reuses ATTACK_REACH_PX so melee/ranged never overlap
+// or gap. The actual melee hit still goes through resolveMeleeAttack's own
+// facing-direction hitbox rect below, this just decides which path to take.
+export function isWithinMeleeRange(player, enemy) {
+    return Math.abs(enemy.centerX - player.centerX) <= ATTACK_REACH_PX;
 }
 
 // Returns the enemies actually hit (as { enemy, amount }) so the caller can
@@ -41,7 +74,30 @@ export function resolveMeleeAttack(player, enemies) {
     for (const enemy of enemies) {
         if (!enemy.dead && rectsOverlap(hitbox, enemy)) {
             enemy.takeDamage(PLAYER_ATTACK_DAMAGE);
+            enemy.applyKnockback(player.facing * ENEMY_KNOCKBACK_SPEED);
             hits.push({ enemy, amount: PLAYER_ATTACK_DAMAGE });
+        }
+    }
+    return hits;
+}
+
+// Same shape as the other resolve* functions (returns { enemy, amount } hits)
+// so damage numbers/hit-stop/knockback all keep working through GameState's
+// existing pipeline with no extra wiring beyond calling this once per frame.
+export function resolveProjectileHits(projectiles, enemies) {
+    const hits = [];
+    for (const projectile of projectiles) {
+        if (projectile.dead) continue;
+
+        for (const enemy of enemies) {
+            if (enemy.dead) continue;
+            if (!rectsOverlap(projectile, enemy)) continue;
+
+            enemy.takeDamage(projectile.damage);
+            enemy.applyKnockback(projectile.direction * ENEMY_KNOCKBACK_SPEED);
+            hits.push({ enemy, amount: projectile.damage });
+            projectile.dead = true;
+            break;
         }
     }
     return hits;
@@ -73,6 +129,11 @@ export function resolveContactDamage(dt, player, enemies, difficulty) {
 
         player.takeDamage(enemy.contactDamage * multiplier);
         enemy.takeDamage(enemy.contactDamage);
+        // Push both apart along whichever side the player is standing on,
+        // rather than a fixed direction - mirrors the melee push above.
+        const pushDir = player.centerX >= enemy.centerX ? 1 : -1;
+        player.applyKnockback(pushDir * PLAYER_KNOCKBACK_SPEED);
+        enemy.applyKnockback(-pushDir * ENEMY_KNOCKBACK_SPEED);
         enemy.contactCooldown = CONTACT_DAMAGE_COOLDOWN_SECONDS;
         hits.push({ enemy, amount: enemy.contactDamage });
     }
