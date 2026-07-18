@@ -79,11 +79,18 @@ New enemy types only appear from certain zones onward - not everything from the 
 
 ## 2.5 Secret Rooms & Token Economy
 
-A Secret Room is only visible once the player has colored the surrounding area. No key item: access costs 50 Shield/Prisma (see [03_mechanics.md](03_mechanics.md) 4.5) - the player pays with their own color energy. Not every level has a Secret Room.
+A Secret Room is only visible once the player has colored the surrounding area. Not every level has a Secret Room. Two distinct kinds, not to be conflated:
+
+| Type | Cost | Reward | Frequency |
+|---|---|---|---|
+| Buff-Secret | 50 Shield/Prisma (see [03_mechanics.md](03_mechanics.md) 4.5) - the player pays with their own color energy | 1 permanent character buff | Rare - not every map |
+| Lore-Secret | Free or low cost | Story/lore only, no mechanical reward | Can appear more often than Buff-Secrets |
+
+The Prisma paywall exists to make Buff-Secrets a real trade-off (power now vs. power later). Lore-Secrets are about narrative payoff, not stat progression - gating them behind the same cost would work against the point of having them show up more often.
 
 | Source | Reward |
 |---|---|
-| Secret Room | 1 permanent character buff (e.g. +Max Health, +Shield Regen, +Shield Max) |
+| Buff-Secret | 1 permanent character buff (e.g. +Max Health, +Shield Regen, +Shield Max) |
 | Miniboss | 1 Token |
 | Templateboss | 2 Tokens |
 | Chapterboss | 2 Tokens (same as Templateboss, same tier slot) |
