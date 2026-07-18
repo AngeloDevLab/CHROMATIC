@@ -83,8 +83,35 @@ export class SpriteAnimation {
         }
     }
 
-    draw(ctx, dx, dy, dw, dh) {
+    // flashAmount (0-1) tints the frame white for hit-feedback, without baking
+    // it into the sprite sheet - drawn onto a scratch canvas first so the
+    // white fill's source-atop compositing only affects this frame's own
+    // opaque pixels, not whatever else is already on the destination canvas.
+    draw(ctx, dx, dy, dw, dh, flashAmount = 0) {
         const sx = this.currentFrame * this.frameWidth;
-        ctx.drawImage(this.image, sx, 0, this.frameWidth, this.frameHeight, dx, dy, dw, dh);
+
+        if (flashAmount <= 0) {
+            ctx.drawImage(this.image, sx, 0, this.frameWidth, this.frameHeight, dx, dy, dw, dh);
+            return;
+        }
+
+        if (!this._flashCtx) {
+            const flashCanvas = document.createElement('canvas');
+            flashCanvas.width = this.frameWidth;
+            flashCanvas.height = this.frameHeight;
+            this._flashCtx = flashCanvas.getContext('2d');
+        }
+
+        const fctx = this._flashCtx;
+        fctx.clearRect(0, 0, this.frameWidth, this.frameHeight);
+        fctx.drawImage(this.image, sx, 0, this.frameWidth, this.frameHeight, 0, 0, this.frameWidth, this.frameHeight);
+        fctx.globalCompositeOperation = 'source-atop';
+        fctx.globalAlpha = flashAmount;
+        fctx.fillStyle = '#fff';
+        fctx.fillRect(0, 0, this.frameWidth, this.frameHeight);
+        fctx.globalCompositeOperation = 'source-over';
+        fctx.globalAlpha = 1;
+
+        ctx.drawImage(fctx.canvas, 0, 0, this.frameWidth, this.frameHeight, dx, dy, dw, dh);
     }
 }

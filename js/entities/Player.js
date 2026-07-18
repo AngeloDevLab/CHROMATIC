@@ -19,6 +19,16 @@ const SHIELD_REGEN_PER_SECOND = 1;
 // its hit exactly once, here, via consumeAttackImpact() (see Combat.js).
 const ATTACK_IMPACT_FRAME = 4;
 
+// Brief invincibility after taking any hit, so multiple overlapping enemies
+// (or one lingering enemy) can't stack damage every single frame - independent
+// of any individual enemy's own contactCooldown in Combat.js.
+const INVINCIBILITY_SECONDS = 0.5;
+
+// Brief white tint on taking damage (see SpriteAnimation.draw's flashAmount) -
+// deliberately much shorter than INVINCIBILITY_SECONDS, a quick hit reaction
+// rather than a "still invincible" indicator.
+const HIT_FLASH_SECONDS = 0.15;
+
 export class Player extends Entity {
     constructor(x, y, animations) {
         super(x, y, HITBOX_WIDTH, HITBOX_HEIGHT);
@@ -46,6 +56,11 @@ export class Player extends Entity {
         this.attacking = false;
         this._attackImpactResolved = false;
 
+        this.invincibleTimer = 0;
+        this.hitFlashTimer = 0;
+
+        this.dead = false;
+
         this.maxHealth = MAX_HEALTH;
         this.health = MAX_HEALTH;
         this.maxShield = MAX_SHIELD;
@@ -55,6 +70,8 @@ export class Player extends Entity {
     // 03_mechanics.md 4.5: Prisma absorbs hits first, only once fully depleted
     // does the remainder carry over to Health.
     takeDamage(amount) {
+        if (this.dead || this.invincibleTimer > 0) return;
+
         if (this.shield > 0) {
             const overflow = amount - this.shield;
             this.shield = Math.max(0, this.shield - amount);
@@ -62,6 +79,11 @@ export class Player extends Entity {
         } else {
             this.health = Math.max(0, this.health - amount);
         }
+
+        if (this.health === 0) this.dead = true;
+
+        this.invincibleTimer = INVINCIBILITY_SECONDS;
+        this.hitFlashTimer = HIT_FLASH_SECONDS;
     }
 
     // True exactly once per swing, the instant the blade reaches full extension
@@ -106,6 +128,11 @@ export class Player extends Entity {
     }
 
     update(dt) {
+        if (this.dead) return;
+
+        if (this.invincibleTimer > 0) this.invincibleTimer = Math.max(0, this.invincibleTimer - dt);
+        if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
+
         if (this.autopilot) {
             this._updateAutopilot();
             super.update(dt);
@@ -142,13 +169,17 @@ export class Player extends Entity {
             this._startAttack();
         }
 
-        const left = !this.attacking && this.input.isDown('left');
-        const right = !this.attacking && this.input.isDown('right');
+        // Attack only roots the player while grounded - airborne, physics keep
+        // running normally (momentum, direction changes) instead of freezing
+        // horizontal movement mid-air.
+        const groundedAttack = this.attacking && this.grounded;
+        const left = !groundedAttack && this.input.isDown('left');
+        const right = !groundedAttack && this.input.isDown('right');
         // Ducking has no crouch sprite/hitbox yet - placeholder just locks
         // movement, reusing the idle animation, until real duck art exists.
         const ducking = !this.attacking && this.input.isDown('duck') && this.grounded;
 
-        if (this.attacking || ducking) {
+        if (groundedAttack || ducking) {
             this.vx = 0;
         } else if (left && !right) {
             this.vx = -this.moveSpeed;
@@ -265,14 +296,15 @@ export class Player extends Entity {
         }
         const drawX = this._drawX(renderWidth);
         const drawY = isAttacking ? this._drawY(anim, renderHeight) : this._drawY();
+        const flashAmount = this.hitFlashTimer / HIT_FLASH_SECONDS;
 
         ctx.save();
         if (this.facing === -1) {
             ctx.translate(drawX + renderWidth, drawY);
             ctx.scale(-1, 1);
-            anim.draw(ctx, 0, 0, renderWidth, renderHeight);
+            anim.draw(ctx, 0, 0, renderWidth, renderHeight, flashAmount);
         } else {
-            anim.draw(ctx, drawX, drawY, renderWidth, renderHeight);
+            anim.draw(ctx, drawX, drawY, renderWidth, renderHeight, flashAmount);
         }
         ctx.restore();
     }
