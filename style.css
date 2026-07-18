@@ -250,7 +250,16 @@ body {
   color: #f2f2f2;
   -webkit-text-stroke: 3px rgba(0, 0, 0, 0.9);
   paint-order: stroke fill;
-  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  text-shadow:
+    -2px -2px 0 rgba(0, 0, 0, 0.9),
+     2px -2px 0 rgba(0, 0, 0, 0.9),
+    -2px  2px 0 rgba(0, 0, 0, 0.9),
+     2px  2px 0 rgba(0, 0, 0, 0.9),
+    -2px  0   0 rgba(0, 0, 0, 0.9),
+     2px  0   0 rgba(0, 0, 0, 0.9),
+     0   -2px 0 rgba(0, 0, 0, 0.9),
+     0    2px 0 rgba(0, 0, 0, 0.9),
+     0 2px 6px rgba(0, 0, 0, 0.8);
   pointer-events: none;
 }
 

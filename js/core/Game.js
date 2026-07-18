@@ -47,7 +47,7 @@ export class Game {
     }
 
     _loop(timestamp) {
-        const dt = this._lastTime ? (timestamp - this._lastTime) / 1000 : 0;
+        const dt = Math.min(this._lastTime ? (timestamp - this._lastTime) / 1000 : 0, 0.05);
         this._lastTime = timestamp;
 
         this.stateMachine.update(dt);
