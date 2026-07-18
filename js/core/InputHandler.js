@@ -14,6 +14,10 @@ export class InputHandler {
         // every frame the mouse button happens to still be down.
         this._attackPressed = false;
 
+        // Same edge-triggered pattern as attack - Escape toggles pause once per
+        // press instead of every frame it happens to still be held.
+        this._pausePressed = false;
+
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onKeyUp = this._onKeyUp.bind(this);
         this._onMouseDown = this._onMouseDown.bind(this);
@@ -28,6 +32,11 @@ export class InputHandler {
     }
 
     _onKeyDown(e) {
+        if (e.code === 'Escape') {
+            this._pausePressed = true;
+            return;
+        }
+
         const action = KEY_MAP[e.code];
         if (action) this.actions[action] = true;
     }
@@ -52,5 +61,24 @@ export class InputHandler {
         if (!this._attackPressed) return false;
         this._attackPressed = false;
         return true;
+    }
+
+    // Discards a stale click queued up from a previous screen (e.g. clicking
+    // the Worldmap background, which also fires this same canvas-scoped
+    // mousedown) so it doesn't fire an attack the instant a new Player exists.
+    clearAttackPress() {
+        this._attackPressed = false;
+    }
+
+    consumePausePress() {
+        if (!this._pausePressed) return false;
+        this._pausePressed = false;
+        return true;
+    }
+
+    // Same reasoning as clearAttackPress() - an Escape press from a previous
+    // screen shouldn't instantly pause the very next GameState.
+    clearPausePress() {
+        this._pausePressed = false;
     }
 }

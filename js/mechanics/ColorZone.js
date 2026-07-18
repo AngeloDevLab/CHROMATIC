@@ -55,6 +55,9 @@ export class ColorZone {
 
         // triggerFullReveal() state - see update() and that method below.
         this._fullReveal = null;
+
+        // triggerFullDarken() state - see update() and that method below.
+        this._fullDarken = null;
     }
 
     paintGreyFrom(colorSourceCanvas) {
@@ -83,6 +86,11 @@ export class ColorZone {
     update(dt, x, y) {
         if (this._fullReveal) {
             this._updateFullReveal(dt);
+            return;
+        }
+
+        if (this._fullDarken) {
+            this._updateFullDarken(dt);
             return;
         }
 
@@ -151,6 +159,23 @@ export class ColorZone {
         this.overlayCtx.drawImage(this._scratchCanvas, 0, 0);
     }
 
+    // One-time reveal punch at a location (e.g. an enemy's death spot) - unlike
+    // update()'s continuous per-frame reveal at the live player position, this
+    // fires once and leaves the erased hole exactly as it is afterward.
+    reveal(x, y, radius = this.revealRadius) {
+        this._punch(this.overlayCtx, x, y, 1, radius);
+    }
+
+    // Whether a triggerFullReveal()/triggerFullDarken() sweep is still playing
+    // out. Callers that stop caring about per-frame position tracking once
+    // their own one-off transition finishes (e.g. GameState after a player
+    // death) can gate their update() calls on this, instead of update() falling
+    // through to its normal per-frame reveal-at-(x,y) behavior the instant the
+    // transition ends.
+    get isTransitioning() {
+        return !!this._fullReveal || !!this._fullDarken;
+    }
+
     // 03_mechanics.md 4.1: "Boss defeated -> the entire level turns colorful -
     // color explosion". Standing in for that here since Lv_1 has no boss yet -
     // GameState triggers this once all of the level's enemies are dead. Expands
@@ -178,6 +203,31 @@ export class ColorZone {
         }
 
         this._punch(this.overlayCtx, this._fullReveal.originX, this._fullReveal.originY, 1, this._fullReveal.maxRadius * progress);
+    }
+
+    // Player death - the inverse of triggerFullReveal(): instead of erasing the
+    // overlay to show color, repaints it with the grey template, expanding out
+    // from (originX, originY) until the whole level is grey again.
+    triggerFullDarken(originX, originY) {
+        this._fullDarken = {
+            originX,
+            originY,
+            elapsed: 0,
+            maxRadius: Math.hypot(this.width, this.height),
+        };
+    }
+
+    _updateFullDarken(dt) {
+        this._fullDarken.elapsed += dt;
+        const progress = Math.min(1, this._fullDarken.elapsed / FULL_REVEAL_DURATION_SECONDS);
+
+        if (progress >= 1) {
+            this.overlayCtx.drawImage(this.greyTemplateCanvas, 0, 0);
+            this._fullDarken = null;
+            return;
+        }
+
+        this.darken(this._fullDarken.originX, this._fullDarken.originY, this._fullDarken.maxRadius * progress);
     }
 
     _punch(ctx, x, y, strength, radius = this.revealRadius) {

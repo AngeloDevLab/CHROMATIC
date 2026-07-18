@@ -9,6 +9,7 @@ import { ColorZone } from '../mechanics/ColorZone.js';
 import { resolveMeleeAttack, resolveContactDamage } from '../mechanics/Combat.js';
 import { HUD, HEALTH_BAR, SHIELD_BAR } from '../ui/HUD.js';
 import { DamageNumbers } from '../ui/DamageNumbers.js';
+import { Panel } from '../ui/Panel.js';
 
 const CHARACTER_FRAME_SIZE = 96;
 // Bigger canvas than the other sheets, deliberately - gives the sword extra
@@ -20,12 +21,19 @@ const ATTACK_FRAME_WIDTH = 150;
 const ATTACK_FRAME_HEIGHT = 96;
 const FALLBACK_SPAWN = { x: 64, y: 0 };
 
+const GHOST_FRAME_SIZE = 64;
+const GHOST_RISE_SPEED = 25;
+const GHOST_FADE_DURATION_SECONDS = 2.5;
+
 // Sizes are independent of each other - the player's own live glow (render()
 // below) always shows their immediate area as revealed regardless of what an
 // enemy's darken() does to the persistent overlay there, so this doesn't need
 // to stay smaller just to avoid getting overwritten near the player.
 const PLAYER_REVEAL_RADIUS = 55;
 const ENEMY_DARKEN_RADIUS = 65;
+// A bit bigger than the darken radius above - dying reveals back what the
+// enemy had darkened while patrolling, plus a bit more as a small death beat.
+const ENEMY_DEATH_REVEAL_RADIUS = 90;
 
 // Real Prologue Level 1 (assets/levels/Lv_1.json), built in Tiled. Player/enemy
 // spawn positions come from the Objects layer (PlayerStart/EnemySpawn) per
@@ -86,6 +94,17 @@ export class GameState extends State {
             attack: new SpriteAnimation(this.game.assets.getImage('guardian-attack'), ATTACK_FRAME_WIDTH, ATTACK_FRAME_HEIGHT, 8, 16, { loop: false }),
         };
 
+        // Player death (04_health-save-system.md) - float-and-fade ghost, see
+        // _startDeathSequence()/_updateDeathSequence().
+        this.ghostAnimation = new SpriteAnimation(this.game.assets.getImage('guardian-dead-ghost'), GHOST_FRAME_SIZE, GHOST_FRAME_SIZE, 13, 10);
+        this._deathSequence = null;
+
+        this.game.input.clearAttackPress();
+        this.game.input.clearPausePress();
+
+        this.paused = false;
+        this.panel = new Panel(this.game.overlay);
+
         const playerStart = this.level.getObjectsByType('PlayerStart')[0] ?? FALLBACK_SPAWN;
         this.player = new Player(playerStart.x, playerStart.y, animations);
         this.player.enableControl(this.game.input, this.collision);
@@ -126,14 +145,22 @@ export class GameState extends State {
         this.healthValueEl?.remove();
         this.shieldValueEl?.remove();
         this.damageNumbers?.clear();
+        this.panel?.close();
     }
 
     update(dt) {
+        // Always drain the press regardless of death state, same reasoning as
+        // the attack click - but ignore it once dead, Escape does nothing during
+        // or after the death sequence (the Game Over panel handles that instead).
+        const pausePressed = this.game.input.consumePausePress();
+        if (pausePressed && !this._deathSequence) this._togglePause();
+        if (this.paused) return;
+
         this.player.update(dt);
         for (const enemy of this.enemies) enemy.update(dt);
 
         const hits = this.player.consumeAttackImpact() ? resolveMeleeAttack(this.player, this.enemies) : [];
-        hits.push(...resolveContactDamage(dt, this.player, this.enemies));
+        hits.push(...resolveContactDamage(dt, this.player, this.enemies, this.game.difficulty));
         for (const hit of hits) {
             this.damageNumbers.spawn(hit.enemy.centerX, hit.enemy.visualTopY, hit.amount);
         }
@@ -141,8 +168,15 @@ export class GameState extends State {
         // 03_mechanics.md 4.1: "Enemy crosses a colored area -> the area turns
         // back to dark" - every living enemy continuously erases color around
         // itself as it patrols, independent of the player's own reveal below.
+        // Dying reverses that once, revealing back what it had darkened (plus a
+        // bit more) instead of just leaving a dark patch behind.
         for (const enemy of this.enemies) {
-            if (!enemy.dead) this.colorZone.darken(enemy.centerX, enemy.centerY, ENEMY_DARKEN_RADIUS);
+            if (!enemy.dead) {
+                this.colorZone.darken(enemy.centerX, enemy.centerY, ENEMY_DARKEN_RADIUS);
+            } else if (!enemy.colorRevealed) {
+                enemy.colorRevealed = true;
+                this.colorZone.reveal(enemy.centerX, enemy.centerY, ENEMY_DEATH_REVEAL_RADIUS);
+            }
         }
 
         // Standing in for "Boss defeated" (03_mechanics.md 4.1) since Lv_1 has
@@ -153,12 +187,117 @@ export class GameState extends State {
             this.colorZone.triggerFullReveal(this.player.centerX, this.player.visualCenterY);
         }
 
+        if (!this._deathSequence && this.player.dead) this._startDeathSequence();
+        if (this._deathSequence) this._updateDeathSequence(dt);
+
         this.camera.follow(this.player, this.level.pixelWidth, this.level.pixelHeight);
-        this.colorZone.update(dt, this.player.centerX, this.player.visualCenterY);
+        // Once the death sequence's full-darken sweep finishes, stop feeding
+        // position updates entirely - otherwise this falls through to the
+        // normal per-frame reveal-at-(x,y) behavior and punches a fresh
+        // colored hole right at the (frozen) death spot.
+        if (!this._deathSequence || this.colorZone.isTransitioning) {
+            this.colorZone.update(dt, this.player.centerX, this.player.visualCenterY);
+        }
         this.damageNumbers.update(dt, this.camera);
 
         this.healthValueEl.textContent = `${Math.round(this.player.health)}/${this.player.maxHealth}`;
         this.shieldValueEl.textContent = `${Math.round(this.player.shield)}/${this.player.maxShield}`;
+    }
+
+    // Player death (04_health-save-system.md) - mirrors the victory full-reveal
+    // above: instead of the level bursting into color, it darkens fully while a
+    // ghost rises from the death spot and fades out, then the Game Over panel
+    // (same Panel/mechanism as Pause, see _togglePause()) offers Retry/Main Menu.
+    _startDeathSequence() {
+        this._deathSequence = {
+            x: this.player.centerX,
+            y: this.player.visualCenterY,
+            elapsed: 0,
+            gameOverShown: false,
+        };
+        this.ghostAnimation.reset();
+        this.colorZone.triggerFullDarken(this._deathSequence.x, this._deathSequence.y);
+    }
+
+    _updateDeathSequence(dt) {
+        this._deathSequence.elapsed += dt;
+        this._deathSequence.y -= GHOST_RISE_SPEED * dt;
+        this.ghostAnimation.update(dt);
+
+        if (!this._deathSequence.gameOverShown && this._deathSequence.elapsed >= GHOST_FADE_DURATION_SECONDS) {
+            this._deathSequence.gameOverShown = true;
+            this._openGameOverPanel();
+        }
+    }
+
+    // Same Panel + option-list pattern as the Pause menu below, non-dismissible
+    // since there's no gameplay left to fall back to - the player has to pick
+    // Retry or Main Menu explicitly.
+    _openGameOverPanel() {
+        this.panel.open('Game Over', `
+            <div class="difficulty-options">
+                <button class="difficulty-option" data-action="retry">Retry</button>
+                <button class="difficulty-option" data-action="menu">Main Menu</button>
+            </div>
+        `, {
+            dismissible: false,
+            onMount: (root) => {
+                root.querySelector('[data-action="retry"]').addEventListener('click', () => {
+                    this.game.stateMachine.change('game', { chapterId: this.chapterId, level: this.levelNumber });
+                });
+                root.querySelector('[data-action="menu"]').addEventListener('click', () => {
+                    this.game.stateMachine.change('menu');
+                });
+            },
+        });
+    }
+
+    // Pause: paused freezes update() (see update()'s early return) while
+    // render() keeps drawing the last frame, so the panel shows on top of a
+    // frozen (not blanked) screen. Non-dismissible for the same reason as Game
+    // Over's panel - Escape/backdrop/× would desync `this.paused` from the
+    // panel's actual visibility, so Resume is the only way back in, driven
+    // through this same method Escape itself calls.
+    _togglePause() {
+        this.paused = !this.paused;
+        if (this.paused) {
+            this._openPausePanel();
+        } else {
+            this.panel.close();
+        }
+    }
+
+    _openPausePanel() {
+        this.panel.open('Paused', `
+            <div class="difficulty-options">
+                <button class="difficulty-option" data-action="resume">Resume</button>
+                <button class="difficulty-option" data-action="menu">Main Menu</button>
+            </div>
+        `, {
+            dismissible: false,
+            onMount: (root) => {
+                root.querySelector('[data-action="resume"]').addEventListener('click', () => this._togglePause());
+                root.querySelector('[data-action="menu"]').addEventListener('click', () => {
+                    this.game.stateMachine.change('menu');
+                });
+            },
+        });
+    }
+
+    _renderGhost(ctx) {
+        const alpha = Math.max(0, 1 - this._deathSequence.elapsed / GHOST_FADE_DURATION_SECONDS);
+        if (alpha <= 0) return;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        this.ghostAnimation.draw(
+            ctx,
+            this._deathSequence.x - GHOST_FRAME_SIZE / 2,
+            this._deathSequence.y - GHOST_FRAME_SIZE / 2,
+            GHOST_FRAME_SIZE,
+            GHOST_FRAME_SIZE
+        );
+        ctx.restore();
     }
 
     render(ctx) {
@@ -166,16 +305,26 @@ export class GameState extends State {
         ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
 
         ctx.drawImage(this.levelCanvas, 0, 0);
-        this.colorZone.render(ctx, {
-            x: this.player.centerX,
-            y: this.player.visualCenterY,
-            radius: PLAYER_REVEAL_RADIUS,
-        });
+        if (this._deathSequence) {
+            // No liveGlow while dead - that would keep punching a hole open right
+            // at the death spot every frame, fighting the full-darken effect.
+            this.colorZone.render(ctx);
+        } else {
+            this.colorZone.render(ctx, {
+                x: this.player.centerX,
+                y: this.player.visualCenterY,
+                radius: PLAYER_REVEAL_RADIUS,
+            });
+        }
         for (const enemy of this.enemies) {
             enemy.render(ctx);
             this.hud.renderEnemyBar(ctx, enemy);
         }
-        this.player.render(ctx);
+        if (this._deathSequence) {
+            this._renderGhost(ctx);
+        } else {
+            this.player.render(ctx);
+        }
 
         ctx.restore();
 

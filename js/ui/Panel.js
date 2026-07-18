@@ -8,26 +8,31 @@ export class Panel {
     // onMount: optional callback receiving the panel's root element, for callers
     // that need to wire up interactive content inside bodyHTML (e.g. buttons)
     // instead of just static text.
-    open(title, bodyHTML, { onMount } = {}) {
+    // dismissible: when false, omits the × button and the backdrop-click/Escape
+    // close handlers - for panels with no "cancel" path (e.g. Game Over), where
+    // the player must pick one of the panel's own options instead.
+    open(title, bodyHTML, { onMount, dismissible = true } = {}) {
         this.close();
 
         this.element = document.createElement('div');
         this.element.className = 'panel-backdrop';
         this.element.innerHTML = `
             <div class="panel">
-                <button class="panel-close" aria-label="Close">×</button>
+                ${dismissible ? '<button class="panel-close" aria-label="Close">×</button>' : ''}
                 <h2 class="panel-title">${title}</h2>
                 <div class="panel-body">${bodyHTML}</div>
             </div>
         `;
 
-        this.element.addEventListener('click', (event) => {
-            if (event.target === this.element) this.close();
-        });
-        this.element.querySelector('.panel-close').addEventListener('click', () => this.close());
+        if (dismissible) {
+            this.element.addEventListener('click', (event) => {
+                if (event.target === this.element) this.close();
+            });
+            this.element.querySelector('.panel-close').addEventListener('click', () => this.close());
+            window.addEventListener('keydown', this._onKeyDown);
+        }
 
         this.overlayRoot.appendChild(this.element);
-        window.addEventListener('keydown', this._onKeyDown);
 
         onMount?.(this.element);
     }
