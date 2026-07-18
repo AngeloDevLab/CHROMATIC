@@ -23,11 +23,13 @@ Chosen at game start (see [08_menu-flow.md](08_menu-flow.md) 9.3) and scales exc
 
 | Difficulty | Damage Multiplier | Feel |
 |---|---|---|
-| Easy | ×0.66 | Can afford mistakes, survives several hits |
+| Easy | ×0.5 (-50% incoming damage) | Can afford mistakes, survives several hits |
 | Normal | ×1 (base values from [05_enemies-bosses.md](05_enemies-bosses.md) 6.5) | Normal margin for error |
-| Hard | ×2 | Needs near-perfect play - many hits can be a one-shot |
+| Hard | ×2 (+100% incoming damage) | Needs near-perfect play - many hits can be a one-shot |
 
-Reference Chapterboss hit (base value 100, 50% of the 200 pool on Normal): Easy ~66, Hard ~200 (= full pool, one-shot).
+Deliberately round numbers (-50%/+100%) rather than an odd fraction - easy to state as a one-line "what changes" info wherever difficulty is shown (e.g. the selection panel), and easy to reason about while balancing.
+
+Reference Chapterboss hit (base value 100, 50% of the 200 pool on Normal): Easy 50 (25% of pool), Hard 200 (= full pool, one-shot).
 
 ## 5.4 Save System
 

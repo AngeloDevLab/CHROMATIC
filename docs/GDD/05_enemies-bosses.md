@@ -62,7 +62,7 @@ Rough values for calibration, to be adjusted after playtesting. Base: player dam
 
 | Type | HP | Damage/Hit | Player hits until enemy dead | Enemy hits until player dead (1v1, isolated) |
 |---|---|---|---|---|
-| Patroller | 20 | 5 | 2 | 40 |
+| Patroller | 20 | 10 | 2 | 20 |
 | Sentinel | 30 | 8 | 3 | 25 |
 | Charger (Zone 2+) | 25 | 10 | 3 | 20 |
 | Shooter (Zone 3+) | 15 | 8 | 2 | 25 |

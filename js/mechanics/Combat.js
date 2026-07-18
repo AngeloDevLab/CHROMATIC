@@ -16,6 +16,14 @@ export const PLAYER_ATTACK_DAMAGE = 10;
 // doesn't deal damage every single frame.
 const CONTACT_DAMAGE_COOLDOWN_SECONDS = 1;
 
+// 04_health-save-system.md 5.3: difficulty scales only incoming damage, enemy
+// HP and the player's own damage stay the same across all three. Deliberately
+// round (-50%/+100%) rather than an odd fraction, so it's easy to state as a
+// one-line "what changes" info wherever difficulty is shown. Falls back to
+// Normal (1) for an unrecognized/missing difficulty (e.g. a level tested
+// directly without going through the menu's difficulty selection first).
+const DIFFICULTY_DAMAGE_MULTIPLIERS = { easy: 0.5, normal: 1, hard: 2 };
+
 function rectsOverlap(a, b) {
     return a.x < b.x + b.width && a.x + a.width > b.x
         && a.y < b.y + b.height && a.y + a.height > b.y;
@@ -45,7 +53,15 @@ export function resolveMeleeAttack(player, enemies) {
 // (05_enemies-bosses.md 6.5 balancing table); the GDD doesn't give a separate
 // barrier -> enemy value yet, so this mirrors the same amount back as a
 // placeholder pending real balancing.
-export function resolveContactDamage(dt, player, enemies) {
+export function resolveContactDamage(dt, player, enemies, difficulty) {
+    // Dead means no more Prisma barrier - nothing to zap enemies with, and
+    // nothing left to hurt. Without this, an enemy idly overlapping the
+    // player's frozen death-position hitbox keeps taking contact damage from
+    // a "ghost" that shouldn't be a combatant anymore.
+    if (player.dead) return [];
+
+    const multiplier = DIFFICULTY_DAMAGE_MULTIPLIERS[difficulty] ?? DIFFICULTY_DAMAGE_MULTIPLIERS.normal;
+
     const hits = [];
     for (const enemy of enemies) {
         if (enemy.dead) continue;
@@ -55,7 +71,7 @@ export function resolveContactDamage(dt, player, enemies) {
 
         if (!rectsOverlap(player, enemy)) continue;
 
-        player.takeDamage(enemy.contactDamage);
+        player.takeDamage(enemy.contactDamage * multiplier);
         enemy.takeDamage(enemy.contactDamage);
         enemy.contactCooldown = CONTACT_DAMAGE_COOLDOWN_SECONDS;
         hits.push({ enemy, amount: enemy.contactDamage });

@@ -3,10 +3,16 @@ import { Entity } from './Entity.js';
 const DEFAULT_PATROL_SPEED = 40;
 const DEFAULT_GRAVITY = 700;
 
+// Brief white tint on taking damage, mirrors Player.js's HIT_FLASH_SECONDS
+// (see SpriteAnimation.draw's flashAmount).
+const HIT_FLASH_SECONDS = 0.15;
+
 // Patroller behavior (05_enemies-bosses.md), HP bumped up from the GDD's 20
 // (Zone 1 balancing draft) per playtesting feedback - 2 hits felt too fast.
 const DEFAULT_HP = 50;
-const DEFAULT_CONTACT_DAMAGE = 5;
+// Bumped from the GDD's original 5 - at 5, the difficulty multiplier's effect
+// on a single Patroller hit was too small to actually notice while playing.
+const DEFAULT_CONTACT_DAMAGE = 10;
 
 // How far past its own leading edge to probe for "is the way ahead blocked" -
 // small enough to react before actually stepping off, large enough to not
@@ -42,12 +48,19 @@ export class Enemy extends Entity {
         this.contactDamage = DEFAULT_CONTACT_DAMAGE;
         this.contactCooldown = 0;
         this.dead = false;
+        // One-time flag so GameState's death color-reveal (see Combat/ColorZone
+        // wiring in GameState.js) fires exactly once per enemy, not every frame
+        // it stays dead.
+        this.colorRevealed = false;
+
+        this.hitFlashTimer = 0;
     }
 
     takeDamage(amount) {
         if (this.dead) return;
         this.hp = Math.max(0, this.hp - amount);
         if (this.hp === 0) this.dead = true;
+        this.hitFlashTimer = HIT_FLASH_SECONDS;
     }
 
     setAnimations(animations, initial = 'running') {
@@ -85,6 +98,7 @@ export class Enemy extends Entity {
 
     update(dt) {
         if (this.dead) return;
+        if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
         if (this.patrolling) this._updatePatrol(dt);
         else if (this.freeRun) super.update(dt);
         this.animations?.[this.currentAnimation]?.update(dt);
@@ -147,14 +161,15 @@ export class Enemy extends Entity {
 
         const drawY = this._drawY();
         const drawX = this._drawX();
+        const flashAmount = this.hitFlashTimer / HIT_FLASH_SECONDS;
 
         ctx.save();
         if (this.facing === -1) {
             ctx.translate(drawX + this.renderSize, drawY);
             ctx.scale(-1, 1);
-            anim.draw(ctx, 0, 0, this.renderSize, this.renderSize);
+            anim.draw(ctx, 0, 0, this.renderSize, this.renderSize, flashAmount);
         } else {
-            anim.draw(ctx, drawX, drawY, this.renderSize, this.renderSize);
+            anim.draw(ctx, drawX, drawY, this.renderSize, this.renderSize, flashAmount);
         }
         ctx.restore();
     }

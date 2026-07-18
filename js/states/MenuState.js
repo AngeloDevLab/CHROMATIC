@@ -18,9 +18,9 @@ const BACKGROUND_OVERLAP_PX = 32;
 // Difficulty scales only incoming damage (04_health-save-system.md 5.3) -
 // enemy HP and the player's own damage stay the same across all three.
 const DIFFICULTIES = [
-    { id: 'easy', label: 'Easy', description: 'Can afford mistakes, survives several hits.' },
+    { id: 'easy', label: 'Easy', description: 'Can afford mistakes, survives several hits. (-50% incoming damage)' },
     { id: 'normal', label: 'Normal', description: 'Normal margin for error.' },
-    { id: 'hard', label: 'Hard', description: 'Needs near-perfect play - many hits can be a one-shot.' },
+    { id: 'hard', label: 'Hard', description: 'Needs near-perfect play - many hits can be a one-shot. (+100% incoming damage)' },
 ];
 
 // Settings/Info are self-contained (no dependency on states that don't exist
