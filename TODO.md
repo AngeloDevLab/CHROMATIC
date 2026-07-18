@@ -2,14 +2,11 @@
 
 Working list of what's next. Update together at the end of a session (see `CHANGELOG.md` for what's already shipped) - this file tracks intent, not history.
 
-## Bugs
-
-- **Jump apex ~5px short on another machine/browser.** `dt` clamping (50ms cap) is in as a preventive fix, but the original report is still unconfirmed - needs checking back with the friend whether that alone resolved it. If not: semi-implicit Euler is still step-size sensitive even with clamped `dt` (velocity updates before position each step), a fixed-timestep accumulator would make the arc identical on every machine as a fallback fix.
-
 ## Game feel
 
 - Enemy death has a color-reveal beat now, but still no real animation/sprite - it just vanishes (color reveal aside) once HP hits 0.
 - **Fine-tuning: jumping directly over a Maggot still takes contact damage.** Noticed during playtesting, not urgent - likely the contact hitbox/timing grazes the jump arc. Revisit later.
+- Jump/movement/combat feel pass added (coyote time, jump buffering, variable jump height, movement accel/decel, hit-stop, knockback) - constants are first-guess defaults, needs real playtesting to tune.
 - Special Attack concept (replaces the planned Slide+Attack/Air Attack unlocks from `03_mechanics.md` 4.2 with one contextual button): Ground Special = short forward slide, hit + knockback; Air Special = freeze time, aim an arrow toward the mouse, left-click confirms a dash-attack in that direction, then normal gravity resumes. Both would apply a generic stagger status on hit (later extendable to per-enemy reactions, e.g. Patroller freezes, Shooter stops firing - blocked on those enemy types existing at all). Needs dedicated sprite sheets eventually (attack.png as placeholder in the meantime), no sound yet, no unlock-gating since there's no ability-unlock system in code at all yet. Parked for now - current normal Attack already works mid-air (locks vx, gravity/vy keep resolving) which covers the immediate need.
 
 ## Difficulty & Balancing
@@ -20,8 +17,8 @@ Working list of what's next. Update together at the end of a session (see `CHANG
 ## Enemies & Ranged Combat
 
 - Remaining enemy types: Charger, Shooter, Sentinel (only the Patroller-style maggot exists).
-- Shooter needs: a Projectile entity, a swept wall-collision check (a single point-check on the new position risks tunneling through thin walls at high speed - `Collision.isSolidAt()` is reusable but needs sampling between old/new position, not just the endpoint), and a shoot animation (code-driven aim/rotation vs. baked per-direction sprite frames - still undecided).
-- Ranged attack (sword throw/boomerang) - melee-only right now; `thrown_sword.png` is already in the project but unused.
+- Shooter needs: a Projectile entity and a shoot animation (code-driven aim/rotation vs. baked per-direction sprite frames - still undecided) - can reuse the swept wall-collision pattern (`js/entities/Projectile.js`, built for the player's ranged attack) instead of a single point-check that risks tunneling through thin walls at high speed.
+- Ranged attack (sword throw) is a deliberate v1 simplification: auto-targets the nearest enemy (no real click-direction aiming) and is a single-hit throw (no boomerang return-hit) - revisit both if playtesting says otherwise.
 - Per-enemy special reactions (Patroller freezes, Shooter stops firing, etc.) - ties into the Special Attack concept above, blocked on those enemy types existing.
 
 ## Tooling

@@ -4,6 +4,24 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-19
+
+### Added
+- Fall-into-pit death: crossing a kill plane below the level's bottom edge now kills the player instead of letting them fall forever while still controlling mid-air.
+- Jump feel pass: coyote time (jump still available briefly after walking off a ledge), jump buffering (a press slightly before landing still fires once grounded), and variable jump height (releasing the key early cuts the ascent short instead of always reaching full height).
+- Movement feel pass: horizontal velocity now ramps toward its target instead of snapping instantly, for a touch of weight on starting/stopping.
+- Combat feel pass: a brief hit-stop freezes gameplay for a beat on any landed hit (melee or contact), and both hit types now knock player and enemy apart briefly instead of damage being purely a number.
+- Ranged attack (sword throw): attacking an enemy beyond melee reach now throws a projectile instead of whiffing - auto-targets the nearest enemy, same swing animation/timing as melee, swept wall-collision so it can't tunnel through thin walls at high speed. `thrown_sword.png` was already in the project but unused until now.
+
+### Changed
+- Jump now requires a fresh key press instead of re-triggering every frame the jump key is held while grounded - removes an unintended auto-bunny-hop.
+- `jumpSpeed` raised from 360 to 379 (~10px more apex height) as safety margin on top of the fixed-timestep fix below.
+- Gameplay updates now run on a fixed 1/60s timestep via an accumulator in the main loop, instead of directly on the actual per-frame `dt` - decouples every velocity-based motion (jump arcs, movement, gravity) from the display's refresh rate/frame timing.
+
+### Fixed
+- Jump apex differing between machines/browsers - root-caused to the previous variable-timestep integration being step-size sensitive (see the fixed-timestep change above); the earlier `dt` clamp had only been a partial/preventive fix.
+- Player death sequence: the ghost's rise-and-fade now stays pinned to the visible bottom edge of the screen when the actual death position is off-screen (e.g. after falling into a pit), instead of playing invisibly below the camera's own clamp.
+
 ## [0.6.0] - 2026-07-18
 
 ### Added
