@@ -106,7 +106,26 @@ export class Player extends Entity {
         if (this.dead) return;
         this.shield = 0;
         this.health = 0;
+        this._enterDeathAnimation();
+    }
+
+    // Switches to the one-shot fall animation rather than instantly cutting to
+    // GameState's ghost-rise - deathAnimationFinished (below) gates when
+    // that's allowed to start, so the player visibly collapses first.
+    _enterDeathAnimation() {
         this.dead = true;
+        if (this.animations.dead) {
+            this.currentAnimation = 'dead';
+            this.animations.dead.reset();
+        }
+    }
+
+    // True once the fall animation has played out (or immediately if this
+    // Player instance has no 'dead' animation wired, e.g. MenuState's
+    // decorative characters) - GameState waits for this before starting the
+    // ghost-rise sequence.
+    get deathAnimationFinished() {
+        return !this.animations.dead || this.animations.dead.finished;
     }
 
     // 03_mechanics.md 4.5: Prisma absorbs hits first, only once fully depleted
@@ -122,7 +141,7 @@ export class Player extends Entity {
             this.health = Math.max(0, this.health - amount);
         }
 
-        if (this.health === 0) this.dead = true;
+        if (this.health === 0) this._enterDeathAnimation();
 
         this.invincibleTimer = INVINCIBILITY_SECONDS;
         this.hitFlashTimer = HIT_FLASH_SECONDS;
@@ -181,10 +200,17 @@ export class Player extends Entity {
     }
 
     update(dt) {
-        if (this.dead) return;
+        // Ticks down even once dead - otherwise the killing blow's white flash
+        // (still active from the same frame takeDamage() set it) would never
+        // fade and the whole death animation renders permanently white-tinted.
+        if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
+
+        if (this.dead) {
+            this.animations.dead?.update(dt);
+            return;
+        }
 
         if (this.invincibleTimer > 0) this.invincibleTimer = Math.max(0, this.invincibleTimer - dt);
-        if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
 
         if (this.autopilot) {
             this._updateAutopilot();
@@ -349,16 +375,16 @@ export class Player extends Entity {
         const anim = this.animations[this.currentAnimation];
         if (!anim) return;
 
-        // Idle/running/jump share idle's own render size and ground line (see
-        // _drawY's default params) so switching between those looping poses
-        // never jitters vertically. Attack is a distinct one-shot pose that can
-        // use a differently-sized/padded sheet - including non-square, e.g.
-        // extra side padding for the sword to swing past the body without
-        // needing extra vertical padding too - without throwing that off, so
-        // it's anchored to and scaled from its own bounds instead. Scaled by
-        // height only, then width follows the frame's own aspect ratio, or a
-        // non-square frame would stretch/squash instead of just having more
-        // padding.
+        // Idle/running/jump/dead share idle's own render size and ground line
+        // (see _drawY's default params) so switching between those poses never
+        // jitters vertically - all drawn from the same 96x96 sheet convention.
+        // Attack is a distinct one-shot pose that can use a differently-sized/
+        // padded sheet - including non-square, e.g. extra side padding for the
+        // sword to swing past the body without needing extra vertical padding
+        // too - without throwing that off, so it's anchored to and scaled from
+        // its own bounds instead. Scaled by height only, then width follows the
+        // frame's own aspect ratio, or a non-square frame would stretch/squash
+        // instead of just having more padding.
         const isAttacking = this.currentAnimation === 'attack';
         let renderWidth;
         let renderHeight;
