@@ -2,7 +2,9 @@ import { State } from './State.js';
 import { Level } from '../world/Level.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
+import { Charger } from '../entities/enemies/Charger.js';
 import { Projectile } from '../entities/Projectile.js';
+import { Portal } from '../entities/Portal.js';
 import { Collision } from '../utils/Collision.js';
 import { Camera } from '../utils/Camera.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
@@ -20,6 +22,18 @@ import { DamageNumbers } from '../ui/DamageNumbers.js';
 import { Panel } from '../ui/Panel.js';
 
 const CHARACTER_FRAME_SIZE = 96;
+// Enemy sheets (assets/images/enemys/<type>/) are their own 64x64 convention,
+// independent of the player's 96x96 one above.
+const ENEMY_FRAME_SIZE = 64;
+// Maps an EnemySpawn object's Tiled Name field to its asset keys - add an
+// entry here once a new enemy type actually exists in code (Shooter/Sentinel
+// are art-only so far, see TODO.md). `charge` is Charger-only (its distinct
+// rush sprite, see entities/enemies/Charger.js) - absent for types that don't
+// use it.
+const ENEMY_SPRITE_SETS = {
+    patroller: { running: 'enemy-patroller-walking-idle', dead: 'enemy-patroller-dead' },
+    charger: { running: 'enemy-charger-walking-idle', dead: 'enemy-charger-dead', charge: 'enemy-charger-charge' },
+};
 // Bigger canvas than the other sheets, deliberately - gives the sword extra
 // room to swing past the body without clipping the frame edge. Doesn't need
 // to be square - Player.js scales the attack frame by its own aspect ratio,
@@ -55,17 +69,38 @@ const ENEMY_DARKEN_RADIUS = 65;
 // enemy had darkened while patrolling, plus a bit more as a small death beat.
 const ENEMY_DEATH_REVEAL_RADIUS = 90;
 
-// Real Prologue Level 1 (assets/levels/Lv_1.json), built in Tiled. Player/enemy
-// spawn positions come from the Objects layer (PlayerStart/EnemySpawn) per
-// 10_technical-architecture.md 11.6.2 - enemies are all "maggot" for now since
-// no enemyType property is set on the spawns yet and there's no AI either
-// (05_enemies-bosses.md Patroller/Charger/Shooter/Sentinel behavior comes later).
+// How close the player needs to be (center to center) to the level-end
+// portal for the [E] prompt to show/register - see _updatePortal() below.
+const PORTAL_INTERACT_RANGE_PX = 40;
+
+// Real Prologue levels (assets/levels/Lv_N.json), built in Tiled - which one
+// loads is picked by number via LEVEL_JSON_KEYS below (only levels actually
+// exported to JSON so far are registered there). Player/enemy spawn positions
+// come from the Objects layer (PlayerStart/EnemySpawn) per
+// 10_technical-architecture.md 11.6.2 - which enemy type spawns is read off
+// each EnemySpawn object's own Tiled Name field (see ENEMY_SPRITE_SETS/
+// _createEnemy() below), not a separate custom property. Names that don't
+// match a registered type (typo, or a type not built yet - Shooter/Sentinel
+// per 05_enemies-bosses.md) are skipped with a console warning rather than
+// spawning the wrong thing.
+// All Prologue levels share the same tileset image so far (per
+// 'prologue-tileset' in LoadingState.js) - add a distinct manifest key/lookup
+// here too if a later level needs a different one.
+const LEVEL_JSON_KEYS = {
+    1: 'lv1-level',
+    2: 'lv2-level',
+};
+
 export class GameState extends State {
     enter({ chapterId, level } = {}) {
         this.chapterId = chapterId;
         this.levelNumber = level;
 
-        this.level = Level.load(this.game.assets, 'lv1-level', 'lv1-tileset');
+        const levelKey = LEVEL_JSON_KEYS[this.levelNumber];
+        if (!levelKey) {
+            throw new Error(`GameState: no level registered for level number ${this.levelNumber}`);
+        }
+        this.level = Level.load(this.game.assets, levelKey, 'prologue-tileset');
         // The Tiled layer is named "terrain", not the documented
         // "Terrain/Collision" - passed explicitly rather than renaming in Tiled.
         // One-way: the level is built from several stacked walkable floors, not
@@ -112,6 +147,9 @@ export class GameState extends State {
             // false) - Player watches its `finished` flag to know when to hand
             // control back to normal locomotion.
             attack: new SpriteAnimation(this.game.assets.getImage('guardian-attack'), ATTACK_FRAME_WIDTH, ATTACK_FRAME_HEIGHT, 8, 16, { loop: false }),
+            // Plays once on death, before the ghost-rise sequence below - see
+            // Player.js's deathAnimationFinished/_enterDeathAnimation().
+            dead: new SpriteAnimation(this.game.assets.getImage('guardian-dead'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 13, 10, { loop: false }),
         };
 
         // Player death (04_health-save-system.md) - float-and-fade ghost, see
@@ -130,19 +168,28 @@ export class GameState extends State {
         this.player = new Player(playerStart.x, playerStart.y, animations);
         this.player.enableControl(this.game.input, this.collision);
 
-        const maggotSprite = this.game.assets.getImage('enemy-maggot');
-        const maggotRunningImage = this.game.assets.getImage('enemy-maggot-running');
-        this.enemies = this.level.getObjectsByType('EnemySpawn').map((spawn) => {
-            const enemy = new Enemy(spawn.x, spawn.y, maggotSprite);
-            // Own SpriteAnimation instance per enemy - sharing one across all of
-            // them would advance its frame timer once per enemy per game frame
-            // (animation playing N times too fast for N enemies).
-            enemy.setAnimations({
-                running: new SpriteAnimation(maggotRunningImage, CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 9, 10),
-            });
-            enemy.enablePatrol(this.collision);
-            return enemy;
-        });
+        this.enemies = this.level.getObjectsByType('EnemySpawn')
+            .map((spawn) => this._createEnemy(spawn))
+            .filter(Boolean);
+
+        // Level-end portal (01_core-gameplay-loop.md) - locked until every
+        // enemy is dead (see update()'s _levelFullyRevealed check), then
+        // interactable via [E] in range (_updatePortal()). Not every level has
+        // one placed in Tiled yet, hence the null-tolerant Portal? everywhere.
+        const portalSpawn = this.level.getObjectsByType('ExitPortal')[0];
+        this.portal = portalSpawn ? new Portal(portalSpawn.x, portalSpawn.y, {
+            closed: this.game.assets.getImage('portal-closed'),
+            open: this.game.assets.getImage('portal-open'),
+            opens: this.game.assets.getImage('portal-opens'),
+        }) : null;
+        if (!this.portal) {
+            console.warn(`GameState: no ExitPortal object in this level - it can't be completed.`);
+        }
+        this.interactPromptEl = document.createElement('div');
+        this.interactPromptEl.className = 'interact-prompt';
+        this.interactPromptEl.textContent = '[E] Exit Level';
+        this.interactPromptEl.hidden = true;
+        this.game.overlay.appendChild(this.interactPromptEl);
 
         this.hud = new HUD();
         this.damageNumbers = new DamageNumbers(this.game.overlay);
@@ -154,7 +201,40 @@ export class GameState extends State {
         this._hitStopTimer = 0;
 
         this.thrownSwordSprite = this.game.assets.getImage('thrown-sword');
+        this.thrownSwordTrailSprite = this.game.assets.getImage('thrown-sword-trail');
         this.projectiles = [];
+    }
+
+    // Own SpriteAnimation instance per enemy - sharing one across all of them
+    // would advance its frame timer once per enemy per game frame (animation
+    // playing N times too fast for N enemies). Returns null (filtered out by
+    // the caller) for a spawn name with no registered sprite.
+    _createEnemy(spawn) {
+        const spriteSet = ENEMY_SPRITE_SETS[spawn.name?.toLowerCase()];
+        if (!spriteSet) {
+            console.warn(`GameState: no enemy type registered for EnemySpawn name "${spawn.name}" at (${spawn.x}, ${spawn.y}) - skipped.`);
+            return null;
+        }
+
+        const typeName = spawn.name.toLowerCase();
+        const sprite = this.game.assets.getImage(spriteSet.running);
+        const EnemyClass = typeName === 'charger' ? Charger : Enemy;
+        const enemy = new EnemyClass(spawn.x, spawn.y, sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE);
+
+        const animations = {
+            running: new SpriteAnimation(sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 10),
+            // Plays once on death instead of vanishing instantly - see
+            // Enemy.js's deathAnimationFinished/_enterDeathAnimation().
+            dead: new SpriteAnimation(this.game.assets.getImage(spriteSet.dead), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 12, { loop: false }),
+        };
+        if (spriteSet.charge) {
+            animations.charge = new SpriteAnimation(this.game.assets.getImage(spriteSet.charge), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 14);
+        }
+        enemy.setAnimations(animations);
+
+        enemy.enablePatrol(this.collision);
+        if (enemy instanceof Charger) enemy.enableCharge(this.player);
+        return enemy;
     }
 
     _createHudValueLabel(bar) {
@@ -169,6 +249,7 @@ export class GameState extends State {
     exit() {
         this.healthValueEl?.remove();
         this.shieldValueEl?.remove();
+        this.interactPromptEl?.remove();
         this.damageNumbers?.clear();
         this.panel?.close();
     }
@@ -188,6 +269,7 @@ export class GameState extends State {
 
         this.player.update(dt);
         for (const enemy of this.enemies) enemy.update(dt);
+        this.portal?.update(dt);
 
         // Jump & Run gaps with no floor below (10_technical-architecture.md
         // Platform level type) currently let the player fall forever and keep
@@ -207,7 +289,7 @@ export class GameState extends State {
                 this.player.facing = nearest.centerX >= this.player.centerX ? 1 : -1;
                 const direction = this.player.facing;
                 const spawnCenterX = direction === 1 ? this.player.x + this.player.width : this.player.x;
-                this.projectiles.push(new Projectile(spawnCenterX, this.player.centerY, direction, this.thrownSwordSprite, PLAYER_ATTACK_DAMAGE));
+                this.projectiles.push(new Projectile(spawnCenterX, this.player.centerY, direction, this.thrownSwordSprite, PLAYER_ATTACK_DAMAGE, this.thrownSwordTrailSprite));
             } else {
                 hits = resolveMeleeAttack(this.player, this.enemies);
             }
@@ -245,10 +327,11 @@ export class GameState extends State {
             this.colorZone.triggerFullReveal(this.player.centerX, this.player.visualCenterY);
         }
 
-        if (!this._deathSequence && this.player.dead) this._startDeathSequence();
+        if (!this._deathSequence && this.player.dead && this.player.deathAnimationFinished) this._startDeathSequence();
         if (this._deathSequence) this._updateDeathSequence(dt);
 
         this.camera.follow(this.player, this.level.pixelWidth, this.level.pixelHeight);
+        this._updatePortal();
         // Once the death sequence's full-darken sweep finishes, stop feeding
         // position updates entirely - otherwise this falls through to the
         // normal per-frame reveal-at-(x,y) behavior and punches a fresh
@@ -260,6 +343,34 @@ export class GameState extends State {
 
         this.healthValueEl.textContent = `${Math.round(this.player.health)}/${this.player.maxHealth}`;
         this.shieldValueEl.textContent = `${Math.round(this.player.shield)}/${this.player.maxShield}`;
+    }
+
+    // Locked until _levelFullyRevealed (all enemies dead, set above) - drains
+    // the interact press every frame regardless of range/active, same
+    // reasoning as the attack click, so a stray press well outside range
+    // doesn't linger and fire the moment the player later steps into it.
+    _updatePortal() {
+        if (this.portal) this.portal.active = this._levelFullyRevealed;
+
+        const interactPressed = this.game.input.consumeInteractPress();
+        const inRange = !!this.portal && this.portal.isOpen && !this.player.dead
+            && Math.hypot(this.player.centerX - this.portal.centerX, this.player.centerY - this.portal.centerY) <= PORTAL_INTERACT_RANGE_PX;
+
+        this.interactPromptEl.hidden = !inRange;
+        if (inRange) {
+            this.interactPromptEl.style.left = `${this.portal.centerX - this.camera.x}px`;
+            this.interactPromptEl.style.top = `${this.portal.y - this.camera.y}px`;
+        }
+
+        if (inRange && interactPressed) this._completeLevel();
+    }
+
+    // 01_core-gameplay-loop.md: "Reach the exit portal/level end - back to the
+    // Worldmap" - completedLevels lives on Game (see Game.js), not this state,
+    // since WorldmapState gets torn down/rebuilt on every visit.
+    _completeLevel() {
+        this.game.completedLevels.add(this.levelNumber);
+        this.game.stateMachine.change('worldmap');
     }
 
     // Player death (04_health-save-system.md) - mirrors the victory full-reveal
@@ -384,6 +495,7 @@ export class GameState extends State {
             enemy.render(ctx);
             this.hud.renderEnemyBar(ctx, enemy);
         }
+        this.portal?.render(ctx);
         for (const projectile of this.projectiles) projectile.render(ctx);
         if (this._deathSequence) {
             this._renderGhost(ctx);
