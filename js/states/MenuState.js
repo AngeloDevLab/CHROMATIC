@@ -13,6 +13,9 @@ const REVEAL_RADIUS = 55;
 const DARKEN_RADIUS = 65;
 const PASS_DELAY_SECONDS = 1;
 const CHARACTER_FRAME_SIZE = 96;
+// enemy-patroller-walking-idle.png is its own 64x64 sheet, unrelated to the
+// player's 96x96 convention above.
+const ENEMY_FRAME_SIZE = 64;
 const BACKGROUND_OVERLAP_PX = 32;
 
 // Difficulty scales only incoming damage (04_health-save-system.md 5.3) -
@@ -68,8 +71,8 @@ export class MenuState extends State {
         this.level.drawAllLayers(bgCtx);
 
         // Permanent reveal now (same mode as real gameplay, 03_mechanics.md 4.1)
-        // instead of the old decorative fading-bubble variant - the maggot pass
-        // below is what erases it instead, previewing the real
+        // instead of the old decorative fading-bubble variant - the patroller
+        // pass below is what erases it instead, previewing the real
         // reveal/darken exchange rather than a separate menu-only effect.
         this.colorZone = new ColorZone(this.game.width, this.game.height, REVEAL_RADIUS, {
             greyBrightness: 0.15,
@@ -85,14 +88,14 @@ export class MenuState extends State {
         };
         this.player = new Player(0, groundY, animations);
 
-        const maggotSprite = this.game.assets.getImage('enemy-maggot');
-        this.enemy = new Enemy(0, groundSurfaceY - maggotSprite.height, maggotSprite);
+        const patrollerSprite = this.game.assets.getImage('enemy-patroller-walking-idle');
+        this.enemy = new Enemy(0, groundSurfaceY - ENEMY_FRAME_SIZE, patrollerSprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE);
         this.enemy.setAnimations({
-            running: new SpriteAnimation(this.game.assets.getImage('enemy-maggot-running'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 9, 10),
+            running: new SpriteAnimation(patrollerSprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 10),
         });
 
         // Living background choreography: the player runs across leaving a
-        // permanent trail, then once they've fully exited, a maggot runs
+        // permanent trail, then once they've fully exited, a patroller runs
         // across erasing it, then it repeats - see _startPlayerPass()/
         // _startEnemyPass()/update().
         this._startPlayerPass();

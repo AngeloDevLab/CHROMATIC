@@ -65,8 +65,27 @@ export class Enemy extends Entity {
     takeDamage(amount) {
         if (this.dead) return;
         this.hp = Math.max(0, this.hp - amount);
-        if (this.hp === 0) this.dead = true;
+        if (this.hp === 0) this._enterDeathAnimation();
         this.hitFlashTimer = HIT_FLASH_SECONDS;
+    }
+
+    // Switches to the one-shot death animation rather than vanishing instantly
+    // - render()/deathAnimationFinished below keep it visible (and its own
+    // animation still updating) until that plays out. GameState's death color
+    // reveal etc. key off `dead` directly, so those still fire immediately.
+    _enterDeathAnimation() {
+        this.dead = true;
+        if (this.animations?.dead) {
+            this.currentAnimation = 'dead';
+            this.animations.dead.reset();
+        }
+    }
+
+    // True once the death animation has played out (or immediately if this
+    // Enemy instance has no 'dead' animation wired) - mirrors Player.js's
+    // deathAnimationFinished.
+    get deathAnimationFinished() {
+        return !this.animations?.dead || this.animations.dead.finished;
     }
 
     // Combat feel: a hit shoves the enemy back briefly instead of it just
@@ -110,8 +129,17 @@ export class Enemy extends Entity {
     }
 
     update(dt) {
-        if (this.dead) return;
+        // Ticks down even once dead - otherwise the killing blow's white flash
+        // (still active from the same frame takeDamage() set it) would never
+        // fade and the whole death animation renders permanently white-tinted
+        // (same fix as Player.js).
         if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
+
+        if (this.dead) {
+            this.animations?.dead?.update(dt);
+            return;
+        }
+
         if (this.patrolling) this._updatePatrol(dt);
         else if (this.freeRun) super.update(dt);
         this.animations?.[this.currentAnimation]?.update(dt);
@@ -169,7 +197,7 @@ export class Enemy extends Entity {
     }
 
     render(ctx) {
-        if (this.dead) return;
+        if (this.dead && this.deathAnimationFinished) return;
 
         const anim = this.animations?.[this.currentAnimation];
         if (!anim || !this.referenceAnim) {
