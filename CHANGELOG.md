@@ -4,6 +4,15 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-20
+
+### Changed
+- ColorZone's enemy-darken and player-live-glow rendering now operate on small local patches instead of full canvas-sized buffers - `overlayCanvas`/`greyTemplateCanvas` are sized to the whole level, not the viewport, so darken() (running once per living enemy per frame) and the live-glow were doing roughly 10 full-level-sized clear+copy operations every frame regardless of camera position. A significant performance fix, reported as considerably better in Firefox/Edge, browsers that handle repeated full-surface canvas compositing noticeably worse than Chrome.
+- Canvas display scaling now snaps to the nearest whole-number factor instead of an exact fractional fit, trading occasional letterboxing for cheaper/crisper nearest-neighbor upscaling - another lever for the same Firefox/Edge performance work above.
+
+### Fixed
+- A visible box/seam briefly appeared around the player's live-glow reveal circle after the patch-based rendering change above - the base overlay draw was covering the same area a moment before the "hole" was punched into it, a no-op composite that left the hole invisible; fixed by excluding that region from the base draw instead of double-compositing it.
+
 ## [0.8.0] - 2026-07-19
 
 ### Added

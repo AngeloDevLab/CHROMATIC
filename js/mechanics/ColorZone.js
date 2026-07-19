@@ -46,11 +46,16 @@ export class ColorZone {
         // Permanent mode only: last punched position, see update() below.
         this._lastPermanentPunch = null;
 
-        // Scratch canvas for darken()'s soft-edged grey patch - kept around
-        // instead of allocated per call.
+        // Scratch canvas for darken()'s soft-edged grey patch and render()'s
+        // liveGlow, resized per call to just the local patch each one
+        // actually needs (see _patchBounds()) rather than the full width x
+        // height above - overlayCanvas/greyTemplateCanvas are sized to the
+        // whole level, not the viewport, and darken() in particular runs once
+        // per living enemy per frame, so operating on the full canvas there
+        // was many times more pixels than the visible radius ever needed
+        // (a real, measurable performance cost, worse in Firefox than Chrome
+        // for this kind of repeated full-surface clear+copy).
         this._scratchCanvas = document.createElement('canvas');
-        this._scratchCanvas.width = width;
-        this._scratchCanvas.height = height;
         this._scratchCtx = this._scratchCanvas.getContext('2d');
 
         // triggerFullReveal() state - see update() and that method below.
@@ -136,27 +141,45 @@ export class ColorZone {
         this._punch(this.overlayCtx, x, y, 1);
     }
 
+    // Bounding box of a radius around (x, y), clamped to the canvas - shared by
+    // darken()/render() so both only ever clear/copy/composite that small
+    // patch instead of the whole (level-sized) canvas. Naturally falls back to
+    // the full canvas once radius grows past it (triggerFullReveal/Darken's
+    // sweep), no special-casing needed for that.
+    _patchBounds(x, y, radius) {
+        const left = Math.max(0, Math.floor(x - radius));
+        const top = Math.max(0, Math.floor(y - radius));
+        const right = Math.min(this.width, Math.ceil(x + radius));
+        const bottom = Math.min(this.height, Math.ceil(y + radius));
+        return { x: left, y: top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) };
+    }
+
     // 03_mechanics.md 4.1: "Enemy crosses a colored area -> the area turns back
     // to dark". The inverse of _punch: instead of erasing the overlay
     // (revealing color), this repaints the grey template back onto the overlay
     // in a soft-edged patch, restoring grey there regardless of how it got
     // revealed in the first place.
     darken(x, y, radius = this.revealRadius) {
-        const gradient = this._scratchCtx.createRadialGradient(x, y, 0, x, y, radius);
+        const patch = this._patchBounds(x, y, radius);
+        this._scratchCanvas.width = patch.width;
+        this._scratchCanvas.height = patch.height;
+
+        const localX = x - patch.x;
+        const localY = y - patch.y;
+        const gradient = this._scratchCtx.createRadialGradient(localX, localY, 0, localX, localY, radius);
         gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
         gradient.addColorStop(0.55, 'rgba(0, 0, 0, 1)');
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
 
-        this._scratchCtx.clearRect(0, 0, this.width, this.height);
-        this._scratchCtx.drawImage(this.greyTemplateCanvas, 0, 0);
+        this._scratchCtx.drawImage(this.greyTemplateCanvas, patch.x, patch.y, patch.width, patch.height, 0, 0, patch.width, patch.height);
         this._scratchCtx.globalCompositeOperation = 'destination-in';
         this._scratchCtx.fillStyle = gradient;
         this._scratchCtx.beginPath();
-        this._scratchCtx.arc(x, y, radius, 0, Math.PI * 2);
+        this._scratchCtx.arc(localX, localY, radius, 0, Math.PI * 2);
         this._scratchCtx.fill();
         this._scratchCtx.globalCompositeOperation = 'source-over';
 
-        this.overlayCtx.drawImage(this._scratchCanvas, 0, 0);
+        this.overlayCtx.drawImage(this._scratchCanvas, patch.x, patch.y);
     }
 
     // One-time reveal punch at a location (e.g. an enemy's death spot) - unlike
@@ -262,9 +285,28 @@ export class ColorZone {
             return;
         }
 
-        this._scratchCtx.clearRect(0, 0, this.width, this.height);
-        this._scratchCtx.drawImage(this.overlayCanvas, 0, 0);
-        this._punch(this._scratchCtx, liveGlow.x, liveGlow.y, 1, liveGlow.radius ?? this.revealRadius);
-        ctx.drawImage(this._scratchCanvas, 0, 0);
+        // The patch (overlay sub-rect with a hole actually punched into it)
+        // has to be the ONLY thing drawn over the patch region - drawing the
+        // full overlay there too (even first, even "underneath") would leave
+        // opaque overlay pixels behind the hole, since compositing a
+        // transparent pixel over an opaque one is a no-op. So the base
+        // overlay draw below excludes exactly that rect (evenodd clip), and
+        // only the small patch fills it in.
+        const radius = liveGlow.radius ?? this.revealRadius;
+        const patch = this._patchBounds(liveGlow.x, liveGlow.y, radius);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, this.width, this.height);
+        ctx.rect(patch.x, patch.y, patch.width, patch.height);
+        ctx.clip('evenodd');
+        ctx.drawImage(this.overlayCanvas, 0, 0);
+        ctx.restore();
+
+        this._scratchCanvas.width = patch.width;
+        this._scratchCanvas.height = patch.height;
+        this._scratchCtx.drawImage(this.overlayCanvas, patch.x, patch.y, patch.width, patch.height, 0, 0, patch.width, patch.height);
+        this._punch(this._scratchCtx, liveGlow.x - patch.x, liveGlow.y - patch.y, 1, radius);
+        ctx.drawImage(this._scratchCanvas, patch.x, patch.y);
     }
 }

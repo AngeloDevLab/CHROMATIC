@@ -43,17 +43,22 @@ export class Game {
     }
 
     _handleResize() {
-        // Fractional scale, uniformly in every state - fills the window fully (no
-        // large letterbox bars from snapping down a whole-number step) and, since
-        // it's the exact same formula everywhere, the scale factor never changes
-        // between states either (no visual jump opening Pause, entering the Menu,
-        // etc.). Trade-off: nearest-neighbor sampling at a fractional scale can
-        // shimmer once Camera.js scrolls - accepted for now, revisit only if that's
-        // actually visible/bothersome once real scrolling gameplay exists.
-        const scale = Math.min(
+        // Snapped to the nearest whole-number scale instead of an exact
+        // fractional fit - image-rendering:pixelated nearest-neighbor upscaling
+        // at a non-integer factor was a real, reported Firefox performance/
+        // shimmer issue (every source pixel maps to a *whole* number of
+        // destination pixels only at an integer scale, some browsers have a
+        // faster path for exactly that case). Trade-off: visible letterbox
+        // bars whenever the window isn't an exact multiple of 640x360 -
+        // previously avoided on purpose (see git history), reinstated because
+        // the performance cost turned out to matter more.
+        const rawScale = Math.min(
             window.innerWidth / this.width,
             window.innerHeight / this.height
         );
+        // Window smaller than the base resolution: fall back to the raw
+        // fractional fit instead of floor()ing to 0 and rendering nothing.
+        const scale = rawScale >= 1 ? Math.floor(rawScale) : rawScale;
 
         this.viewport.style.width = `${this.width * scale}px`;
         this.viewport.style.height = `${this.height * scale}px`;
