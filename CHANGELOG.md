@@ -4,6 +4,29 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-19
+
+### Added
+- Real player death animation (`dead.png`) plays out before the ghost-rise sequence starts, instead of cutting straight to the ghost.
+- Patroller now has real sprite art (walking/idle plus its own death animation) instead of the placeholder Maggot, which is fully removed from the project (assets, code, manifest entries).
+- Charger enemy: patrols like a Patroller until the player is spotted nearby on roughly the same floor, then rushes at higher speed with its own charge sprite; has a cooldown between rushes and deals double contact damage to the player without hurting itself while charging.
+- Ghost-trail effect behind the thrown sword as it flies (`thrown_sword_trail.png`), spaced and rotated to stay in sync with the blade's own spin.
+- Level-end portal: a Tiled `ExitPortal` object that starts locked, plays an opening animation once every enemy in the level is dead, and can be used via `[E]` in range to return to the Worldmap with that level marked completed.
+- Worldmap nodes show a "completed" overlay badge now, same treatment as the existing "locked" padlock, instead of swapping the whole button image.
+- Lv_2 exported and wired up; level loading is generic by level number now instead of hardcoded to Lv_1.
+
+### Changed
+- Thrown sword render/hitbox size now matches its actual sprite resolution (32x64) instead of a smaller placeholder size.
+- Enemy/player knockback speed reduced slightly.
+- Right-click over the canvas no longer opens the browser's context menu (reserved for a planned gameplay use).
+
+### Fixed
+- A held movement key left the player walking on its own indefinitely if the window/tab lost focus before the key was released (the browser never sends that `keyup`) - held keys now reset on blur/tab-hide.
+- Player and enemy death animations rendered permanently white-tinted from the killing blow's hit-flash, since the flash timer stopped ticking down once dead.
+- Charger's charge cooldown could be silently bypassed - a hit's knockback stun left it still "charging" underneath, so it resumed rushing the instant the stun ended instead of waiting out the cooldown.
+- Charger's passive Prisma contact damage was killing it off its own charges (25 HP / 10 contact damage = dead in 3 touches) - it no longer takes that self-damage while charging.
+- Worldmap level-lock/completion checks compared against the wrong index (array position vs. the actual level number) - would have kept every level beyond the first permanently locked once completions started being tracked.
+
 ## [0.7.0] - 2026-07-19
 
 ### Added
