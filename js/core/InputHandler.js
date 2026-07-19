@@ -24,9 +24,17 @@ export class InputHandler {
         // in _onKeyDown, or holding the key would re-trigger this every repeat tick.
         this._jumpPressed = false;
 
+        // Same edge-triggered pattern as attack/pause - used for the level-end
+        // portal (GameState.js), a discrete "use it" action rather than a held
+        // state.
+        this._interactPressed = false;
+
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onKeyUp = this._onKeyUp.bind(this);
         this._onMouseDown = this._onMouseDown.bind(this);
+        this._onContextMenu = this._onContextMenu.bind(this);
+        this._releaseAllActions = this._releaseAllActions.bind(this);
+        this._onVisibilityChange = this._onVisibilityChange.bind(this);
 
         window.addEventListener('keydown', this._onKeyDown);
         window.addEventListener('keyup', this._onKeyUp);
@@ -35,11 +43,40 @@ export class InputHandler {
         // up an attack that fires the instant GameState's Player exists on the
         // very next frame, since nothing had consumed it yet.
         canvas.addEventListener('mousedown', this._onMouseDown);
+        // Right-click is reserved for gameplay (planned) - suppress the
+        // browser's own copy/inspect context menu over the canvas so it
+        // doesn't pop up mid-game. Scoped to the canvas like mousedown above,
+        // so right-clicking HTML overlay UI still gets the normal menu.
+        canvas.addEventListener('contextmenu', this._onContextMenu);
+
+        // A held key's keyup never reaches the page if focus leaves the window/
+        // tab first (Alt+Tab, clicking another app, switching tabs) - without
+        // this, `actions` would keep reporting it held forever, walking the
+        // player off on their own with nothing actually pressed. Both events
+        // covered since either can fire without the other depending on how
+        // focus was lost.
+        window.addEventListener('blur', this._releaseAllActions);
+        document.addEventListener('visibilitychange', this._onVisibilityChange);
+    }
+
+    _onVisibilityChange() {
+        if (document.hidden) this._releaseAllActions();
+    }
+
+    _releaseAllActions() {
+        this.actions.left = false;
+        this.actions.right = false;
+        this.actions.jump = false;
+        this.actions.duck = false;
     }
 
     _onKeyDown(e) {
         if (e.code === 'Escape') {
             this._pausePressed = true;
+            return;
+        }
+        if (e.code === 'KeyE') {
+            this._interactPressed = true;
             return;
         }
 
@@ -56,6 +93,10 @@ export class InputHandler {
 
     _onMouseDown() {
         this._attackPressed = true;
+    }
+
+    _onContextMenu(e) {
+        e.preventDefault();
     }
 
     isDown(action) {
@@ -102,5 +143,19 @@ export class InputHandler {
     // screen shouldn't instantly pause the very next GameState.
     clearPausePress() {
         this._pausePressed = false;
+    }
+
+    // Same "at most once per press" contract as consumeAttackPress()/
+    // consumeJumpPress() - GameState drains this every frame regardless of
+    // whether the portal is actually in range/active right now, so a stray
+    // press while out of range doesn't linger and fire late once in range.
+    consumeInteractPress() {
+        if (!this._interactPressed) return false;
+        this._interactPressed = false;
+        return true;
+    }
+
+    clearInteractPress() {
+        this._interactPressed = false;
     }
 }
