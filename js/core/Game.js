@@ -25,6 +25,13 @@ export class Game {
         this.assets = null;
         this.input = null;
         this.difficulty = null;
+        // Level numbers completed this session (WorldmapState reads this to
+        // unlock the next node) - lives here rather than on WorldmapState
+        // itself since States are torn down/rebuilt on enter()/exit(), so a
+        // Set living on WorldmapState would reset every time it's revisited.
+        // No persistence across page reloads yet - see TODO.md's LocalStorage
+        // save system entry, this becomes the natural save/load target later.
+        this.completedLevels = new Set();
 
         this._lastTime = 0;
         this._accumulator = 0;

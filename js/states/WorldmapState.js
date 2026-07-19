@@ -33,8 +33,12 @@ export class WorldmapState extends State {
         this.background = this.game.assets.getImage('worldmap-prologue-bg');
         this._computeFit();
 
-        // Nothing completed yet - no SaveManager to read progress from.
-        this.completedLevels = new Set();
+        // Lives on Game, not this state - this state is torn down/rebuilt on
+        // every visit (enter()/exit()), so a local Set here would forget
+        // completions the instant the player left for a level and came back.
+        // No persistence across page reloads yet (see TODO.md's LocalStorage
+        // save system entry).
+        this.completedLevels = this.game.completedLevels;
         this.selectedIndex = null;
 
         this._buildChapterBar();
@@ -105,15 +109,12 @@ export class WorldmapState extends State {
         };
     }
 
+    // completedLevels stores the Tiled/GameState level *number*
+    // (PROLOGUE_NODES[i].level, 1-based), not the array index - matters once
+    // node order and level number can diverge (e.g. a reordered Special/Secret
+    // node).
     _isLocked(index) {
-        return index > 0 && !this.completedLevels.has(index - 1);
-    }
-
-    // Locked is a padlock overlay (::before) on top of the default badge, not
-    // a separate base image - wm_btn_locked.png is just the padlock icon.
-    _badgeSrc(index) {
-        if (this.completedLevels.has(index)) return 'assets/icons/wm_btn_completed.png';
-        return 'assets/icons/wm_btn_default.png';
+        return index > 0 && !this.completedLevels.has(PROLOGUE_NODES[index - 1].level);
     }
 
     _selectNode(index) {
@@ -130,9 +131,13 @@ export class WorldmapState extends State {
 
             el.style.left = `${x - NODE_SIZE / 2}px`;
             el.style.top = `${y - NODE_SIZE / 2}px`;
-            el.style.backgroundImage = `url(${this._badgeSrc(i)})`;
             el.disabled = this._isLocked(i);
+            // locked/completed both overlay the same always-visible default
+            // badge (see .worldmap-node::before in style.css) - mutually
+            // exclusive in practice, a completed level was necessarily
+            // unlocked to begin with.
             el.classList.toggle('locked', this._isLocked(i));
+            el.classList.toggle('completed', this.completedLevels.has(PROLOGUE_NODES[i].level));
             el.classList.toggle('selected', this.selectedIndex === i);
         }
     }
@@ -142,7 +147,7 @@ export class WorldmapState extends State {
 
         const data = PROLOGUE_NODES[index];
         const secretsTotal = data.hasSecret ? 1 : 0;
-        const secretsFound = this.completedLevels.has(index) ? secretsTotal : 0;
+        const secretsFound = this.completedLevels.has(data.level) ? secretsTotal : 0;
 
         this.infoCard = document.createElement('div');
         this.infoCard.className = 'worldmap-info-card';
