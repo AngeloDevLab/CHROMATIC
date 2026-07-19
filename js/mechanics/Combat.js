@@ -20,8 +20,8 @@ const CONTACT_DAMAGE_COOLDOWN_SECONDS = 1;
 // both entities' own knockback lock (Player.js/Enemy.js) briefly overrides
 // normal movement so the push is actually visible instead of being stomped
 // by input/patrol logic the very next frame.
-const ENEMY_KNOCKBACK_SPEED = 220;
-const PLAYER_KNOCKBACK_SPEED = 180;
+const ENEMY_KNOCKBACK_SPEED = 180;
+const PLAYER_KNOCKBACK_SPEED = 150;
 
 // 04_health-save-system.md 5.3: difficulty scales only incoming damage, enemy
 // HP and the player's own damage stay the same across all three. Deliberately
@@ -30,6 +30,11 @@ const PLAYER_KNOCKBACK_SPEED = 180;
 // Normal (1) for an unrecognized/missing difficulty (e.g. a level tested
 // directly without going through the menu's difficulty selection first).
 const DIFFICULTY_DAMAGE_MULTIPLIERS = { easy: 0.5, normal: 1, hard: 2 };
+
+// Charger mid-rush (entities/enemies/Charger.js's `charging`) hits harder
+// through the passive barrier below, instead of also zapping itself for the
+// normal contactDamage amount - see resolveContactDamage.
+const CHARGE_CONTACT_DAMAGE_MULTIPLIER = 2;
 
 function rectsOverlap(a, b) {
     return a.x < b.x + b.width && a.x + a.width > b.x
@@ -127,15 +132,25 @@ export function resolveContactDamage(dt, player, enemies, difficulty) {
 
         if (!rectsOverlap(player, enemy)) continue;
 
-        player.takeDamage(enemy.contactDamage * multiplier);
-        enemy.takeDamage(enemy.contactDamage);
+        // A Charger mid-rush is deliberately attacking, not just idly bumping
+        // into the barrier - hits harder and skips the self-damage mirror
+        // below, or every successful charge would tick it to death off its
+        // own rush (25 HP / 10 contactDamage = dead in 3 barrier touches,
+        // which read as the Charger "suiciding" into the player). The 1s
+        // contactCooldown above still applies either way, so this can't fire
+        // more than once per second per enemy regardless of charging.
+        const isCharging = !!enemy.charging;
+        const playerDamage = enemy.contactDamage * multiplier * (isCharging ? CHARGE_CONTACT_DAMAGE_MULTIPLIER : 1);
+
+        player.takeDamage(playerDamage);
+        if (!isCharging) enemy.takeDamage(enemy.contactDamage);
         // Push both apart along whichever side the player is standing on,
         // rather than a fixed direction - mirrors the melee push above.
         const pushDir = player.centerX >= enemy.centerX ? 1 : -1;
         player.applyKnockback(pushDir * PLAYER_KNOCKBACK_SPEED);
         enemy.applyKnockback(-pushDir * ENEMY_KNOCKBACK_SPEED);
         enemy.contactCooldown = CONTACT_DAMAGE_COOLDOWN_SECONDS;
-        hits.push({ enemy, amount: enemy.contactDamage });
+        hits.push({ enemy, amount: playerDamage });
     }
     return hits;
 }
