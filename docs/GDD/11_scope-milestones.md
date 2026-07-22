@@ -54,8 +54,8 @@ Tracks actual status against the 12.1 checklist - update this instead of trying 
 
 | Item | Status |
 |---|---|
-| Prologue levels (6) | Lv 1-2 done, Lv 3-6 (Miniboss/Special/Secret/Templateboss) not built |
-| Enemy types (Patroller, Charger, Shooter, Sentinel) | 2/4 done (Patroller, Charger); Shooter and Sentinel not built |
+| Prologue levels (6) | Lv 1-2 done and reachable, Lv 3 exported but not yet wired into `GameState.js`/`LoadingState.js`, Lv 4-6 (Miniboss/Special/Secret/Templateboss) not built |
+| Enemy types (Patroller, Charger, Shooter, Sentinel) | 4/4 implemented - balance values still first-guess, see `TODO.md` |
 | Miniboss + Templateboss | Not built |
 | Combat system (melee + ranged) | Done, balance still first-guess (see `TODO.md`) |
 | Color mechanic (in-level) | Done |

@@ -6,6 +6,22 @@ Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to le
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-22
+
+### Added
+- Sentinel enemy type: buried and harmless until the player enters its aggro range, then rises (visible in front of the terrain during the rise itself, unlike while still dormant/buried behind it - a telegraphed pop-up, not an instant invisible-to-dangerous cut) before settling into a stationary contact-damage threat. Never moves, no chase/reset logic.
+- Shooter enemy type: holds position once it spots the player and fires projectiles from range instead of closing in. Its bolts can be destroyed by the player's melee swing or thrown sword before they land.
+- Drop-Through-Platform (`Player.js`/`Collision.js`) replaces the placeholder Duck ability (no crouch art/movement-while-crouched was ever built for it, and wasn't worth building for this level layout) - S/Down now drops the player through the one-way platform they're standing on, but only if there's an actual floor to land on below. Not a naive check - correctly skips past the current platform's own multi-tile-thick mass first before looking for a genuine next floor, so it won't drop the player into a pit from the last platform above one.
+- `walls` Tiled tile layer support (`Collision.js`): an optional second layer that's always fully solid in every direction, regardless of the primary terrain layer's one-way mode - lets specific ledge/corner tiles block sideways movement (fixing a corner-clip death reported during playtesting) without losing one-way behavior everywhere else. Lv_1/Lv_2 now have a few tiles painted into this layer.
+- The level-end portal now participates in the color mechanic - greyed out like the rest of the world until the player gets close enough or the level's full-reveal fires, instead of always rendering in full color regardless of what's been revealed around it.
+- Lv_3 exported, plus a new gravel tileset.
+
+### Changed
+- Charger's charge is no longer a homing chase - facing locks in at the start of a rush and it travels a fixed distance before stopping, so a dodge (sidestep, jump over) actually works instead of the charger endlessly re-tracking. Speed and detection range also retuned across a couple of passes this session.
+- Enemies now render in front of the level-end portal (previously behind it).
+- Each Prologue level now paints its own `background` Tiled tile layer on top of the shared forest backdrop every level bakes in (`GameState.js`) - e.g. the planned cave-interior Gimmick level can cover that shared backdrop entirely with its own art instead of it showing through. The earlier depth-parallax attempts (see 0.4.4) are fully superseded by authoring per-level overrides directly in Tiled instead.
+- `docs/GDD/03_mechanics.md`/`07_ui-hud.md`/`10_technical-architecture.md`/`02_game-structure.md` updated throughout for Duck -> Drop Through Platform.
+
 ## [0.4.4] - 2026-07-22
 
 ### Changed
