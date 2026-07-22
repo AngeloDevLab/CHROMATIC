@@ -1,14 +1,14 @@
 import { State } from './State.js';
 import { Level } from '../world/Level.js';
 import { Player } from '../entities/Player.js';
-import { Enemy } from '../entities/Enemy.js';
-import { Charger } from '../entities/enemies/Charger.js';
+import { createEnemy } from '../entities/EnemyFactory.js';
 import { Projectile } from '../entities/Projectile.js';
 import { Portal } from '../entities/Portal.js';
 import { Collision } from '../utils/Collision.js';
 import { Camera } from '../utils/Camera.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 import { ColorZone } from '../mechanics/ColorZone.js';
+import { DeathSequence, GHOST_FRAME_SIZE } from '../mechanics/DeathSequence.js';
 import {
     resolveMeleeAttack,
     resolveContactDamage,
@@ -22,18 +22,6 @@ import { DamageNumbers } from '../ui/DamageNumbers.js';
 import { Panel } from '../ui/Panel.js';
 
 const CHARACTER_FRAME_SIZE = 96;
-// Enemy sheets (assets/images/enemys/<type>/) are their own 64x64 convention,
-// independent of the player's 96x96 one above.
-const ENEMY_FRAME_SIZE = 64;
-// Maps an EnemySpawn object's Tiled Name field to its asset keys - add an
-// entry here once a new enemy type actually exists in code (Shooter/Sentinel
-// are art-only so far, see TODO.md). `charge` is Charger-only (its distinct
-// rush sprite, see entities/enemies/Charger.js) - absent for types that don't
-// use it.
-const ENEMY_SPRITE_SETS = {
-    patroller: { running: 'enemy-patroller-walking-idle', dead: 'enemy-patroller-dead' },
-    charger: { running: 'enemy-charger-walking-idle', dead: 'enemy-charger-dead', charge: 'enemy-charger-charge' },
-};
 // Bigger canvas than the other sheets, deliberately - gives the sword extra
 // room to swing past the body without clipping the frame edge. Doesn't need
 // to be square - Player.js scales the attack frame by its own aspect ratio,
@@ -42,10 +30,6 @@ const ENEMY_SPRITE_SETS = {
 const ATTACK_FRAME_WIDTH = 150;
 const ATTACK_FRAME_HEIGHT = 96;
 const FALLBACK_SPAWN = { x: 64, y: 0 };
-
-const GHOST_FRAME_SIZE = 64;
-const GHOST_RISE_SPEED = 25;
-const GHOST_FADE_DURATION_SECONDS = 2.5;
 
 // How far below the level's bottom edge the player has to fall before it
 // counts as "into a pit" - a bit of slack past the visible bottom rather than
@@ -78,8 +62,8 @@ const PORTAL_INTERACT_RANGE_PX = 40;
 // exported to JSON so far are registered there). Player/enemy spawn positions
 // come from the Objects layer (PlayerStart/EnemySpawn) per
 // 10_technical-architecture.md 11.6.2 - which enemy type spawns is read off
-// each EnemySpawn object's own Tiled Name field (see ENEMY_SPRITE_SETS/
-// _createEnemy() below), not a separate custom property. Names that don't
+// each EnemySpawn object's own Tiled Name field (see EnemyFactory.js's
+// ENEMY_SPRITE_SETS), not a separate custom property. Names that don't
 // match a registered type (typo, or a type not built yet - Shooter/Sentinel
 // per 05_enemies-bosses.md) are skipped with a console warning rather than
 // spawning the wrong thing.
@@ -153,9 +137,8 @@ export class GameState extends State {
         };
 
         // Player death (04_health-save-system.md) - float-and-fade ghost, see
-        // _startDeathSequence()/_updateDeathSequence().
-        this.ghostAnimation = new SpriteAnimation(this.game.assets.getImage('guardian-dead-ghost'), GHOST_FRAME_SIZE, GHOST_FRAME_SIZE, 13, 10);
-        this._deathSequence = null;
+        // _startDeathSequence() and DeathSequence.js.
+        this.deathSequence = new DeathSequence(this.game.assets.getImage('guardian-dead-ghost'));
 
         this.game.input.clearAttackPress();
         this.game.input.clearPausePress();
@@ -169,7 +152,7 @@ export class GameState extends State {
         this.player.enableControl(this.game.input, this.collision);
 
         this.enemies = this.level.getObjectsByType('EnemySpawn')
-            .map((spawn) => this._createEnemy(spawn))
+            .map((spawn) => createEnemy(this.game.assets, this.collision, this.player, spawn))
             .filter(Boolean);
 
         // Level-end portal (01_core-gameplay-loop.md) - locked until every
@@ -205,38 +188,6 @@ export class GameState extends State {
         this.projectiles = [];
     }
 
-    // Own SpriteAnimation instance per enemy - sharing one across all of them
-    // would advance its frame timer once per enemy per game frame (animation
-    // playing N times too fast for N enemies). Returns null (filtered out by
-    // the caller) for a spawn name with no registered sprite.
-    _createEnemy(spawn) {
-        const spriteSet = ENEMY_SPRITE_SETS[spawn.name?.toLowerCase()];
-        if (!spriteSet) {
-            console.warn(`GameState: no enemy type registered for EnemySpawn name "${spawn.name}" at (${spawn.x}, ${spawn.y}) - skipped.`);
-            return null;
-        }
-
-        const typeName = spawn.name.toLowerCase();
-        const sprite = this.game.assets.getImage(spriteSet.running);
-        const EnemyClass = typeName === 'charger' ? Charger : Enemy;
-        const enemy = new EnemyClass(spawn.x, spawn.y, sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE);
-
-        const animations = {
-            running: new SpriteAnimation(sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 10),
-            // Plays once on death instead of vanishing instantly - see
-            // Enemy.js's deathAnimationFinished/_enterDeathAnimation().
-            dead: new SpriteAnimation(this.game.assets.getImage(spriteSet.dead), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 12, { loop: false }),
-        };
-        if (spriteSet.charge) {
-            animations.charge = new SpriteAnimation(this.game.assets.getImage(spriteSet.charge), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 14);
-        }
-        enemy.setAnimations(animations);
-
-        enemy.enablePatrol(this.collision);
-        if (enemy instanceof Charger) enemy.enableCharge(this.player);
-        return enemy;
-    }
-
     _createHudValueLabel(bar) {
         const el = document.createElement('div');
         el.className = 'hud-value';
@@ -259,7 +210,7 @@ export class GameState extends State {
         // the attack click - but ignore it once dead, Escape does nothing during
         // or after the death sequence (the Game Over panel handles that instead).
         const pausePressed = this.game.input.consumePausePress();
-        if (pausePressed && !this._deathSequence) this._togglePause();
+        if (pausePressed && !this.deathSequence.active) this._togglePause();
         if (this.paused) return;
 
         if (this._hitStopTimer > 0) {
@@ -327,8 +278,10 @@ export class GameState extends State {
             this.colorZone.triggerFullReveal(this.player.centerX, this.player.visualCenterY);
         }
 
-        if (!this._deathSequence && this.player.dead && this.player.deathAnimationFinished) this._startDeathSequence();
-        if (this._deathSequence) this._updateDeathSequence(dt);
+        if (!this.deathSequence.active && this.player.dead && this.player.deathAnimationFinished) this._startDeathSequence();
+        if (this.deathSequence.active) {
+            if (this.deathSequence.update(dt)) this._openGameOverPanel();
+        }
 
         this.camera.follow(this.player, this.level.pixelWidth, this.level.pixelHeight);
         this._updatePortal();
@@ -336,7 +289,7 @@ export class GameState extends State {
         // position updates entirely - otherwise this falls through to the
         // normal per-frame reveal-at-(x,y) behavior and punches a fresh
         // colored hole right at the (frozen) death spot.
-        if (!this._deathSequence || this.colorZone.isTransitioning) {
+        if (!this.deathSequence.active || this.colorZone.isTransitioning) {
             this.colorZone.update(dt, this.player.centerX, this.player.visualCenterY);
         }
         this.damageNumbers.update(dt, this.camera);
@@ -375,8 +328,9 @@ export class GameState extends State {
 
     // Player death (04_health-save-system.md) - mirrors the victory full-reveal
     // above: instead of the level bursting into color, it darkens fully while a
-    // ghost rises from the death spot and fades out, then the Game Over panel
-    // (same Panel/mechanism as Pause, see _togglePause()) offers Retry/Main Menu.
+    // ghost rises from the death spot and fades out (DeathSequence.js), then
+    // the Game Over panel (same Panel/mechanism as Pause, see _togglePause())
+    // offers Retry/Main Menu.
     _startDeathSequence() {
         // Falling into a pit (the kill plane above) can put the actual death
         // position below what Camera.js ever scrolls to (it clamps to the
@@ -384,47 +338,37 @@ export class GameState extends State {
         // the screen instead of spawning it off-screen where the rise-and-fade
         // would never be seen.
         const visibleBottom = this.camera.y + this.game.height - GHOST_FRAME_SIZE / 2;
-        this._deathSequence = {
-            x: this.player.centerX,
-            y: Math.min(this.player.visualCenterY, visibleBottom),
-            elapsed: 0,
-            gameOverShown: false,
-        };
-        this.ghostAnimation.reset();
-        this.colorZone.triggerFullDarken(this._deathSequence.x, this._deathSequence.y);
+        const x = this.player.centerX;
+        const y = Math.min(this.player.visualCenterY, visibleBottom);
+        this.deathSequence.start(x, y);
+        this.colorZone.triggerFullDarken(x, y);
     }
 
-    _updateDeathSequence(dt) {
-        this._deathSequence.elapsed += dt;
-        this._deathSequence.y -= GHOST_RISE_SPEED * dt;
-        this.ghostAnimation.update(dt);
+    // Renders a [{ id, label, onClick }] choice list into a Panel - shared by
+    // the Pause and Game Over panels below, which are otherwise identical
+    // except for their title/choices.
+    _openChoicePanel(title, choices, { dismissible = true } = {}) {
+        const buttonsHTML = choices
+            .map((choice) => `<button class="difficulty-option" data-action="${choice.id}">${choice.label}</button>`)
+            .join('');
 
-        if (!this._deathSequence.gameOverShown && this._deathSequence.elapsed >= GHOST_FADE_DURATION_SECONDS) {
-            this._deathSequence.gameOverShown = true;
-            this._openGameOverPanel();
-        }
-    }
-
-    // Same Panel + option-list pattern as the Pause menu below, non-dismissible
-    // since there's no gameplay left to fall back to - the player has to pick
-    // Retry or Main Menu explicitly.
-    _openGameOverPanel() {
-        this.panel.open('Game Over', `
-            <div class="difficulty-options">
-                <button class="difficulty-option" data-action="retry">Retry</button>
-                <button class="difficulty-option" data-action="menu">Main Menu</button>
-            </div>
-        `, {
-            dismissible: false,
+        this.panel.open(title, `<div class="difficulty-options">${buttonsHTML}</div>`, {
+            dismissible,
             onMount: (root) => {
-                root.querySelector('[data-action="retry"]').addEventListener('click', () => {
-                    this.game.stateMachine.change('game', { chapterId: this.chapterId, level: this.levelNumber });
-                });
-                root.querySelector('[data-action="menu"]').addEventListener('click', () => {
-                    this.game.stateMachine.change('menu');
-                });
+                for (const choice of choices) {
+                    root.querySelector(`[data-action="${choice.id}"]`).addEventListener('click', choice.onClick);
+                }
             },
         });
+    }
+
+    // Non-dismissible since there's no gameplay left to fall back to - the
+    // player has to pick Retry or Main Menu explicitly.
+    _openGameOverPanel() {
+        this._openChoicePanel('Game Over', [
+            { id: 'retry', label: 'Retry', onClick: () => this.game.stateMachine.change('game', { chapterId: this.chapterId, level: this.levelNumber }) },
+            { id: 'menu', label: 'Main Menu', onClick: () => this.game.stateMachine.change('menu') },
+        ], { dismissible: false });
     }
 
     // Pause: paused freezes update() (see update()'s early return) while
@@ -443,36 +387,10 @@ export class GameState extends State {
     }
 
     _openPausePanel() {
-        this.panel.open('Paused', `
-            <div class="difficulty-options">
-                <button class="difficulty-option" data-action="resume">Resume</button>
-                <button class="difficulty-option" data-action="menu">Main Menu</button>
-            </div>
-        `, {
-            dismissible: false,
-            onMount: (root) => {
-                root.querySelector('[data-action="resume"]').addEventListener('click', () => this._togglePause());
-                root.querySelector('[data-action="menu"]').addEventListener('click', () => {
-                    this.game.stateMachine.change('menu');
-                });
-            },
-        });
-    }
-
-    _renderGhost(ctx) {
-        const alpha = Math.max(0, 1 - this._deathSequence.elapsed / GHOST_FADE_DURATION_SECONDS);
-        if (alpha <= 0) return;
-
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        this.ghostAnimation.draw(
-            ctx,
-            this._deathSequence.x - GHOST_FRAME_SIZE / 2,
-            this._deathSequence.y - GHOST_FRAME_SIZE / 2,
-            GHOST_FRAME_SIZE,
-            GHOST_FRAME_SIZE
-        );
-        ctx.restore();
+        this._openChoicePanel('Paused', [
+            { id: 'resume', label: 'Resume', onClick: () => this._togglePause() },
+            { id: 'menu', label: 'Main Menu', onClick: () => this.game.stateMachine.change('menu') },
+        ], { dismissible: false });
     }
 
     render(ctx) {
@@ -480,7 +398,7 @@ export class GameState extends State {
         ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
 
         ctx.drawImage(this.levelCanvas, 0, 0);
-        if (this._deathSequence) {
+        if (this.deathSequence.active) {
             // No liveGlow while dead - that would keep punching a hole open right
             // at the death spot every frame, fighting the full-darken effect.
             this.colorZone.render(ctx);
@@ -497,8 +415,8 @@ export class GameState extends State {
         }
         this.portal?.render(ctx);
         for (const projectile of this.projectiles) projectile.render(ctx);
-        if (this._deathSequence) {
-            this._renderGhost(ctx);
+        if (this.deathSequence.active) {
+            this.deathSequence.render(ctx);
         } else {
             this.player.render(ctx);
         }
