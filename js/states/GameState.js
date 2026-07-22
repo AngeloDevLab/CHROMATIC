@@ -13,6 +13,7 @@ import {
     resolveMeleeAttack,
     resolveContactDamage,
     resolveProjectileHits,
+    resolveEnemyProjectileHits,
     findNearestEnemy,
     isWithinMeleeRange,
     PLAYER_ATTACK_DAMAGE,
@@ -65,9 +66,8 @@ const PORTAL_INTERACT_RANGE_PX = 40;
 // 10_technical-architecture.md 11.6.2 - which enemy type spawns is read off
 // each EnemySpawn object's own Tiled Name field (see EnemyFactory.js's
 // ENEMY_SPRITE_SETS), not a separate custom property. Names that don't
-// match a registered type (typo, or a type not built yet - Shooter/Sentinel
-// per 05_enemies-bosses.md) are skipped with a console warning rather than
-// spawning the wrong thing.
+// match a registered type (e.g. a typo in Tiled) are skipped with a console
+// warning rather than spawning the wrong thing.
 // All Prologue levels share the same tileset image so far (per
 // 'prologue-tileset' in LoadingState.js) - add a distinct manifest key/lookup
 // here too if a later level needs a different one.
@@ -187,6 +187,12 @@ export class GameState extends State {
         this.thrownSwordSprite = this.game.assets.getImage('thrown-sword');
         this.thrownSwordTrailSprite = this.game.assets.getImage('thrown-sword-trail');
         this.projectiles = [];
+        // Separate from the player's own projectiles above rather than one
+        // shared list with a "whose is this" flag - resolveProjectileHits
+        // only ever checks player-thrown ones against enemies, and
+        // resolveEnemyProjectileHits (Shooter.js's shots) only ever checks
+        // these against the player, so there's no ambiguity to sort out.
+        this.enemyProjectiles = [];
     }
 
     _createHudValueLabel(bar) {
@@ -220,7 +226,15 @@ export class GameState extends State {
         }
 
         this.player.update(dt);
-        for (const enemy of this.enemies) enemy.update(dt);
+        for (const enemy of this.enemies) {
+            enemy.update(dt);
+            // Shooter.js's mailbox for a shot fired this frame - it has no
+            // access to this shared array itself, see its own pendingProjectile.
+            if (enemy.pendingProjectile) {
+                this.enemyProjectiles.push(enemy.pendingProjectile);
+                enemy.pendingProjectile = null;
+            }
+        }
         this.portal?.update(dt);
 
         // Jump & Run gaps with no floor below (10_technical-architecture.md
@@ -250,13 +264,26 @@ export class GameState extends State {
                     this.damageNumbers.spawnStatus(this.player.centerX, this.player.visualTopY, 'No Prisma for Ranged Attack');
                 }
             } else {
-                hits = resolveMeleeAttack(this.player, this.enemies);
+                hits = resolveMeleeAttack(this.player, this.enemies, this.enemyProjectiles);
             }
         }
 
         for (const projectile of this.projectiles) projectile.update(dt, this.collision);
-        hits.push(...resolveProjectileHits(this.projectiles, this.enemies));
+        hits.push(...resolveProjectileHits(this.projectiles, this.enemies, this.enemyProjectiles));
         this.projectiles = this.projectiles.filter((projectile) => !projectile.dead);
+
+        for (const projectile of this.enemyProjectiles) projectile.update(dt, this.collision);
+        const playerHits = resolveEnemyProjectileHits(this.enemyProjectiles, this.player, this.game.difficulty);
+        for (const hit of playerHits) {
+            // Anchored at the player, not "the enemy" like the hits loop
+            // below - the Shooter that fired this may be far away (or dead)
+            // by the time its shot actually lands, so showing the number at
+            // the impact point (the player) is the only position that still
+            // makes sense.
+            this.damageNumbers.spawn(this.player.centerX, this.player.visualTopY, hit.amount);
+        }
+        if (playerHits.length > 0) this._hitStopTimer = HIT_STOP_SECONDS;
+        this.enemyProjectiles = this.enemyProjectiles.filter((projectile) => !projectile.dead);
 
         hits.push(...resolveContactDamage(dt, this.player, this.enemies, this.game.difficulty));
         for (const hit of hits) {
@@ -405,6 +432,15 @@ export class GameState extends State {
         ctx.save();
         ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
 
+        // Buried enemies (Sentinel.js, not yet triggered) draw before the
+        // terrain layer so it occludes them, instead of floating in front of
+        // the ground they're meant to be hidden inside. Separate from
+        // `dormant` (still true a bit longer, through the visible rise) -
+        // see Sentinel.js.
+        for (const enemy of this.enemies) {
+            if (enemy.buried) enemy.render(ctx);
+        }
+
         ctx.drawImage(this.levelCanvas, 0, 0);
         if (this.deathSequence.active) {
             // No liveGlow while dead - that would keep punching a hole open right
@@ -418,11 +454,13 @@ export class GameState extends State {
             });
         }
         for (const enemy of this.enemies) {
+            if (enemy.buried) continue;
             enemy.render(ctx);
             this.hud.renderEnemyBar(ctx, enemy);
         }
         this.portal?.render(ctx);
         for (const projectile of this.projectiles) projectile.render(ctx);
+        for (const projectile of this.enemyProjectiles) projectile.render(ctx);
         if (this.deathSequence.active) {
             this.deathSequence.render(ctx);
         } else {

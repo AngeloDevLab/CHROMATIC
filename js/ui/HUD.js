@@ -21,7 +21,9 @@ export class HUD {
     // World-space (follows the enemy) - call inside the camera-translated
     // block, alongside enemy rendering.
     renderEnemyBar(ctx, enemy) {
-        if (enemy.dead || !enemy.referenceAnim) return;
+        // Dormant (Sentinel.js) stays hidden until it's actually risen - no
+        // HP bar spoiling a buried ambush before it triggers.
+        if (enemy.dead || enemy.dormant || !enemy.referenceAnim) return;
 
         const rect = {
             x: enemy.centerX - ENEMY_BAR_WIDTH / 2,

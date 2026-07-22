@@ -53,6 +53,18 @@ export class Enemy extends Entity {
         this.contactDamage = DEFAULT_CONTACT_DAMAGE;
         this.contactCooldown = 0;
         this.dead = false;
+        // Harmless and hidden from the HP bar until a subclass clears this
+        // (Sentinel.js, through both its buried and mid-rise phases - not
+        // dangerous until fully risen). Every other enemy type stays
+        // false/interactive from the start.
+        this.dormant = false;
+        // Whether GameState should draw this before the terrain layer (fully
+        // hidden behind it) instead of after (normal, visible). Separate from
+        // `dormant` above - Sentinel.js clears this the instant it's
+        // triggered (so the rise is visible, telegraphing the coming threat)
+        // well before `dormant` itself clears (which is what actually makes
+        // it dangerous) - see Sentinel.js for why those two needed to split.
+        this.buried = false;
         // One-time flag so GameState's death color-reveal (see Combat/ColorZone
         // wiring in GameState.js) fires exactly once per enemy, not every frame
         // it stays dead.

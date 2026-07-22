@@ -83,7 +83,7 @@ export function isWithinMeleeRange(player, enemy) {
 // Returns the enemies actually hit (as { enemy, amount }) so the caller can
 // drive UI feedback (floating damage numbers) without this module needing to
 // know anything about rendering.
-export function resolveMeleeAttack(player, enemies) {
+export function resolveMeleeAttack(player, enemies, enemyProjectiles = []) {
     const hitbox = player.facing === 1
         ? { x: player.x + player.width, y: player.y, width: ATTACK_REACH_PX, height: player.height }
         : { x: player.x - ATTACK_REACH_PX, y: player.y, width: ATTACK_REACH_PX, height: player.height };
@@ -96,13 +96,23 @@ export function resolveMeleeAttack(player, enemies) {
             hits.push({ enemy, amount: PLAYER_ATTACK_DAMAGE });
         }
     }
+
+    // The same swing also swats an incoming Shooter.js bolt out of the air -
+    // no damage number, just destroyed (see resolveProjectileHits below for
+    // the player's own thrown sword doing the same).
+    for (const enemyProjectile of enemyProjectiles) {
+        if (!enemyProjectile.dead && rectsOverlap(hitbox, enemyProjectile)) {
+            enemyProjectile.dead = true;
+        }
+    }
+
     return hits;
 }
 
 // Same shape as the other resolve* functions (returns { enemy, amount } hits)
 // so damage numbers/hit-stop/knockback all keep working through GameState's
 // existing pipeline with no extra wiring beyond calling this once per frame.
-export function resolveProjectileHits(projectiles, enemies) {
+export function resolveProjectileHits(projectiles, enemies, enemyProjectiles = []) {
     const hits = [];
     for (const projectile of projectiles) {
         if (projectile.dead) continue;
@@ -117,6 +127,43 @@ export function resolveProjectileHits(projectiles, enemies) {
             projectile.dead = true;
             break;
         }
+        if (projectile.dead) continue;
+
+        // The player's own thrown sword cuts through an incoming Shooter.js
+        // bolt the same way - destroys the bolt, the thrown sword itself
+        // keeps flying (a clash isn't a hit on either the player's or the
+        // enemy's *character*, so nothing goes in `hits`).
+        for (const enemyProjectile of enemyProjectiles) {
+            if (!enemyProjectile.dead && rectsOverlap(projectile, enemyProjectile)) {
+                enemyProjectile.dead = true;
+                break;
+            }
+        }
+    }
+    return hits;
+}
+
+// Shooter.js's fired shots (05_enemies-bosses.md 6.1 "keeps distance, fires
+// projectiles") - the enemy-side mirror of resolveProjectileHits above,
+// checked against the single player instead of a list of enemies. Incoming
+// damage scales with difficulty (04_health-save-system.md 5.3), same as
+// resolveContactDamage below - unlike the player's own outgoing damage
+// (PLAYER_ATTACK_DAMAGE), which never scales.
+export function resolveEnemyProjectileHits(projectiles, player, difficulty) {
+    const hits = [];
+    if (player.dead) return hits;
+
+    const multiplier = DIFFICULTY_DAMAGE_MULTIPLIERS[difficulty] ?? DIFFICULTY_DAMAGE_MULTIPLIERS.normal;
+
+    for (const projectile of projectiles) {
+        if (projectile.dead) continue;
+        if (!rectsOverlap(projectile, player)) continue;
+
+        const amount = projectile.damage * multiplier;
+        player.takeDamage(amount);
+        player.applyKnockback(projectile.direction * PLAYER_KNOCKBACK_SPEED);
+        hits.push({ amount });
+        projectile.dead = true;
     }
     return hits;
 }
@@ -138,7 +185,9 @@ export function resolveContactDamage(dt, player, enemies, difficulty) {
 
     const hits = [];
     for (const enemy of enemies) {
-        if (enemy.dead) continue;
+        // Dormant (Sentinel.js, buried and not yet triggered) is harmless by
+        // design - the ambush is the aggro range, not a surprise touch.
+        if (enemy.dead || enemy.dormant) continue;
 
         enemy.contactCooldown = Math.max(0, enemy.contactCooldown - dt);
         if (enemy.contactCooldown > 0) continue;
