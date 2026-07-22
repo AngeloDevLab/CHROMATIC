@@ -40,7 +40,7 @@ Inheritance chain: Entity → Enemy → Boss → Templateboss → Chapterboss. P
 | Platform | Movement | Attack | Pause |
 |---|---|---|---|
 | Desktop | WASD / Arrow keys | Mouse click | ESC |
-| Mobile | Left/Right/Duck/Jump Button | Attack Button (auto-targeting) | Pause Button |
+| Mobile | Left/Right/Drop/Jump Button | Attack Button (auto-targeting) | Pause Button |
 
 ## 11.4 Language & Localization
 

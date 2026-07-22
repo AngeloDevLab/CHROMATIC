@@ -52,6 +52,14 @@ const DECELERATION = 2600;
 // whatever direction is held (or 0), making the hit invisible.
 const KNOCKBACK_LOCK_SECONDS = 0.15;
 
+// Drop-Through-Platform (03_mechanics.md 4.2, replaces the originally-planned
+// Duck - see Collision.js's hasFloorBelow()): just enough to push the player
+// past the one-way collision's "already below this surface" threshold before
+// Collision.resolve() runs this same frame, so it stops catching them against
+// the platform they were just standing on - gravity does the rest, no special
+// multi-frame "falling through" state needed.
+const DROP_NUDGE_PX = 4;
+
 function moveToward(current, target, maxDelta) {
     if (current < target) return Math.min(current + maxDelta, target);
     if (current > target) return Math.max(current - maxDelta, target);
@@ -196,8 +204,9 @@ export class Player extends Entity {
         this.currentAnimation = 'running';
     }
 
-    // Real keyboard-driven movement (04_health-save-system.md base abilities:
-    // Run, Jump, Duck) - used by GameState, as opposed to the menu's autopilot.
+    // Real keyboard-driven movement (03_mechanics.md 4.2 base abilities: Run,
+    // Jump, Drop Through Platform) - used by GameState, as opposed to the
+    // menu's autopilot.
     // jumpSpeed 379 (up from 360) gives a max apex of ~102.5px instead of
     // ~92.5px (maxHeight = jumpSpeed^2 / (2*gravity)) - ~10px of extra safety
     // margin on top of the fixed-timestep fix (Game.js), for level geometry
@@ -266,9 +275,6 @@ export class Player extends Entity {
         const groundedAttack = this.attacking && this.grounded;
         const left = !groundedAttack && this.input.isDown('left');
         const right = !groundedAttack && this.input.isDown('right');
-        // Ducking has no crouch sprite/hitbox yet - placeholder just locks
-        // movement, reusing the idle animation, until real duck art exists.
-        const ducking = !this.attacking && this.input.isDown('duck') && this.grounded;
 
         // Coyote time: this.grounded still reflects last frame's collision
         // result at this point (this frame's own resolve() happens below), so
@@ -285,7 +291,7 @@ export class Player extends Entity {
         const inKnockback = this.knockbackTimer > 0;
 
         let targetVx = 0;
-        if (!inKnockback && !(groundedAttack || ducking)) {
+        if (!inKnockback && !groundedAttack) {
             if (left && !right) {
                 targetVx = -this.moveSpeed;
                 this.facing = -1;
@@ -295,11 +301,11 @@ export class Player extends Entity {
             }
         }
         const accelRate = targetVx === 0 ? DECELERATION : ACCELERATION;
-        this.vx = inKnockback ? this.vx : ((groundedAttack || ducking) ? 0 : moveToward(this.vx, targetVx, accelRate * dt));
+        this.vx = inKnockback ? this.vx : (groundedAttack ? 0 : moveToward(this.vx, targetVx, accelRate * dt));
 
         this.vy += this.gravity * dt;
 
-        if (!this.attacking && this.jumpBufferTimer > 0 && this.coyoteTimer > 0 && !ducking) {
+        if (!this.attacking && this.jumpBufferTimer > 0 && this.coyoteTimer > 0) {
             this.vy = -this.jumpSpeed;
             this.jumpBufferTimer = 0;
             this.coyoteTimer = 0;
@@ -310,13 +316,23 @@ export class Player extends Entity {
             this.vy = Math.max(this.vy, -this.jumpSpeed * SHORT_HOP_VY_FRACTION);
         }
 
+        // Drop-Through-Platform (03_mechanics.md 4.2, replaces Duck) - only if
+        // there's an actual floor to land on below (Collision.hasFloorBelow),
+        // otherwise this would just walk the player into the kill-plane/pit.
+        // The resolve() call right below immediately overwrites `grounded`
+        // with this frame's real result anyway, so the nudge is the only
+        // thing that actually matters here.
+        if (this.input.consumeDropPress() && !this.attacking && this.grounded && this.collision.hasFloorBelow(this)) {
+            this.y += DROP_NUDGE_PX;
+        }
+
         this.grounded = this.collision.resolve(this, dt);
 
         if (this.attacking && this.animations.attack.finished) {
             this.attacking = false;
         }
 
-        this._updateAnimationState(ducking);
+        this._updateAnimationState();
     }
 
     // Locks movement for the swing's duration (base Attack, as opposed to the
@@ -333,13 +349,13 @@ export class Player extends Entity {
     // input, so jumping while moving still shows the jump pose. Switching
     // animations resets it, so a jump never starts mid-way through whatever
     // frame idle/running happened to be on last.
-    _updateAnimationState(ducking) {
+    _updateAnimationState() {
         let nextAnimation;
         if (this.attacking) {
             nextAnimation = 'attack';
         } else if (!this.grounded) {
             nextAnimation = 'jump';
-        } else if (ducking || this.vx === 0) {
+        } else if (this.vx === 0) {
             nextAnimation = 'idle';
         } else {
             nextAnimation = 'running';

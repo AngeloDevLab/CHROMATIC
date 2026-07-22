@@ -90,8 +90,12 @@ export class GameState extends State {
         // "Terrain/Collision" - passed explicitly rather than renaming in Tiled.
         // One-way: the level is built from several stacked walkable floors, not
         // solid walls, so every terrain tile only blocks when landed on from
-        // above (see utils/Collision.js).
-        this.collision = new Collision(this.level, 'terrain', { oneWay: true });
+        // above (see utils/Collision.js). `walls` is an optional second layer,
+        // always fully solid regardless of the one-way terrain above - lets a
+        // level mark specific ledge/corner tiles as real walls (blocks sideways
+        // movement too) without losing one-way behavior everywhere else.
+        // Tolerates not existing yet - opt-in per level as it gets painted in.
+        this.collision = new Collision(this.level, 'terrain', { oneWay: true, wallLayerName: 'walls' });
         this.camera = new Camera(this.game.width, this.game.height);
 
         this.levelCanvas = document.createElement('canvas');
@@ -144,6 +148,7 @@ export class GameState extends State {
         this.game.input.clearAttackPress();
         this.game.input.clearPausePress();
         this.game.input.clearJumpPress();
+        this.game.input.clearDropPress();
 
         this.paused = false;
         this.panel = new Panel(this.game.overlay);

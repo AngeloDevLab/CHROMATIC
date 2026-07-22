@@ -2,12 +2,16 @@ const KEY_MAP = {
     ArrowLeft: 'left', KeyA: 'left',
     ArrowRight: 'right', KeyD: 'right',
     ArrowUp: 'jump', Space: 'jump', KeyW: 'jump',
-    ArrowDown: 'duck', KeyS: 'duck',
+    ArrowDown: 'drop', KeyS: 'drop',
 };
 
 export class InputHandler {
     constructor(canvas) {
-        this.actions = { left: false, right: false, jump: false, duck: false };
+        // `drop` (Drop-Through-Platform, Player.js) only needs the edge-
+        // triggered press below, not a held state like the movement keys -
+        // it's kept here anyway purely as the same repeat-guard `jump` uses
+        // (see _onKeyDown), not read anywhere else.
+        this.actions = { left: false, right: false, jump: false, drop: false };
         // Attack is a discrete click, not a held state like the movement keys -
         // tracked separately as an edge-triggered flag consumed (and cleared) by
         // consumeAttackPress(), so a click fires the swing exactly once instead of
@@ -23,6 +27,12 @@ export class InputHandler {
         // jump buffering) - guarded against the browser's own keydown auto-repeat
         // in _onKeyDown, or holding the key would re-trigger this every repeat tick.
         this._jumpPressed = false;
+
+        // Same edge-triggered pattern as jump (guarded the same way against
+        // keydown auto-repeat) - Drop-Through-Platform is a discrete "drop
+        // once" action, not something that should keep re-triggering while
+        // the key is held.
+        this._dropPressed = false;
 
         // Same edge-triggered pattern as attack/pause - used for the level-end
         // portal (GameState.js), a discrete "use it" action rather than a held
@@ -67,7 +77,7 @@ export class InputHandler {
         this.actions.left = false;
         this.actions.right = false;
         this.actions.jump = false;
-        this.actions.duck = false;
+        this.actions.drop = false;
     }
 
     _onKeyDown(e) {
@@ -83,6 +93,7 @@ export class InputHandler {
         const action = KEY_MAP[e.code];
         if (!action) return;
         if (action === 'jump' && !this.actions.jump) this._jumpPressed = true;
+        if (action === 'drop' && !this.actions.drop) this._dropPressed = true;
         this.actions[action] = true;
     }
 
@@ -131,6 +142,17 @@ export class InputHandler {
 
     clearJumpPress() {
         this._jumpPressed = false;
+    }
+
+    // Same "at most once per press" contract as consumeJumpPress().
+    consumeDropPress() {
+        if (!this._dropPressed) return false;
+        this._dropPressed = false;
+        return true;
+    }
+
+    clearDropPress() {
+        this._dropPressed = false;
     }
 
     consumePausePress() {

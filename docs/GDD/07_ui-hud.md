@@ -7,7 +7,7 @@
 | Chapter/Level | Top right | Progress display, HTML overlay text |
 | Boss HP Bar | Top center | Large, dramatic - only during boss fights. Canvas bar, HTML number |
 | Ability Popup | Center of screen | On unlock + short tutorial, HTML overlay |
-| Left/Right/Duck Button | Bottom left | Mobile only, HTML buttons (touch hit-testing/press states) |
+| Left/Right/Drop Button | Bottom left | Mobile only, HTML buttons (touch hit-testing/press states) |
 | Jump/Attack Button | Bottom right | Mobile only, attack with auto-targeting of the nearest enemy, HTML buttons |
 
 No score. Progress is measured through colored areas, defeated bosses, and chapter status.

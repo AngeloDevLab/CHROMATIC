@@ -108,7 +108,7 @@ Story: The Darkness devours the world. Just before it buries everything beneath 
 
 | Lvl | Slot | Content |
 |---|---|---|
-| 1 | Combat (Tutorial) | Introduce running, jumping, ducking, melee combat; Patroller and Charger introduced |
+| 1 | Combat (Tutorial) | Introduce running, jumping, dropping through platforms, melee combat; Patroller and Charger introduced |
 | 2 | Combat (Tutorial) | Introduce ranged combat (sword throw); Shooter and Sentinel introduced |
 | 3 | Boss (Miniboss) | First Miniboss, introduces first boss theme → 1 Token |
 | 4 | Special | A trapdoor leads to a random underground level |

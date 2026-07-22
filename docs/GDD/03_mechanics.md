@@ -22,7 +22,7 @@ Purely visual feature - no combat bonus for the player and no malus for enemies 
 |---|---|---|
 | Run | Base | A/D (Desktop), Left/Right Button (Mobile) |
 | Jump | Base | W / Spacebar (Desktop), Jump Button (Mobile) |
-| Duck | Base | S (Desktop), Duck Button (Mobile) |
+| Drop Through Platform | Base | S / Down Arrow (Desktop), Drop Button (Mobile) |
 | Double Jump | Unlockable | Press Jump twice |
 | Dash | Unlockable | Double-tap A or D |
 | Wall Jump | Unlockable, only from Chap 2 | Jump off a wall |
