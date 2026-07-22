@@ -3,6 +3,21 @@
 // triggerFullReveal().
 const FULL_REVEAL_DURATION_SECONDS = 1.5;
 
+// Shared with paintGreyFrom() below and exposed as a plain CSS string (see
+// ColorZone's own greyFilterCSS field) so other always-full-color elements
+// that want the *same* grey treatment as the terrain plane (e.g. Portal.js,
+// while unrevealed) can match it exactly instead of re-deriving the same
+// filter formula from a second copy of the tint constants.
+export function buildGreyFilter(greyBrightness, greyTint) {
+    const filters = ['grayscale(1)'];
+    if (greyTint) {
+        const { sepia, hueRotate, saturate } = greyTint;
+        filters.push(`sepia(${sepia})`, `hue-rotate(${hueRotate}deg)`, `saturate(${saturate})`);
+    }
+    filters.push(`brightness(${greyBrightness})`);
+    return filters.join(' ');
+}
+
 export class ColorZone {
     // fadeDurationSeconds: how long a reveal stays visible before fading back to
     // grey. Infinity (default) matches the real game mechanic (03_mechanics.md 4.1 -
@@ -26,6 +41,7 @@ export class ColorZone {
         this.stampIntervalSeconds = stampIntervalSeconds;
         this.greyBrightness = greyBrightness;
         this.greyTint = greyTint;
+        this.greyFilterCSS = buildGreyFilter(greyBrightness, greyTint);
 
         this.greyTemplateCanvas = document.createElement('canvas');
         this.greyTemplateCanvas.width = width;
@@ -70,13 +86,7 @@ export class ColorZone {
         templateCtx.clearRect(0, 0, this.width, this.height);
         templateCtx.save();
 
-        const filters = ['grayscale(1)'];
-        if (this.greyTint) {
-            const { sepia, hueRotate, saturate } = this.greyTint;
-            filters.push(`sepia(${sepia})`, `hue-rotate(${hueRotate}deg)`, `saturate(${saturate})`);
-        }
-        filters.push(`brightness(${this.greyBrightness})`);
-        templateCtx.filter = filters.join(' ');
+        templateCtx.filter = this.greyFilterCSS;
 
         templateCtx.drawImage(colorSourceCanvas, 0, 0);
         templateCtx.restore();

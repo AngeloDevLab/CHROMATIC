@@ -165,7 +165,7 @@ export class GameState extends State {
             closed: this.game.assets.getImage('portal-closed'),
             open: this.game.assets.getImage('portal-open'),
             opens: this.game.assets.getImage('portal-opens'),
-        }) : null;
+        }, this.colorZone.greyFilterCSS) : null;
         if (!this.portal) {
             console.warn(`GameState: no ExitPortal object in this level - it can't be completed.`);
         }
@@ -311,6 +311,10 @@ export class GameState extends State {
         if (!this._levelFullyRevealed && this.enemies.length > 0 && this.enemies.every((enemy) => enemy.dead)) {
             this._levelFullyRevealed = true;
             this.colorZone.triggerFullReveal(this.player.centerX, this.player.visualCenterY);
+            // The portal's own reveal isn't position-keyed (see Portal.js) -
+            // but a full-level reveal means everything around it is
+            // revealed too by the time it's even usable, so it should be.
+            if (this.portal) this.portal.revealed = true;
         }
 
         if (!this.deathSequence.active && this.player.dead && this.player.deathAnimationFinished) this._startDeathSequence();
@@ -338,10 +342,21 @@ export class GameState extends State {
     // reasoning as the attack click, so a stray press well outside range
     // doesn't linger and fire the moment the player later steps into it.
     _updatePortal() {
-        if (this.portal) this.portal.active = this._levelFullyRevealed;
-
         const interactPressed = this.game.input.consumeInteractPress();
-        const inRange = !!this.portal && this.portal.isOpen && !this.player.dead
+        if (!this.portal) return;
+
+        this.portal.active = this._levelFullyRevealed;
+
+        // Same reveal radius as the player's own live-glow/permanent trail
+        // (PLAYER_REVEAL_RADIUS) - walking within it reveals the portal same
+        // as it would any other ground, even before the level's full-reveal
+        // (which also sets this, see update() above) guarantees it later.
+        if (!this.portal.revealed) {
+            const dist = Math.hypot(this.player.centerX - this.portal.centerX, this.player.visualCenterY - this.portal.centerY);
+            if (dist <= PLAYER_REVEAL_RADIUS) this.portal.revealed = true;
+        }
+
+        const inRange = this.portal.isOpen && !this.player.dead
             && Math.hypot(this.player.centerX - this.portal.centerX, this.player.centerY - this.portal.centerY) <= PORTAL_INTERACT_RANGE_PX;
 
         this.interactPromptEl.hidden = !inRange;
@@ -453,12 +468,15 @@ export class GameState extends State {
                 radius: PLAYER_REVEAL_RADIUS,
             });
         }
+        // Ahead of the enemies/player below, so it reads as part of the
+        // background/level furniture rather than a foreground object they'd
+        // otherwise render behind.
+        this.portal?.render(ctx);
         for (const enemy of this.enemies) {
             if (enemy.buried) continue;
             enemy.render(ctx);
             this.hud.renderEnemyBar(ctx, enemy);
         }
-        this.portal?.render(ctx);
         for (const projectile of this.projectiles) projectile.render(ctx);
         for (const projectile of this.enemyProjectiles) projectile.render(ctx);
         if (this.deathSequence.active) {
