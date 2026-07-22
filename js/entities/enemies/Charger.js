@@ -6,13 +6,22 @@ import { Enemy } from '../Enemy.js';
 // own raw value instead of guessing a similar bump.
 const CHARGE_HP = 25;
 
-const DEFAULT_CHARGE_SPEED = 170;
+// Nudged down twice now (170 -> 140 -> 115) - first-guess, needs playtesting.
+const DEFAULT_CHARGE_SPEED = 115;
 // How close (and how level with the charger, vertically) the player needs to
 // be to trigger a charge - a simple distance+height check rather than a real
 // line-of-sight raycast, consistent with the rest of this codebase's 2D
-// collision checks.
-const CHARGE_RANGE_PX = 150;
+// collision checks. Raised from 150 for an earlier detection/telegraph.
+const CHARGE_RANGE_PX = 190;
 const CHARGE_HEIGHT_TOLERANCE_PX = 24;
+// A charge travels this far and then stops, win or lose - a bit more than
+// CHARGE_RANGE_PX so it usually still reaches a player who hasn't moved, but
+// bounded rather than an indefinite homing chase (facing is locked once at
+// the start below, not re-aimed every frame) - a dodge (sidestep, jump over)
+// actually ends the encounter instead of the charger endlessly re-tracking.
+// Trimmed from 220 alongside the CHARGE_RANGE_PX increase above, keeping it
+// just past that range rather than growing the gap between them.
+const DEFAULT_CHARGE_DISTANCE_PX = 210;
 // After a charge ends (wall hit or losing the player), how long before it can
 // trigger another one - without this it would immediately re-charge the
 // instant conditions are met again (e.g. right off a wall bounce), which
@@ -34,14 +43,21 @@ export class Charger extends Enemy {
         this.player = null;
         this.chargeSpeed = DEFAULT_CHARGE_SPEED;
         this.chargeCooldownSeconds = DEFAULT_CHARGE_COOLDOWN_SECONDS;
+        this.chargeDistance = DEFAULT_CHARGE_DISTANCE_PX;
         this.charging = false;
         this.chargeCooldownTimer = 0;
+        this.chargeTraveled = 0;
     }
 
-    enableCharge(player, { chargeSpeed = DEFAULT_CHARGE_SPEED, chargeCooldownSeconds = DEFAULT_CHARGE_COOLDOWN_SECONDS } = {}) {
+    enableCharge(player, {
+        chargeSpeed = DEFAULT_CHARGE_SPEED,
+        chargeCooldownSeconds = DEFAULT_CHARGE_COOLDOWN_SECONDS,
+        chargeDistance = DEFAULT_CHARGE_DISTANCE_PX,
+    } = {}) {
         this.player = player;
         this.chargeSpeed = chargeSpeed;
         this.chargeCooldownSeconds = chargeCooldownSeconds;
+        this.chargeDistance = chargeDistance;
     }
 
     // Punishing by design (05_enemies-bosses.md 6.1) to offset the Charger's
@@ -81,13 +97,19 @@ export class Charger extends Enemy {
                 // committed, a charge is meant to be a full-commitment "rush,
                 // then recover" beat (05_enemies-bosses.md 6.1), not something
                 // the player can escape by jumping over the height tolerance
-                // mid-rush. Only a wall (above) or actually connecting with
-                // the player (the knockbackTimer branch above) still ends one
-                // early.
+                // mid-rush. Facing is locked in for the whole charge right
+                // here, not re-aimed every frame - combined with the fixed
+                // chargeDistance below, a charge is a straight dash at a
+                // fixed target, not a homing chase that re-tracks if the
+                // player dodges sideways or doubles back.
                 if (!this.charging && this.chargeCooldownTimer <= 0 && this._canSeePlayer()) {
+                    this.facing = this.player.centerX >= this.centerX ? 1 : -1;
+                    this.chargeTraveled = 0;
                     this._setCharging(true);
+                } else if (this.charging) {
+                    this.chargeTraveled += this.chargeSpeed * dt;
+                    if (this.chargeTraveled >= this.chargeDistance) this._setCharging(false);
                 }
-                if (this.charging) this.facing = this.player.centerX >= this.centerX ? 1 : -1;
             }
 
             this.vx = (this.charging ? this.chargeSpeed : this.patrolSpeed) * this.facing;
