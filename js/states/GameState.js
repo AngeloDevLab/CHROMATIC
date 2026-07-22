@@ -103,10 +103,13 @@ export class GameState extends State {
         this.levelCanvas.height = this.level.pixelHeight;
         const levelCtx = this.levelCanvas.getContext('2d');
 
-        // Test: reuse the main menu's parallax image as a level backdrop, tiled
-        // across the full level width and cover-fit to its height - real
-        // per-level background art (10_technical-architecture.md 11.6.1) replaces
-        // this once ready.
+        // Base backdrop every Prologue level shares, tiled across the full
+        // level width and cover-fit to its height - reuses the main menu's
+        // forest image (10_technical-architecture.md 11.6.1). Tiled's own
+        // "background" tile layer (drawn right after, per layerOrder) paints
+        // on top of this per level - e.g. a cave-interior level (the planned
+        // Gimmick level) covers this forest backdrop entirely with its own
+        // rock/cave art instead of letting it show through gaps.
         const parallax = this.game.assets.getImage('menu-parallax-bg');
         const parallaxScale = this.level.pixelHeight / parallax.height;
         const parallaxWidth = parallax.width * parallaxScale;
