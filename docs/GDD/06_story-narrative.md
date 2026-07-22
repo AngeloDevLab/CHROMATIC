@@ -37,7 +37,5 @@ His sword is not a carried item, but a part of his energy that he only manifests
 
 - Cutscenes between chapters (skippable)
 - NPC dialogue in the world
-- Found notes and fragments, mainly in Lore-Secrets (see [02_game-structure.md](02_game-structure.md) 2.5) - documented only for now, not yet built:
-  - **Terminal/Console** - player presses E, a text overlay opens. Fits the Sci-Fi/high-tech theme of the ancient outpost ruins well. Needs one reusable overlay/reader system; each terminal just supplies its own text content, no per-terminal code.
-  - **Letters/Fragments** - a pickup that opens the same overlay reader. Mechanically identical to the Terminal, just a different sprite/trigger.
-  - **Environmental storytelling** - the room tells its own story (a broken Guardian statue, an old outpost) - costs only a tileset/decoration piece, no code at all. The cheapest of the three.
+
+A free/low-cost Lore-Secret variant plus dedicated lore-delivery devices (Terminal/Console, Letters/Fragments, Environmental storytelling) were designed alongside the Buff-Secret split, then cut for scope along with it - see `_ideas-inbox.md`.

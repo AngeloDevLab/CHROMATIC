@@ -12,20 +12,18 @@ Working list of what's next. Update together at the end of a session (see `CHANG
   - Deprioritized for now (cosmetic, Firefox/Edge-only, not urgent) - revisit and reapply the hard-mask fix (with the live-halo trade-off, or a better idea) when there's appetite for another pass.
 - Jump/movement/combat feel pass constants (coyote time, jump buffering, variable jump height, movement accel/decel, hit-stop, knockback) are still first-guess defaults, needs real playtesting to tune. Knockback speeds nudged down slightly this session, still not final.
 - Charger's constants (charge range/height tolerance, charge speed, cooldown, HP) are also first-guess, needs real playtesting - see `entities/enemies/Charger.js`.
-- Special Attack concept (replaces the planned Slide+Attack/Air Attack unlocks from `03_mechanics.md` 4.2 with one contextual button): Ground Special = short forward slide, hit + knockback; Air Special = freeze time, aim an arrow toward the mouse, left-click confirms a dash-attack in that direction, then normal gravity resumes. Both would apply a generic stagger status on hit (later extendable to per-enemy reactions, e.g. Patroller freezes, Shooter stops firing - blocked on those enemy types existing at all). Needs dedicated sprite sheets eventually (attack.png as placeholder in the meantime), no sound yet, no unlock-gating since there's no ability-unlock system in code at all yet. Parked for now - current normal Attack already works mid-air (locks vx, gravity/vy keep resolving) which covers the immediate need.
 
 ## Difficulty & Balancing
 
-- Full enemy damage/HP table once Sentinel/Shooter actually exist in code - Patroller is at 10 dmg/50 HP, Charger at 10 dmg/25 HP (both Easy/Hard-scaled via the shared difficulty multiplier), higher numbers reserved for later/stronger enemy types instead.
+- Full enemy damage/HP table once Sentinel/Shooter actually exist in code - Patroller is at 10 dmg/50 HP, Charger at 10 dmg/25 HP (both Easy/Hard-scaled via the shared difficulty multiplier). Original balancing draft (`docs/GDD/05_enemies-bosses.md` 6.5) staged Charger/Shooter for "Zone 2+"/"Zone 3+" (later, stronger-tier introduction) - now that all 4 types are introduced together within the Prologue's Lvl 1-2 (see `docs/GDD/02_game-structure.md` 2.4/2.6), that pacing assumption needs revisiting once Shooter/Sentinel exist in code; the early introduction may need the numbers softened.
 - In-level UI showing the active difficulty modifier (e.g. "+100% damage") while actually playing a level - concept only, placement/format not decided yet. (The difficulty *selection* panel in the main menu already states the -50%/+100% info; this is about surfacing it during gameplay too.)
 - Ranged Sword Throw's Prisma cost (10/throw, see `mechanics/Combat.js`) is a first-guess, needs playtesting against the Shield regen rate (1/sec) to see if it feels right rather than either free-spam or too punishing.
 
 ## Enemies & Ranged Combat
 
-- Remaining enemy types: Shooter, Sentinel (Patroller and Charger now implemented - see `entities/enemies/Charger.js` for the subclass pattern to follow).
+- Remaining enemy types needed for the Prologue: Shooter, Sentinel (Patroller and Charger already implemented - see `entities/enemies/Charger.js` for the subclass pattern to follow). Both are needed within the Prologue itself now, Lvl 2 specifically (see `docs/GDD/02_game-structure.md` 2.6), not deferred to Chap 1 anymore.
 - Shooter needs: a Projectile entity and a shoot animation (code-driven aim/rotation vs. baked per-direction sprite frames - still undecided) - can reuse the swept wall-collision pattern (`js/entities/Projectile.js`, built for the player's ranged attack) instead of a single point-check that risks tunneling through thin walls at high speed.
 - Ranged attack (sword throw) is a deliberate v1 simplification: auto-targets the nearest enemy (no real click-direction aiming) and is a single-hit throw (no boomerang return-hit) - revisit both if playtesting says otherwise.
-- Per-enemy special reactions (Patroller freezes, Shooter stops firing, etc.) - ties into the Special Attack concept above, blocked on those enemy types existing.
 
 ## Tooling
 
@@ -38,7 +36,7 @@ Working list of what's next. Update together at the end of a session (see `CHANG
 - Each level needs an `ExitPortal` object placed in Tiled (plain marker, no sprite attached - see `10_technical-architecture.md` 11.6.2) for the level-complete/portal flow to actually work; Lv_1/Lv_2 don't have one yet.
 - Miniboss + Templateboss encounters (Prologue has 2 per 05_enemies-bosses.md 6.3).
 - Token economy + Merchant.
-- Secret Rooms + permanent character buffs (now split into Buff-Secret/Lore-Secret, see `docs/GDD/02_game-structure.md` 2.5) - Lore-Secret delivery mechanisms (Terminal/Letters/Environmental, see `docs/GDD/06_story-narrative.md` 7.5) are documented only, not built.
+- Secret Room + permanent character buff system (see `docs/GDD/02_game-structure.md` 2.5) - documented only, not built. A free/low-cost Lore-Secret variant was designed alongside this and cut for scope, see `docs/GDD/_ideas-inbox.md`.
 - Touch controls (desktop/keyboard only right now).
 - LocalStorage save system - `Game.completedLevels` (session-only right now, resets on reload) is the intended save/load target once this exists.
 - Audio: Web Audio API GainNode hierarchy (Master -> Music/SFX/Ambience), tracks need downloading + wiring in - see the earlier music-architecture discussion (generic ambient playlist + dedicated boss track leaning).

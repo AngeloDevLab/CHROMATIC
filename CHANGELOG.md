@@ -1,10 +1,21 @@
 # Changelog
 
-All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://keepachangelog.com/). Versions here are development milestones, not published releases (no npm/package.json) - `docs/GDD/11_scope-milestones.md` 12.1 defines **v1.0** as the complete Prologue + Chap 1; everything below 1.0 tracks progress toward that.
+All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://keepachangelog.com/). Versions here are development milestones, not published releases (no npm/package.json) - `docs/GDD/11_scope-milestones.md` 12.1 defines **v1.0** as the complete Prologue (Chap 1 moved to Phase 2/Optional, see 0.4.4 below); everything below 1.0 tracks progress toward that. Track actual completion via `docs/GDD/11_scope-milestones.md` 12.4, not this version number - it counts shipped increments, not % of scope done.
+
+Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
 ## [Unreleased]
 
-## [0.8.2] - 2026-07-22
+## [0.4.4] - 2026-07-22
+
+### Changed
+- v1 scope cut to Prologue-only (was Prologue + Chap 1) - Chap 1's ~18 remaining levels didn't fit the timeline. Chap 1 moves to Phase 2/Optional. See `docs/GDD/11_scope-milestones.md` 12.1-12.3.
+- All 4 enemy types (Patroller, Charger, Shooter, Sentinel) now introduced within the Prologue itself (Lvl 1: Patroller + Charger, Lvl 2: Shooter + Sentinel), instead of Shooter/Sentinel waiting for Chap 1 - see `docs/GDD/02_game-structure.md` 2.4/2.6.
+- Secret Rooms simplified back to a single type (permanent character buff only) - the Lore-Secret variant and its delivery devices (Terminal, Letters/Fragments, Environmental storytelling) were cut for scope, moved to `docs/GDD/_ideas-inbox.md`.
+- Special Attack redesign concept (Ground/Air special via one contextual button) cut for scope, moved to `docs/GDD/_ideas-inbox.md`.
+- Added a living v1 progress checklist (`docs/GDD/11_scope-milestones.md` 12.4) tracking actual completion against the scope list.
+
+## [0.4.3] - 2026-07-22
 
 ### Added
 - Ranged Sword Throw now costs 10 Prisma per throw - previously free, so it could be spammed indefinitely against an enemy sitting just out of melee range. A "No Prisma for Ranged Attack" popup appears over the player instead of throwing when there isn't enough.
@@ -17,7 +28,7 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 ### Fixed
 - Melee-vs-ranged attack mode decision compared center-to-center distance instead of the actual gap between hitboxes - since enemies (64px) and the player (32px) aren't the same width, standing right next to an enemy could still register as "out of melee range" and fire a (now Prisma-costing) ranged throw instead of a free melee swing.
 
-## [0.8.1] - 2026-07-20
+## [0.4.2] - 2026-07-20
 
 ### Changed
 - ColorZone's enemy-darken and player-live-glow rendering now operate on small local patches instead of full canvas-sized buffers - `overlayCanvas`/`greyTemplateCanvas` are sized to the whole level, not the viewport, so darken() (running once per living enemy per frame) and the live-glow were doing roughly 10 full-level-sized clear+copy operations every frame regardless of camera position. A significant performance fix, reported as considerably better in Firefox/Edge, browsers that handle repeated full-surface canvas compositing noticeably worse than Chrome.
@@ -26,7 +37,7 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 ### Fixed
 - A visible box/seam briefly appeared around the player's live-glow reveal circle after the patch-based rendering change above - the base overlay draw was covering the same area a moment before the "hole" was punched into it, a no-op composite that left the hole invisible; fixed by excluding that region from the base draw instead of double-compositing it.
 
-## [0.8.0] - 2026-07-19
+## [0.4.1] - 2026-07-19
 
 ### Added
 - Real player death animation (`dead.png`) plays out before the ghost-rise sequence starts, instead of cutting straight to the ghost.
@@ -49,7 +60,7 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 - Charger's passive Prisma contact damage was killing it off its own charges (25 HP / 10 contact damage = dead in 3 touches) - it no longer takes that self-damage while charging.
 - Worldmap level-lock/completion checks compared against the wrong index (array position vs. the actual level number) - would have kept every level beyond the first permanently locked once completions started being tracked.
 
-## [0.7.0] - 2026-07-19
+## [0.4.0] - 2026-07-19
 
 ### Added
 - Fall-into-pit death: crossing a kill plane below the level's bottom edge now kills the player instead of letting them fall forever while still controlling mid-air.
@@ -67,7 +78,7 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 - Jump apex differing between machines/browsers - root-caused to the previous variable-timestep integration being step-size sensitive (see the fixed-timestep change above); the earlier `dt` clamp had only been a partial/preventive fix.
 - Player death sequence: the ghost's rise-and-fade now stays pinned to the visible bottom edge of the screen when the actual death position is off-screen (e.g. after falling into a pit), instead of playing invisibly below the camera's own clamp.
 
-## [0.6.0] - 2026-07-18
+## [0.3.1] - 2026-07-18
 
 ### Added
 - Player invincibility frames after taking damage, independent of any single enemy's own contact cooldown - stops multiple overlapping enemies (or one lingering enemy) from stacking damage every frame.
@@ -90,7 +101,7 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 - A dead player ("ghost") no longer keeps dealing contact damage to enemies it happens to be overlapping at its frozen death position.
 - A colored hole no longer punches through at the death spot right after the death sequence's full-darken effect finishes.
 
-## [0.5.0] - 2026-07-16
+## [0.3.0] - 2026-07-16
 
 ### Added
 - Main menu reworked into a living reveal/darken choreography: the player runs in from a random side leaving a permanent color trail, then a maggot follows and erases it, then it repeats.
@@ -100,13 +111,13 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 ### Fixed
 - Asset paths broken by tileset/level file renames (`tileset-grass` → `tileset_grass`, `main-menu.json` → `mainMenu.json`) that left the game stuck on the loading screen.
 
-## [0.4.1] - 2026-07-15
+## [0.2.2] - 2026-07-15
 
 ### Fixed
 - Attack firing immediately on entering GameState from a leftover UI click (mousedown is now scoped to the canvas instead of the whole window).
 - Dead manifest entries still pointing at the removed physics-test placeholder assets.
 
-## [0.4.0] - 2026-07-15
+## [0.2.1] - 2026-07-15
 
 ### Added
 - Color mechanic wired into the real Prologue Level 1: permanent reveal trail, player clamped to the level's horizontal bounds.
@@ -117,12 +128,12 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 - Enemies darken colored ground as they cross it; the whole level reveals in color once every enemy is defeated.
 - `CLAUDE.md` project documentation for future dev sessions.
 
-## [0.3.0] - 2026-07-14
+## [0.2.0] - 2026-07-14
 
 ### Added
 - Full New Game flow: `CutsceneState` (intro), `WorldmapState` with level-select nodes, `GameState` with real player movement/collision.
 
-## [0.2.0] - 2026-07-13
+## [0.1.1] - 2026-07-13
 
 ### Added
 - Main menu buttons, panels (Settings/Info/Difficulty), favicon.

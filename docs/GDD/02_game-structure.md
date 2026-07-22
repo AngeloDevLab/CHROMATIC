@@ -77,20 +77,17 @@ New enemy types only appear from certain zones onward - not everything from the 
 
 "Stronger variants" are the same sprites with a different color (re-tint) plus higher stats from [05_enemies-bosses.md](05_enemies-bosses.md) 6.5 - no new enemy assets, to save art budget.
 
+**Prologue-only v1 note**: this pacing was designed to span Prologue + Chap 1. With v1 cut to Prologue only (see [11_scope-milestones.md](11_scope-milestones.md) 12.1), all 4 base types are introduced within the Prologue's own first 2 levels instead (see 2.6) - the Zone 2/3 pacing above and "stronger variants" remain Phase 2/Chap 1 territory. Balance impact of the earlier introduction not yet playtested (see `TODO.md`).
+
 ## 2.5 Secret Rooms & Token Economy
 
-A Secret Room is only visible once the player has colored the surrounding area. Not every level has a Secret Room. Two distinct kinds, not to be conflated:
+A Secret Room is only visible once the player has colored the surrounding area. Not every level has a Secret Room. Costs 50 Shield/Prisma to open (see [03_mechanics.md](03_mechanics.md) 4.5) - the player pays with their own color energy to bring more color back to the world. Fixed value for now, may later be balanced as a % of Max Prisma.
 
-| Type | Cost | Reward | Frequency |
-|---|---|---|---|
-| Buff-Secret | 50 Shield/Prisma (see [03_mechanics.md](03_mechanics.md) 4.5) - the player pays with their own color energy | 1 permanent character buff | Rare - not every map |
-| Lore-Secret | Free or low cost | Story/lore only, no mechanical reward | Can appear more often than Buff-Secrets |
-
-The Prisma paywall exists to make Buff-Secrets a real trade-off (power now vs. power later). Lore-Secrets are about narrative payoff, not stat progression - gating them behind the same cost would work against the point of having them show up more often.
+The Prisma paywall makes opening one a real trade-off (power now vs. power later), rewarding 1 permanent character buff per Secret Room found. (A free/low-cost lore-only variant was considered and cut for scope - see `_ideas-inbox.md`.)
 
 | Source | Reward |
 |---|---|
-| Buff-Secret | 1 permanent character buff (e.g. +Max Health, +Shield Regen, +Shield Max) |
+| Secret Room | 1 permanent character buff (e.g. +Max Health, +Shield Regen, +Shield Max) |
 | Miniboss | 1 Token |
 | Templateboss | 2 Tokens |
 | Chapterboss | 2 Tokens (same as Templateboss, same tier slot) |
@@ -111,8 +108,8 @@ Story: The Darkness devours the world. Just before it buries everything beneath 
 
 | Lvl | Slot | Content |
 |---|---|---|
-| 1 | Combat (Tutorial) | Introduce running, jumping, ducking, melee combat |
-| 2 | Combat (Tutorial) | Introduce ranged combat (sword throw) |
+| 1 | Combat (Tutorial) | Introduce running, jumping, ducking, melee combat; Patroller and Charger introduced |
+| 2 | Combat (Tutorial) | Introduce ranged combat (sword throw); Shooter and Sentinel introduced |
 | 3 | Boss (Miniboss) | First Miniboss, introduces first boss theme → 1 Token |
 | 4 | Special | A trapdoor leads to a random underground level |
 | 5 | Secret | Secret Room, easy to find → first character buff |
