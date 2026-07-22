@@ -4,6 +4,19 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-07-22
+
+### Added
+- Ranged Sword Throw now costs 10 Prisma per throw - previously free, so it could be spammed indefinitely against an enemy sitting just out of melee range. A "No Prisma for Ranged Attack" popup appears over the player instead of throwing when there isn't enough.
+- Asset-load failures during boot now show a visible red error message instead of hanging on "Loading..." forever with only a console error.
+
+### Changed
+- Charger's charge no longer breaks off from taking a sword/thrown-sword hit, or from the player jumping outside its line-of-sight height tolerance mid-rush - only running into a wall or actually connecting with the player's body still ends one early. Makes the low-HP Charger's rush read as a real commitment/punish instead of something a single graze or hop cancels.
+- `GameState.js` split up for maintainability: enemy creation moved to `entities/EnemyFactory.js`, the death ghost-rise/fade sequence moved to `mechanics/DeathSequence.js`, and the Pause/Game Over panels now share one helper instead of near-duplicate markup.
+
+### Fixed
+- Melee-vs-ranged attack mode decision compared center-to-center distance instead of the actual gap between hitboxes - since enemies (64px) and the player (32px) aren't the same width, standing right next to an enemy could still register as "out of melee range" and fire a (now Prisma-costing) ranged throw instead of a free melee swing.
+
 ## [0.8.1] - 2026-07-20
 
 ### Changed
