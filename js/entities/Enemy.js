@@ -89,10 +89,23 @@ export class Enemy extends Entity {
     }
 
     // Combat feel: a hit shoves the enemy back briefly instead of it just
-    // absorbing damage in place - see Combat.js callers.
+    // absorbing damage in place - see Combat.js's resolveContactDamage
+    // (the passive Prisma barrier / body-contact push).
     applyKnockback(vx) {
         this.vx = vx;
         this.knockbackTimer = KNOCKBACK_LOCK_SECONDS;
+    }
+
+    // Separate from applyKnockback above - used only by Combat.js's active
+    // attack resolvers (resolveMeleeAttack/resolveProjectileHits), so a
+    // subclass can make itself immune to being staggered by an attack
+    // without also losing the passive contact-push reaction (Charger.js
+    // overrides only this one, so charging through the player's body still
+    // bounces it back via applyKnockback instead of clipping through).
+    // Plain delegation here - every non-Charger enemy reacts identically to
+    // both knockback sources.
+    applyAttackKnockback(vx) {
+        this.applyKnockback(vx);
     }
 
     setAnimations(animations, initial = 'running') {

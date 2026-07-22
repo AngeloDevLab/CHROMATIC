@@ -79,7 +79,7 @@ export function resolveMeleeAttack(player, enemies) {
     for (const enemy of enemies) {
         if (!enemy.dead && rectsOverlap(hitbox, enemy)) {
             enemy.takeDamage(PLAYER_ATTACK_DAMAGE);
-            enemy.applyKnockback(player.facing * ENEMY_KNOCKBACK_SPEED);
+            enemy.applyAttackKnockback(player.facing * ENEMY_KNOCKBACK_SPEED);
             hits.push({ enemy, amount: PLAYER_ATTACK_DAMAGE });
         }
     }
@@ -99,7 +99,7 @@ export function resolveProjectileHits(projectiles, enemies) {
             if (!rectsOverlap(projectile, enemy)) continue;
 
             enemy.takeDamage(projectile.damage);
-            enemy.applyKnockback(projectile.direction * ENEMY_KNOCKBACK_SPEED);
+            enemy.applyAttackKnockback(projectile.direction * ENEMY_KNOCKBACK_SPEED);
             hits.push({ enemy, amount: projectile.damage });
             projectile.dead = true;
             break;
