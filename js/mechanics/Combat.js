@@ -69,8 +69,15 @@ export function findNearestEnemy(player, enemies) {
 // Mode-decision only - reuses ATTACK_REACH_PX so melee/ranged never overlap
 // or gap. The actual melee hit still goes through resolveMeleeAttack's own
 // facing-direction hitbox rect below, this just decides which path to take.
+// Edge-to-edge gap, not center-to-center distance - entities aren't the same
+// width (enemies are 64px, the player's hitbox is 32px), so two touching
+// bodies can already be 48px+ apart center-to-center despite having zero gap
+// between them. A negative gap (already overlapping) still counts as in range.
 export function isWithinMeleeRange(player, enemy) {
-    return Math.abs(enemy.centerX - player.centerX) <= ATTACK_REACH_PX;
+    const gap = player.centerX <= enemy.centerX
+        ? enemy.x - (player.x + player.width)
+        : player.x - (enemy.x + enemy.width);
+    return gap <= ATTACK_REACH_PX;
 }
 
 // Returns the enemies actually hit (as { enemy, amount }) so the caller can
