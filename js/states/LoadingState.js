@@ -11,7 +11,18 @@ export class LoadingState extends State {
     }
 
     async _load() {
-        await this.game.assets.loadManifest({
+        try {
+            await this._loadManifest();
+            this.game.stateMachine.change('menu');
+        } catch (error) {
+            console.error(error);
+            this.label.textContent = `Failed to load: ${error.message}. Reload the page to try again.`;
+            this.label.classList.add('error');
+        }
+    }
+
+    _loadManifest() {
+        return this.game.assets.loadManifest({
             images: {
                 'menu-tileset': 'assets/images/tilesets/tileset_grass.png',
                 'guardian-idle': 'assets/images/character/idle.png',
@@ -43,7 +54,6 @@ export class LoadingState extends State {
                 'lv2-level': 'assets/levels/Lv_2.json',
             },
         });
-        this.game.stateMachine.change('menu');
     }
 
     exit() {

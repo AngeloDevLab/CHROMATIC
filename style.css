@@ -80,6 +80,10 @@ body {
   pointer-events: none;
 }
 
+.loading-label.error {
+  color: #ff5c5c;
+}
+
 .menu-title {
   position: absolute;
   top: 40px;
