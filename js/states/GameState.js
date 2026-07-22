@@ -16,6 +16,7 @@ import {
     findNearestEnemy,
     isWithinMeleeRange,
     PLAYER_ATTACK_DAMAGE,
+    RANGED_ATTACK_PRISMA_COST,
 } from '../mechanics/Combat.js';
 import { HUD, HEALTH_BAR, SHIELD_BAR } from '../ui/HUD.js';
 import { DamageNumbers } from '../ui/DamageNumbers.js';
@@ -232,15 +233,22 @@ export class GameState extends State {
         // 03_mechanics.md 4.3: melee if the nearest enemy is in reach, a
         // thrown-sword projectile otherwise - both share the same swing
         // animation/timing (Player.js is untouched), only what happens at the
-        // swing's impact frame differs.
+        // swing's impact frame differs. The ranged throw spends Prisma (see
+        // RANGED_ATTACK_PRISMA_COST in Combat.js) so it can't be spammed
+        // indefinitely while an enemy sits just out of melee range - melee
+        // itself stays free.
         let hits = [];
         if (this.player.consumeAttackImpact()) {
             const nearest = findNearestEnemy(this.player, this.enemies);
             if (nearest && !isWithinMeleeRange(this.player, nearest)) {
-                this.player.facing = nearest.centerX >= this.player.centerX ? 1 : -1;
-                const direction = this.player.facing;
-                const spawnCenterX = direction === 1 ? this.player.x + this.player.width : this.player.x;
-                this.projectiles.push(new Projectile(spawnCenterX, this.player.centerY, direction, this.thrownSwordSprite, PLAYER_ATTACK_DAMAGE, this.thrownSwordTrailSprite));
+                if (this.player.consumeShield(RANGED_ATTACK_PRISMA_COST)) {
+                    this.player.facing = nearest.centerX >= this.player.centerX ? 1 : -1;
+                    const direction = this.player.facing;
+                    const spawnCenterX = direction === 1 ? this.player.x + this.player.width : this.player.x;
+                    this.projectiles.push(new Projectile(spawnCenterX, this.player.centerY, direction, this.thrownSwordSprite, PLAYER_ATTACK_DAMAGE, this.thrownSwordTrailSprite));
+                } else {
+                    this.damageNumbers.spawnStatus(this.player.centerX, this.player.visualTopY, 'No Prisma for Ranged Attack');
+                }
             } else {
                 hits = resolveMeleeAttack(this.player, this.enemies);
             }

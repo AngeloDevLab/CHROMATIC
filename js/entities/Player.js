@@ -154,6 +154,18 @@ export class Player extends Entity {
         this.knockbackTimer = KNOCKBACK_LOCK_SECONDS;
     }
 
+    // Spends Prisma as a resource cost (the ranged Sword Throw, see
+    // GameState.js) rather than as incoming damage - deliberately not
+    // routed through takeDamage(), so there's no overflow-to-health carry,
+    // no invincibility window, and no hit-flash. Returns whether there was
+    // enough to spend; doesn't partially consume on failure, so a caller can
+    // gate the whole action on the return value.
+    consumeShield(amount) {
+        if (this.shield < amount) return false;
+        this.shield -= amount;
+        return true;
+    }
+
     // True exactly once per swing, the instant the blade reaches full extension
     // - callers (GameState, via Combat.js's resolveMeleeAttack) resolve the
     // actual hit-detection against enemies from here.
@@ -357,6 +369,15 @@ export class Player extends Entity {
     // side of its own collision box.
     _drawX(renderWidth = this.renderSize) {
         return this.x - (renderWidth - this.width) / 2;
+    }
+
+    // Topmost visible pixel row (accounting for sprite padding), mirrors
+    // Enemy.js's visualTopY - used to sit UI (e.g. GameState's "No Prisma"
+    // popup) just above the player's head instead of above the raw hitbox.
+    get visualTopY() {
+        const referenceAnim = this.animations.idle;
+        if (!referenceAnim) return this.y;
+        return this._drawY() + referenceAnim.topRatio * this.renderSize;
     }
 
     // The true visual middle of the character (accounting for sprite padding),

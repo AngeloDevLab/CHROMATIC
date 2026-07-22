@@ -12,6 +12,12 @@ const ATTACK_REACH_PX = 40;
 // 03_mechanics.md 4.3: uniform for melee and ranged, no separate balancing variable.
 export const PLAYER_ATTACK_DAMAGE = 10;
 
+// Ranged Sword Throw spends Prisma as a resource cost (Player.js's
+// consumeShield(), not takeDamage()) rather than being free - without this it
+// could be spammed as long as an enemy stays just out of melee range. Melee
+// itself stays free; only the ranged path (GameState.js) charges this.
+export const RANGED_ATTACK_PRISMA_COST = 10;
+
 // Per-enemy cooldown between contact-damage ticks, so standing inside an enemy
 // doesn't deal damage every single frame.
 const CONTACT_DAMAGE_COOLDOWN_SECONDS = 1;
