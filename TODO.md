@@ -27,18 +27,22 @@ Working list of what's next. Update together at the end of a session (see `CHANG
 - Melee swings and the player's own thrown sword now destroy an incoming Shooter bolt on contact (`mechanics/Combat.js`) - no reaction/VFX on the bolt itself yet beyond just disappearing, could use a small poof/spark later.
 - Ranged attack (sword throw) is a deliberate v1 simplification: auto-targets the nearest enemy (no real click-direction aiming) and is a single-hit throw (no boomerang return-hit) - revisit both if playtesting says otherwise.
 
-## Tooling
+## Boss (Wraith of the Shifting Sands, Lvl 3 Miniboss)
 
-- Dev panel (Shift+key toggle): hitbox/zone debug overlay, live value editing in-game (e.g. an invincibility toggle for testing).
+- Every timing/distance constant in `entities/bosses/Wraith.js` (attack interval, firing/vulnerable hold durations, walk speed, top margin) is a first-guess, same reasoning as the rest of the roster - needs real playtesting once Lv_3's arena is actually finished, not just resized.
+- Merchant teaser (`entities/Merchant.js`) needs a `Merchant`-class object placed in Lv_3.tmx (Tiled) and re-exported - the trigger/dialogue code is ready and waiting, `this.merchant` stays `null` without it.
+- No Templateboss yet (Lvl 6, Wraith of the Grey City) - `05_enemies-bosses.md` 6.3.1's shared-moveset design means it should extend `Wraith.js` rather than duplicate it (vertical beam alternative, side-switch during the vulnerable window, faster enrage alternation), but that subclass doesn't exist.
+- Camera zoom-out and the beam's room-darken effect (`ColorZone.darkenAllExcept()`) were both applied to the Miniboss as deliberate deviations from `05_enemies-bosses.md` 6.2/6.2.1 (documented as Templateboss/Chapterboss-only) - worth reconciling with the GDD text at some point, currently just a code-level decision.
+- Wraith's contact damage reuses the same 40 (Signature Hit Damage) as the beam - GDD has no separate passive-touch value for bosses, same "placeholder pending real balancing" situation Combat.js already flags for the regular roster.
 
 ## Content/systems still needed for v1 (Prologue, per docs/GDD/11_scope-milestones.md)
 
 - Per-level background layering: every Prologue level bakes in the same shared forest backdrop (`GameState.js`, reusing the main menu's background image) as its base, and each level additionally paints its own `background` Tiled tile layer on top (Lv_1/Lv_2/Lv_3 all have one now) - lets a level (e.g. the planned cave-interior Gimmick level) cover the shared forest backdrop entirely with its own art where needed, instead of it showing through. The whole earlier depth-parallax detour (JS-composited layers, independently-scrolling attempt, `assets/images/backgrounds/parallax/`) is moot now - simpler to just paint overrides in Tiled directly.
-- Lv_3 is now exported (`.tmx` + `.json`) but not yet registered in `GameState.js`'s `LEVEL_JSON_KEYS` or `LoadingState.js`'s manifest, so it's not reachable in-game yet. Lv_4/5/6 still only exist as `.tmx` (Prologue needs 6 total).
-- `walls` collision layer (`Collision.js`, always fully solid regardless of the one-way terrain layer) exists in code now - Lv_1/Lv_2 already have a `walls` tile layer with a few tiles painted in (fixing the corner-clip bug from playtesting), Lv_3 doesn't have one yet. Worth a pass over each level to check for other spots where the one-way terrain's lack of horizontal blocking lets the player clip through what should be a solid ledge/wall.
+- Lv_3 is now registered (`GameState.js`'s `LEVEL_JSON_KEYS`, `LoadingState.js`'s manifest) and reachable in-game. Lv_4/5/6 still only exist as `.tmx` at most (Prologue needs 6 total) - Lv_4 has real progress (own gravel tileset), Lv_5/6 don't exist yet.
+- `walls` collision layer (`Collision.js`, always fully solid regardless of the one-way terrain layer) exists in code now - Lv_1/Lv_2/Lv_3 all have a `walls` tile layer painted in now (Lv_3's mainly for the Wraith's beam to have real cover, see the Boss section above). Worth a pass over each level to check for other spots where the one-way terrain's lack of horizontal blocking lets the player clip through what should be a solid ledge/wall.
 - Each level needs an `ExitPortal` object placed in Tiled for the level-complete/portal flow to work - Lv_1/Lv_2/Lv_3 all have one now.
-- Miniboss + Templateboss encounters (Prologue has 2 per 05_enemies-bosses.md 6.3).
-- Token economy + Merchant.
+- Miniboss done (Wraith of the Shifting Sands, see the Boss section above) - Templateboss (Lvl 6) still not built.
+- Token economy + Merchant - Merchant teaser NPC exists (see Boss section above) but that's flavor only, not the real post-Templateboss shop/Token spend from 05_enemies-bosses.md 6.2.
 - Secret Room + permanent character buff system (see `docs/GDD/02_game-structure.md` 2.5) - documented only, not built. A free/low-cost Lore-Secret variant was designed alongside this and cut for scope, see `docs/GDD/_ideas-inbox.md`.
 - Touch controls (desktop/keyboard only right now).
 - LocalStorage save system - `Game.completedLevels` (session-only right now, resets on reload) is the intended save/load target once this exists.

@@ -6,7 +6,7 @@ Scope cut from the original Prologue + Chap 1 target - Chap 1's ~18 remaining le
 
 - Prologue (1 Template, 6 levels, see 02_game-structure.md 2.6)
 - All 4 enemy types (Patroller, Charger, Shooter, Sentinel) - all introduced within the Prologue itself now (Lvl 1: Patroller + Charger, Lvl 2: Shooter + Sentinel, see 02_game-structure.md 2.4/2.6), instead of Shooter/Sentinel waiting for Chap 1
-- Miniboss + Templateboss (2 boss encounters - The Sand Colossus, Tide Lord, see 05_enemies-bosses.md 6.3) - no Chapterboss, that tier only exists at the end of a chapter's last Template
+- Miniboss + Templateboss (2 boss encounters - Wraith of the Shifting Sands, Wraith of the Grey City, see 05_enemies-bosses.md 6.3) - no Chapterboss, that tier only exists at the end of a chapter's last Template
 - Full combat system (melee + ranged, both available from the start)
 - Color mechanic (in-level + Worldmap)
 - Shield/Prisma system

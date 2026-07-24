@@ -4,8 +4,9 @@ const DEFAULT_PATROL_SPEED = 40;
 const DEFAULT_GRAVITY = 700;
 
 // Brief white tint on taking damage, mirrors Player.js's HIT_FLASH_SECONDS
-// (see SpriteAnimation.draw's flashAmount).
-const HIT_FLASH_SECONDS = 0.15;
+// (see SpriteAnimation.draw's flashAmount). Exported for Boss.js, which needs
+// the same value to compute flashAmount in its own non-square render() override.
+export const HIT_FLASH_SECONDS = 0.15;
 
 // How long a knockback push overrides the normal patrol vx assignment for -
 // without this, _updatePatrol would stomp the pushed-back vx with

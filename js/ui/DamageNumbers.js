@@ -39,8 +39,12 @@ export class DamageNumbers {
         for (const entry of this.active) {
             entry.age += dt;
             const progress = Math.min(1, entry.age / entry.durationSeconds);
-            entry.el.style.left = `${entry.worldX - camera.x}px`;
-            entry.el.style.top = `${entry.worldY - camera.y - RISE_PX * progress}px`;
+            // Multiplied by camera.zoom (Camera.js) to match render()'s own
+            // ctx.scale(zoom)+translate - without this, a boss fight's
+            // zoomed-out camera (GameState's BOSS_CAMERA_ZOOM) would leave
+            // these drifting away from the entity they're floating over.
+            entry.el.style.left = `${(entry.worldX - camera.x) * camera.zoom}px`;
+            entry.el.style.top = `${(entry.worldY - camera.y - RISE_PX * progress) * camera.zoom}px`;
             entry.el.style.opacity = String(1 - progress);
         }
 

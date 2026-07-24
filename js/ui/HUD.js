@@ -22,8 +22,11 @@ export class HUD {
     // block, alongside enemy rendering.
     renderEnemyBar(ctx, enemy) {
         // Dormant (Sentinel.js) stays hidden until it's actually risen - no
-        // HP bar spoiling a buried ambush before it triggers.
-        if (enemy.dead || enemy.dormant || !enemy.referenceAnim) return;
+        // HP bar spoiling a buried ambush before it triggers. No `referenceAnim`
+        // guard - Enemy.js's visualTopY already falls back to `enemy.y` when
+        // there isn't one (e.g. Boss.js subclasses still on placeholder
+        // rendering, no animations wired in yet - see Wraith.js).
+        if (enemy.dead || enemy.dormant) return;
 
         const rect = {
             x: enemy.centerX - ENEMY_BAR_WIDTH / 2,

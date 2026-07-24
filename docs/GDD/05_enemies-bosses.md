@@ -40,8 +40,26 @@ Unlike the Miniboss, Templateboss and Chapterboss fights get a dedicated arena p
 
 | Lvl | Tier | Name | Tokens |
 |---|---|---|---|
-| 3 | Miniboss | The Sand Colossus | 1 |
-| 6 | Templateboss | Tide Lord | 2 |
+| 3 | Miniboss | Wraith of the Shifting Sands | 1 |
+| 6 | Templateboss | Wraith of the Grey City | 2 |
+
+### 6.3.1 Wraith Boss Mechanics
+
+Both Prologue bosses are floating wraiths sharing one base moveset - the Templateboss expands it rather than replacing it, following the Miniboss->Templateboss throughline in 6.2.
+
+**Shared base (Miniboss & Templateboss):**
+
+- Floats along a vertical patrol path within the arena (top to bottom, back and forth).
+- Fires a horizontal beam while moving, after a short visible windup - no instant/unreactable hits.
+- After firing, the wraith lands and pauses briefly: a vulnerability window where it takes double damage from melee/ranged hits, before resuming its patrol.
+- Arena layout combines horizontal platforms (stacked floors, same one-way layout as regular levels) with vertical wall segments (the `walls` collision layer, see [10_technical-architecture.md](10_technical-architecture.md)) that block the beam - giving the player a real safe spot to duck into rather than a pure reaction-time check.
+- Phase 1 (above 50% HP): base speed and attack cadence. Phase 2 (50% HP and below): enrage - the same moveset repeats faster (shorter windup/cooldown), no new attack type added, keeping the fight within the Miniboss's "1-2 phases, simple mechanic" scope (6.2).
+
+**Templateboss-only additions (Wraith of the Grey City):**
+
+- Adds a vertical beam as an alternative to the horizontal one - either/or per attack, never both at once, so the read stays "which beam is coming" instead of a compounded pattern.
+- During its landed vulnerability window, the wraith can also switch which side of itself is exposed (telegraphed the same way as the beam), forcing the player to reposition instead of punishing from a fixed spot.
+- Enrage phase (50% HP and below) additionally increases how often it alternates between the horizontal and vertical beam, making the pattern harder to predict rather than just faster.
 
 ## 6.4 Bosses - Chap 1
 

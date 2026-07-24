@@ -2,8 +2,11 @@ import { State } from './State.js';
 import { Level } from '../world/Level.js';
 import { Player } from '../entities/Player.js';
 import { createEnemy } from '../entities/EnemyFactory.js';
+import { Wraith } from '../entities/bosses/Wraith.js';
+import { Boss } from '../entities/Boss.js';
 import { Projectile } from '../entities/Projectile.js';
 import { Portal } from '../entities/Portal.js';
+import { Merchant } from '../entities/Merchant.js';
 import { Collision } from '../utils/Collision.js';
 import { Camera } from '../utils/Camera.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
@@ -22,6 +25,7 @@ import {
 import { HUD, HEALTH_BAR, SHIELD_BAR } from '../ui/HUD.js';
 import { DamageNumbers } from '../ui/DamageNumbers.js';
 import { Panel } from '../ui/Panel.js';
+import { MerchantDialogue } from '../ui/MerchantDialogue.js';
 
 const CHARACTER_FRAME_SIZE = 96;
 // Bigger canvas than the other sheets, deliberately - gives the sword extra
@@ -57,7 +61,24 @@ const ENEMY_DEATH_REVEAL_RADIUS = 90;
 
 // How close the player needs to be (center to center) to the level-end
 // portal for the [E] prompt to show/register - see _updatePortal() below.
+// Reused as-is for the Merchant's own interact range (_updateMerchant()) -
+// no reason for the two to differ.
 const PORTAL_INTERACT_RANGE_PX = 40;
+
+// 05_enemies-bosses.md 6.2.1's arena-presentation zoom, applied to the
+// Miniboss too as a deliberate session-scoped deviation from the GDD (which
+// only specifies it for Templateboss/Chapterboss) - see Camera.js.
+// 10_technical-architecture.md 11.7.3 gives 0.75 as an example, but that read
+// as barely noticeable in-game - 0.5 (~16px/tile instead of 32px/tile)
+// confirmed by eye as the value that actually reads as "zoomed out".
+const BOSS_CAMERA_ZOOM = 0.55;
+
+// Pre-Lvl-6 teaser line only (05_enemies-bosses.md 6.2's real Merchant -
+// shop, Token spend - only appears after the Templateboss) - placed early to
+// tease the Lvl 6 fight by name. No gating on the Miniboss being defeated
+// (unlike the real post-boss Merchant appearance) since this is just flavor,
+// not a reward.
+const MERCHANT_TEASER_TEXT = "Heh, another wanderer with color to spare. Slay the Wraith that haunts the Grey City, and we'll talk business.";
 
 // Real Prologue levels (assets/levels/Lv_N.json), built in Tiled - which one
 // loads is picked by number via LEVEL_JSON_KEYS below (only levels actually
@@ -71,9 +92,10 @@ const PORTAL_INTERACT_RANGE_PX = 40;
 // All Prologue levels share the same tileset image so far (per
 // 'prologue-tileset' in LoadingState.js) - add a distinct manifest key/lookup
 // here too if a later level needs a different one.
-const LEVEL_JSON_KEYS = {
+export const LEVEL_JSON_KEYS = {
     1: 'lv1-level',
     2: 'lv2-level',
+    3: 'lv3-level',
 };
 
 export class GameState extends State {
@@ -160,9 +182,22 @@ export class GameState extends State {
         this.player = new Player(playerStart.x, playerStart.y, animations);
         this.player.enableControl(this.game.input, this.collision);
 
+        // "miniboss" bypasses the regular EnemyFactory - Wraith.js doesn't fit
+        // its generic sprite-sheet wiring (different frame size/animation set/
+        // clip-per-state shape, see _spawnWraith() below) and isn't part of
+        // the regular roster to begin with.
         this.enemies = this.level.getObjectsByType('EnemySpawn')
-            .map((spawn) => createEnemy(this.game.assets, this.collision, this.player, spawn))
+            .map((spawn) => spawn.name?.toLowerCase() === 'miniboss'
+                ? this._spawnWraith(spawn)
+                : createEnemy(this.game.assets, this.collision, this.player, spawn))
             .filter(Boolean);
+
+        // No dedicated "entering the arena" trigger - Lvl 3 is effectively
+        // just the boss room itself, so the zoom applies for the whole level
+        // session rather than needing a separate zone/state to turn it on.
+        if (this.enemies.some((enemy) => enemy instanceof Boss)) {
+            this.camera.zoom = BOSS_CAMERA_ZOOM;
+        }
 
         // Level-end portal (01_core-gameplay-loop.md) - locked until every
         // enemy is dead (see update()'s _levelFullyRevealed check), then
@@ -182,6 +217,20 @@ export class GameState extends State {
         this.interactPromptEl.textContent = '[E] Exit Level';
         this.interactPromptEl.hidden = true;
         this.game.overlay.appendChild(this.interactPromptEl);
+
+        // Pre-Lvl-6 Merchant teaser (see MERCHANT_TEASER_TEXT above) - not
+        // every level has one placed in Tiled, same null-tolerant pattern as
+        // the Portal above. No sprite yet (Merchant.js's render() is a no-op
+        // stub), so nothing is visible until real art exists - only the
+        // trigger zone/dialogue work already.
+        const merchantSpawn = this.level.getObjectsByType('Merchant')[0];
+        this.merchant = merchantSpawn ? new Merchant(merchantSpawn.x, merchantSpawn.y) : null;
+        this.merchantDialogue = new MerchantDialogue(this.game.overlay);
+        this.merchantPromptEl = document.createElement('div');
+        this.merchantPromptEl.className = 'interact-prompt';
+        this.merchantPromptEl.textContent = '[E] Talk';
+        this.merchantPromptEl.hidden = true;
+        this.game.overlay.appendChild(this.merchantPromptEl);
 
         this.hud = new HUD();
         this.damageNumbers = new DamageNumbers(this.game.overlay);
@@ -203,6 +252,41 @@ export class GameState extends State {
         this.enemyProjectiles = [];
     }
 
+    // Wraith.js's 6-clip-as-6-states shape (see that file's own comment) -
+    // each animation is a distinct drawn pose, most one-shot (loop: false)
+    // rather than a generic looping cycle, so this is built inline here
+    // instead of going through EnemyFactory.js's one-size-fits-all wiring.
+    // Frame sizes/counts match the actual 'boss-wraith-*' sheets
+    // (LoadingState.js) - each a strip of 128x256 frames.
+    _spawnWraith(spawn) {
+        const wraith = new Wraith(spawn.x, spawn.y, this.collision, this.player);
+        const assets = this.game.assets;
+        const animations = {
+            idle: new SpriteAnimation(assets.getImage('boss-wraith-idle'), 128, 256, 12, 8),
+            toFiring: new SpriteAnimation(assets.getImage('boss-wraith-to-firing'), 128, 256, 12, 14, { loop: false }),
+            firing: new SpriteAnimation(assets.getImage('boss-wraith-firing'), 128, 256, 1, 1),
+            // Slow on purpose (session decision: "langsam wieder runter
+            // gleiten") - he's still actively firing the whole way down
+            // (Wraith.js's _activeBeam/trackY), not a quick drop, so 9
+            // frames at 3fps stretches this to ~3s instead of the ~0.56s a
+            // normal enemy-animation pace would give.
+            toVulnerable: new SpriteAnimation(assets.getImage('boss-wraith-to-vulnerable'), 128, 256, 9, 3, { loop: false }),
+            vulnerable: new SpriteAnimation(assets.getImage('boss-wraith-vulnerable'), 128, 256, 1, 1),
+            toIdle: new SpriteAnimation(assets.getImage('boss-wraith-to-idle'), 128, 256, 8, 12, { loop: false }),
+            // Enemy.js's _enterDeathAnimation()/deathAnimationFinished pick
+            // this up automatically once hp hits 0 - same 'dead' key every
+            // other enemy type uses.
+            dead: new SpriteAnimation(assets.getImage('boss-wraith-dead'), 128, 256, 11, 14, { loop: false }),
+        };
+        wraith.setAnimations(animations, 'idle');
+        // Enemy.render()'s deep fallback (anim/referenceAnim missing) draws
+        // this.sprite directly - keep it a real image rather than the null
+        // Wraith's constructor passes to super(), same reasoning Boss.render()
+        // uses `!this.sprite` to decide whether art exists at all yet.
+        wraith.sprite = animations.idle.image;
+        return wraith;
+    }
+
     _createHudValueLabel(bar) {
         const el = document.createElement('div');
         el.className = 'hud-value';
@@ -216,6 +300,8 @@ export class GameState extends State {
         this.healthValueEl?.remove();
         this.shieldValueEl?.remove();
         this.interactPromptEl?.remove();
+        this.merchantPromptEl?.remove();
+        this.merchantDialogue?.close();
         this.damageNumbers?.clear();
         this.panel?.close();
     }
@@ -228,10 +314,26 @@ export class GameState extends State {
         if (pausePressed && !this.deathSequence.active) this._togglePause();
         if (this.paused) return;
 
+        // Merchant dialogue (MerchantDialogue.js) freezes gameplay the same
+        // way Pause does above (update() early-returns, render() keeps
+        // drawing the last frame) - [E] here means "advance the dialogue",
+        // not "interact with the level", so it's handled and consumed before
+        // anything else gets a chance to read it.
+        if (this.merchantDialogue.isOpen) {
+            if (this.game.input.consumeInteractPress()) this.merchantDialogue.advance();
+            this.merchantDialogue.update(dt);
+            return;
+        }
+
         if (this._hitStopTimer > 0) {
             this._hitStopTimer = Math.max(0, this._hitStopTimer - dt);
             return;
         }
+
+        // Dev Panel (js/ui/DevPanel.js) - godmode is read off `game`, not owned
+        // by GameState itself, since the panel's toggle state needs to survive
+        // a level skip/retry (both tear down and rebuild GameState).
+        this.player.godmode = this.game.devPanel.godmode;
 
         this.player.update(dt);
         for (const enemy of this.enemies) {
@@ -241,6 +343,15 @@ export class GameState extends State {
             if (enemy.pendingProjectile) {
                 this.enemyProjectiles.push(enemy.pendingProjectile);
                 enemy.pendingProjectile = null;
+            }
+            // Wraith.js's mailbox for its beam-fire room-darken beat (session
+            // decision) - same reasoning as pendingProjectile above, Wraith
+            // itself has no access to ColorZone. Reuses PLAYER_REVEAL_RADIUS
+            // for the safe pocket so it matches the size of the player's own
+            // everyday reveal instead of a separately tuned number.
+            if (enemy.pendingRoomDarken) {
+                this.colorZone.darkenAllExcept(this.player.centerX, this.player.visualCenterY, PLAYER_REVEAL_RADIUS);
+                enemy.pendingRoomDarken = false;
             }
         }
         this.portal?.update(dt);
@@ -331,7 +442,12 @@ export class GameState extends State {
         }
 
         this.camera.follow(this.player, this.level.pixelWidth, this.level.pixelHeight);
-        this._updatePortal();
+        // Consumed once here rather than inside each of _updatePortal()/
+        // _updateMerchant() - both would otherwise race to drain the same
+        // press, and whichever ran first would silently starve the other.
+        const interactPressed = this.game.input.consumeInteractPress();
+        this._updatePortal(interactPressed);
+        this._updateMerchant(interactPressed);
         // Once the death sequence's full-darken sweep finishes, stop feeding
         // position updates entirely - otherwise this falls through to the
         // normal per-frame reveal-at-(x,y) behavior and punches a fresh
@@ -345,12 +461,10 @@ export class GameState extends State {
         this.shieldValueEl.textContent = `${Math.round(this.player.shield)}/${this.player.maxShield}`;
     }
 
-    // Locked until _levelFullyRevealed (all enemies dead, set above) - drains
-    // the interact press every frame regardless of range/active, same
-    // reasoning as the attack click, so a stray press well outside range
-    // doesn't linger and fire the moment the player later steps into it.
-    _updatePortal() {
-        const interactPressed = this.game.input.consumeInteractPress();
+    // Locked until _levelFullyRevealed (all enemies dead, set above).
+    // interactPressed is drained once in update() and handed to both this and
+    // _updateMerchant() below, see the comment at that call site.
+    _updatePortal(interactPressed) {
         if (!this.portal) return;
 
         this.portal.active = this._levelFullyRevealed;
@@ -369,11 +483,33 @@ export class GameState extends State {
 
         this.interactPromptEl.hidden = !inRange;
         if (inRange) {
-            this.interactPromptEl.style.left = `${this.portal.centerX - this.camera.x}px`;
-            this.interactPromptEl.style.top = `${this.portal.y - this.camera.y}px`;
+            // Screen position must match render()'s ctx.scale(zoom)+translate
+            // exactly, or the prompt drifts from the portal it's pointing at
+            // once a boss fight sets camera.zoom below 1 (BOSS_CAMERA_ZOOM).
+            this.interactPromptEl.style.left = `${(this.portal.centerX - this.camera.x) * this.camera.zoom}px`;
+            this.interactPromptEl.style.top = `${(this.portal.y - this.camera.y) * this.camera.zoom}px`;
         }
 
         if (inRange && interactPressed) this._completeLevel();
+    }
+
+    // Pre-Lvl-6 Merchant teaser (MERCHANT_TEASER_TEXT above) - not gated on
+    // anything (no boss to defeat yet at Lvl 3), just an [E]-in-range NPC
+    // dialogue, same range/prompt pattern as _updatePortal() above.
+    _updateMerchant(interactPressed) {
+        if (!this.merchant) return;
+
+        const inRange = !this.player.dead
+            && Math.hypot(this.player.centerX - this.merchant.centerX, this.player.centerY - this.merchant.centerY) <= PORTAL_INTERACT_RANGE_PX;
+
+        this.merchantPromptEl.hidden = !inRange;
+        if (inRange) {
+            // Same zoom correction as the portal prompt above.
+            this.merchantPromptEl.style.left = `${(this.merchant.centerX - this.camera.x) * this.camera.zoom}px`;
+            this.merchantPromptEl.style.top = `${(this.merchant.y - this.camera.y) * this.camera.zoom}px`;
+        }
+
+        if (inRange && interactPressed) this.merchantDialogue.open(MERCHANT_TEASER_TEXT);
     }
 
     // 01_core-gameplay-loop.md: "Reach the exit portal/level end - back to the
@@ -395,7 +531,10 @@ export class GameState extends State {
         // level's bottom edge) - pin the ghost to the visible bottom edge of
         // the screen instead of spawning it off-screen where the rise-and-fade
         // would never be seen.
-        const visibleBottom = this.camera.y + this.game.height - GHOST_FRAME_SIZE / 2;
+        // this.game.height is screen pixels - divide by zoom for the actual
+        // world-space height currently visible (see Camera.js's follow()
+        // doing the same for its own clamping).
+        const visibleBottom = this.camera.y + this.game.height / this.camera.zoom - GHOST_FRAME_SIZE / 2;
         const x = this.player.centerX;
         const y = Math.min(this.player.visualCenterY, visibleBottom);
         this.deathSequence.start(x, y);
@@ -453,6 +592,7 @@ export class GameState extends State {
 
     render(ctx) {
         ctx.save();
+        ctx.scale(this.camera.zoom, this.camera.zoom);
         ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
 
         // Buried enemies (Sentinel.js, not yet triggered) draw before the
@@ -480,6 +620,7 @@ export class GameState extends State {
         // background/level furniture rather than a foreground object they'd
         // otherwise render behind.
         this.portal?.render(ctx);
+        this.merchant?.render(ctx);
         for (const enemy of this.enemies) {
             if (enemy.buried) continue;
             enemy.render(ctx);
@@ -493,8 +634,39 @@ export class GameState extends State {
             this.player.render(ctx);
         }
 
+        if (this.game.devPanel.showHitboxes) this._renderHitboxes(ctx);
+
         ctx.restore();
 
         this.hud.renderPlayerBars(ctx, this.player);
+    }
+
+    // Dev Panel toggle (js/ui/DevPanel.js) - draws each combat-relevant
+    // entity's actual Collision/Combat box (Entity's x/y/width/height), not
+    // its usually-larger sprite frame, so hit reads line up with what's on
+    // screen. Still inside render()'s camera-translated ctx.save() block, so
+    // these use world coordinates like everything else drawn above.
+    _renderHitboxes(ctx) {
+        ctx.save();
+        ctx.lineWidth = 1;
+
+        ctx.strokeStyle = '#5cff8a';
+        ctx.strokeRect(this.player.x, this.player.y, this.player.width, this.player.height);
+
+        ctx.strokeStyle = '#ffe75c';
+        for (const enemy of this.enemies) {
+            if (enemy.dead || enemy.buried) continue;
+            ctx.strokeRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        }
+
+        ctx.strokeStyle = '#5cc9ff';
+        for (const projectile of this.projectiles) {
+            ctx.strokeRect(projectile.x, projectile.y, projectile.width, projectile.height);
+        }
+        for (const projectile of this.enemyProjectiles) {
+            ctx.strokeRect(projectile.x, projectile.y, projectile.width, projectile.height);
+        }
+
+        ctx.restore();
     }
 }

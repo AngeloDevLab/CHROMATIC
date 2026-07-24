@@ -53,11 +53,24 @@ export class LoadingState extends State {
                 'portal-closed': 'assets/images/objects/portal-closed.png',
                 'portal-open': 'assets/images/objects/portal-open.png',
                 'portal-opens': 'assets/images/objects/portal-opens.png',
+                // Wraith of the Shifting Sands (Lvl 3 Miniboss, entities/bosses/
+                // Wraith.js) - each a fixed 128x256 frame (see the earlier PixelLab
+                // sizing discussion). idle loops; the rest are one-shot transitions
+                // between held end-poses, matching how the sprites were actually
+                // animated rather than a generic loop per state.
+                'boss-wraith-idle': 'assets/images/enemys/bosses/floating-idle.png',
+                'boss-wraith-to-firing': 'assets/images/enemys/bosses/from-idle-to-firing.png',
+                'boss-wraith-firing': 'assets/images/enemys/bosses/firing.png',
+                'boss-wraith-to-vulnerable': 'assets/images/enemys/bosses/from-firing-to-vulnerable.png',
+                'boss-wraith-vulnerable': 'assets/images/enemys/bosses/vulnerable.png',
+                'boss-wraith-to-idle': 'assets/images/enemys/bosses/from-vulnerable-to-idle.png',
+                'boss-wraith-dead': 'assets/images/enemys/bosses/dead.png',
             },
             json: {
                 'menu-background-level': 'assets/levels/mainMenu.json',
                 'lv1-level': 'assets/levels/Lv_1.json',
                 'lv2-level': 'assets/levels/Lv_2.json',
+                'lv3-level': 'assets/levels/Lv_3.json',
             },
         });
     }

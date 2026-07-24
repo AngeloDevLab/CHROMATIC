@@ -23,6 +23,15 @@ export class Collision {
             || (!!this.wallLayerName && this._layerSolidAt(this.wallLayerName, pxX, pxY));
     }
 
+    // Wall-layer-only check (Boss.js/WraithBeam.js) - deliberately excludes the
+    // one-way terrain layer that isSolidAt() above also checks, since a boss
+    // beam should only be blocked by real walls (05_enemies-bosses.md 6.3.1's
+    // "vertical wall segments... block the beam"), not by a horizontal
+    // platform it's flying past at the same height.
+    isWallAt(pxX, pxY) {
+        return !!this.wallLayerName && this._layerSolidAt(this.wallLayerName, pxX, pxY);
+    }
+
     _layerSolidAt(layerName, pxX, pxY) {
         const col = Math.floor(pxX / this.level.tileSize);
         const row = Math.floor(pxY / this.level.tileSize);

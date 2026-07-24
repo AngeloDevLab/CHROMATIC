@@ -101,6 +101,10 @@ export class Player extends Entity {
 
         this.dead = false;
 
+        // Dev Panel toggle (js/ui/DevPanel.js), synced from GameState.update()
+        // every frame - not set here from anything on this class itself.
+        this.godmode = false;
+
         this.maxHealth = MAX_HEALTH;
         this.health = MAX_HEALTH;
         this.maxShield = MAX_SHIELD;
@@ -111,7 +115,7 @@ export class Player extends Entity {
     // level (GameState's kill plane) shouldn't be survivable just because the
     // player happens to be mid-i-frames or still has Prisma up.
     die() {
-        if (this.dead) return;
+        if (this.dead || this.godmode) return;
         this.shield = 0;
         this.health = 0;
         this._enterDeathAnimation();
@@ -139,7 +143,7 @@ export class Player extends Entity {
     // 03_mechanics.md 4.5: Prisma absorbs hits first, only once fully depleted
     // does the remainder carry over to Health.
     takeDamage(amount) {
-        if (this.dead || this.invincibleTimer > 0) return;
+        if (this.dead || this.invincibleTimer > 0 || this.godmode) return;
 
         if (this.shield > 0) {
             const overflow = amount - this.shield;

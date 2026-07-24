@@ -282,6 +282,19 @@ export class ColorZone {
         ctx.restore();
     }
 
+    // Wraith.js (Lvl 3 Miniboss) beam-fire beat, session decision: the boss
+    // beam "desaturates" the whole room in one instant snap, except a safe
+    // pocket around the player - unlike triggerFullDarken() above (a slow
+    // 1.5s sweep for the one-time player-death beat), this needs to read
+    // fast since it can repeat many times over a single fight. Ordinary
+    // per-frame reveal (update(), still called every frame in GameState)
+    // takes over immediately after, so the player re-colors their own path
+    // out of the safe pocket exactly like normal movement always does.
+    darkenAllExcept(safeX, safeY, safeRadius) {
+        this.overlayCtx.drawImage(this.greyTemplateCanvas, 0, 0);
+        this._punch(this.overlayCtx, safeX, safeY, 1, safeRadius);
+    }
+
     // liveGlow: optional { x, y, radius } - punches an extra hole for this
     // frame's render only, on a scratch copy, never written back into
     // overlayCanvas. This is how the player's immediate area always reads as

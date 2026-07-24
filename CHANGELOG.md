@@ -6,6 +6,24 @@ Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to le
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-25
+
+### Added
+- Dev Panel (`js/ui/DevPanel.js`, toggled with the Backquote key): level skip (1-6, automatically greys out levels not registered yet), hitbox overlay, godmode, and placeholder "Give Token"/"Give Ability" stubs for once the Token economy exists.
+- Boss framework: `js/entities/Boss.js` (Entity -> Enemy -> Boss -> Templateboss hierarchy, see CLAUDE.md) adds the vulnerability-window double-damage multiplier, enrage/phase timing, and the non-square rendering a tall boss sheet needs (`Enemy.render()` assumes a square frame).
+- Wraith of the Shifting Sands (Lvl 3 Miniboss, `js/entities/bosses/Wraith.js`): full state machine driven by its own 7 sprite clips (idle/toFiring/firing/toVulnerable/vulnerable/toIdle/dead) - rises to the arena's top edge, fires a horizontal beam that keeps tracking its position and re-checking `walls` collision the whole way back down (`js/entities/bosses/WraithBeam.js`), lands vulnerable to double damage, then walks to the arena's other fixed side before resuming the cycle. Firing also desaturates the whole boss room except a safe pocket around the player (`ColorZone.darkenAllExcept()`).
+- Boss camera zoom-out (`Camera.js`'s new `zoom` parameter, `GameState.js`'s `BOSS_CAMERA_ZOOM`) - a deliberate deviation from the GDD's Templateboss-only arena presentation (05_enemies-bosses.md 6.2), applied to the Miniboss too this session.
+- `Collision.isWallAt()`: walls-layer-only solidity check (excludes the one-way terrain layer), used by the Wraith's beam so it's only blocked by real cover, not platforms it happens to be flying past.
+- Pre-Lvl-6 Merchant teaser (`js/entities/Merchant.js`, `js/ui/MerchantDialogue.js`): a `[E]`-interact NPC with a typewriter-revealed dialogue line teasing the Lvl 6 boss by name. No shop/Token interaction yet (that's Templateboss-only per the GDD) and no art yet, logic/trigger only.
+- Lvl 3 registered and reachable (`GameState.js`'s `LEVEL_JSON_KEYS`, `LoadingState.js`'s manifest).
+
+### Changed
+- `HUD.renderEnemyBar()` no longer requires `referenceAnim` to show an HP bar - needed so a Boss subclass still on placeholder rendering (no animations wired in yet) still gives damage feedback while testing.
+- `DamageNumbers.js` and the portal/Merchant interact prompts now account for `camera.zoom` when positioning their HTML overlay elements - previously computed as if zoom were always 1, so they'd have visibly drifted away from the entities they're anchored to during a boss fight.
+
+### Fixed
+- Dev Panel level-skip buttons kept DOM focus after being clicked - since Space is both the jump key and the browser's native "activate the focused button" key on keyup, releasing jump during gameplay kept re-firing the click and resetting the level back to spawn. Buttons now blur themselves right after use.
+
 ## [0.5.0] - 2026-07-22
 
 ### Added

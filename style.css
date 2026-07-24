@@ -485,3 +485,86 @@ body {
   cursor: pointer;
   line-height: 1;
 }
+
+/* Dev Panel (js/ui/DevPanel.js) - fixed outside #ui-overlay, deliberately
+   unscaled (see #fullscreen-btn above) so it stays readable at any window/
+   game scale. Toggled with the physical key above Tab/left of 1 (Backquote). */
+.dev-panel {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  font-family: 'Jersey 10', monospace;
+  color: #f2f2f2;
+}
+
+.dev-panel-title {
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: #ffe75c;
+}
+
+.dev-panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dev-panel-label {
+  font-size: 12px;
+  color: rgba(242, 242, 242, 0.7);
+}
+
+.dev-panel-levels {
+  display: flex;
+  gap: 4px;
+}
+
+.dev-panel-level {
+  width: 24px;
+  height: 24px;
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 13px;
+  color: #f2f2f2;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.dev-panel-level:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.dev-panel-level:disabled {
+  color: rgba(242, 242, 242, 0.35);
+  border-color: rgba(255, 255, 255, 0.1);
+  cursor: not-allowed;
+}
+
+.dev-panel-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.dev-panel-stub {
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 13px;
+  color: rgba(242, 242, 242, 0.35);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: not-allowed;
+}

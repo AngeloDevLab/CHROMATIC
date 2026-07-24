@@ -6,17 +6,17 @@ import { MenuState } from './states/MenuState.js';
 import { CutsceneState } from './states/CutsceneState.js';
 import { WorldmapState } from './states/WorldmapState.js';
 import { GameState } from './states/GameState.js';
+import { DevPanel } from './ui/DevPanel.js';
 
 const game = new Game('game-canvas', 'ui-overlay');
 game.assets = new AssetLoader();
 game.input = new InputHandler(game.canvas);
-
+game.devPanel = new DevPanel(game);
 game.stateMachine.register('loading', new LoadingState(game));
 game.stateMachine.register('menu', new MenuState(game));
 game.stateMachine.register('cutscene', new CutsceneState(game));
 game.stateMachine.register('worldmap', new WorldmapState(game));
 game.stateMachine.register('game', new GameState(game));
-
 game.stateMachine.change('loading');
 game.start();
 
