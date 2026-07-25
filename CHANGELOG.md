@@ -6,6 +6,13 @@ Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to le
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-07-25
+
+### Added
+- Lvl 4 (Prologue Gimmick, docs/GDD/02_game-structure.md 2.6): a wall funnels the player into a trapdoor (`entities/Trapdoor.js`) that breaks away underfoot and drops them into the level's own cave-interior section - purely narrative "random underground level" framing, one fixed level, no real level-switch. The fall itself is just a real gap in the `terrain` layer; the trapdoor is a closed -> opening -> gone visual cue on top, participating in the color mechanic (grey until revealed) the same way `Portal.js` does.
+- `AssetLoader.composeTileset()`: stitches multiple Tiled tileset images into one combined image matching Tiled's own global gid numbering, so a level can paint with more than one tileset (Lv_4 mixes the shared grass tileset with a new gravel one) without `Level.js` needing to know about multiple images or gid ranges at all.
+- Lvl 4 registered and reachable (`GameState.js`'s `LEVEL_JSON_KEYS`/`LEVEL_TILESET_KEYS`, `LoadingState.js`'s manifest).
+
 ## [0.6.0] - 2026-07-25
 
 ### Added

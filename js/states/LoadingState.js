@@ -21,8 +21,8 @@ export class LoadingState extends State {
         }
     }
 
-    _loadManifest() {
-        return this.game.assets.loadManifest({
+    async _loadManifest() {
+        await this.game.assets.loadManifest({
             images: {
                 'menu-tileset': 'assets/images/tilesets/tileset_grass.png',
                 'guardian-idle': 'assets/images/character/idle.png',
@@ -39,6 +39,10 @@ export class LoadingState extends State {
                 // Shared by every Prologue level so far (see LEVEL_JSON_KEYS in
                 // GameState.js) - not "lv1-tileset" since Lv_2 reuses it too.
                 'prologue-tileset': 'assets/images/tilesets/tileset_grass.png',
+                // Lv_4's cave-interior sections paint with this on top of the
+                // shared grass tileset (see composeTileset() below) - not
+                // reused standalone anywhere yet.
+                'tileset-gravel': 'assets/images/tilesets/tileset_gravel.png',
                 'enemy-patroller-walking-idle': 'assets/images/enemys/patroller/patroller-walking-idle.png',
                 'enemy-patroller-dead': 'assets/images/enemys/patroller/patroller-dead.png',
                 'enemy-charger-walking-idle': 'assets/images/enemys/charger/charger-walking-idle.png',
@@ -53,6 +57,10 @@ export class LoadingState extends State {
                 'portal-closed': 'assets/images/objects/portal-closed.png',
                 'portal-open': 'assets/images/objects/portal-open.png',
                 'portal-opens': 'assets/images/objects/portal-opens.png',
+                // Lvl 4 Gimmick (entities/Trapdoor.js) - closed is a single
+                // 128x32 frame, opens is a 10-frame 128x32 strip (1280x32).
+                'trapdoor-closed': 'assets/images/objects/trapdoor-closed.png',
+                'trapdoor-opens': 'assets/images/objects/trapdoor-opens.png',
                 // Wraith of the Shifting Sands (Lvl 3 Miniboss, entities/bosses/
                 // Wraith.js) - each a fixed 128x256 frame (see the earlier PixelLab
                 // sizing discussion). idle loops; the rest are one-shot transitions
@@ -71,8 +79,15 @@ export class LoadingState extends State {
                 'lv1-level': 'assets/levels/Lv_1.json',
                 'lv2-level': 'assets/levels/Lv_2.json',
                 'lv3-level': 'assets/levels/Lv_3.json',
+                'lv4-level': 'assets/levels/Lv_4.json',
             },
         });
+
+        // Lv_4 paints with both the shared grass tileset (gid 1-20) and the
+        // gravel one (gid 21-40) - AssetLoader.composeTileset() stitches them
+        // into one combined image matching that same gid numbering, so
+        // Level.js's single-tileset-image assumption still holds.
+        this.game.assets.composeTileset('lv4-tileset', ['prologue-tileset', 'tileset-gravel']);
     }
 
     exit() {

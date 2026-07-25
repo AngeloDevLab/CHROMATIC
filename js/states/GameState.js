@@ -7,6 +7,7 @@ import { Boss } from '../entities/Boss.js';
 import { Projectile } from '../entities/Projectile.js';
 import { Portal } from '../entities/Portal.js';
 import { Merchant } from '../entities/Merchant.js';
+import { Trapdoor } from '../entities/Trapdoor.js';
 import { Collision } from '../utils/Collision.js';
 import { Camera } from '../utils/Camera.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
@@ -65,6 +66,12 @@ const ENEMY_DEATH_REVEAL_RADIUS = 90;
 // no reason for the two to differ.
 const PORTAL_INTERACT_RANGE_PX = 40;
 
+// Lvl 4 Gimmick (docs/GDD/02_game-structure.md 2.6) - how close the player's
+// feet need to be to the Trapdoor's top edge before it starts opening, see
+// _updateTrapdoor() below. Small on purpose - it should read as "the ground
+// gives way right as you step on it", not visibly ahead of time.
+const TRAPDOOR_TRIGGER_MARGIN_PX = 16;
+
 // 05_enemies-bosses.md 6.2.1's arena-presentation zoom, applied to the
 // Miniboss too as a deliberate session-scoped deviation from the GDD (which
 // only specifies it for Templateboss/Chapterboss) - see Camera.js.
@@ -89,13 +96,20 @@ const MERCHANT_TEASER_TEXT = "Heh, another wanderer with color to spare. Slay th
 // ENEMY_SPRITE_SETS), not a separate custom property. Names that don't
 // match a registered type (e.g. a typo in Tiled) are skipped with a console
 // warning rather than spawning the wrong thing.
-// All Prologue levels share the same tileset image so far (per
-// 'prologue-tileset' in LoadingState.js) - add a distinct manifest key/lookup
-// here too if a later level needs a different one.
+// Most Prologue levels share the same tileset image ('prologue-tileset' in
+// LoadingState.js) - LEVEL_TILESET_KEYS below only needs an entry for a level
+// that paints with something else/more (Lv_4's combined grass+gravel image,
+// see AssetLoader.composeTileset()), defaulting to 'prologue-tileset'
+// otherwise.
 export const LEVEL_JSON_KEYS = {
     1: 'lv1-level',
     2: 'lv2-level',
     3: 'lv3-level',
+    4: 'lv4-level',
+};
+
+const LEVEL_TILESET_KEYS = {
+    4: 'lv4-tileset',
 };
 
 export class GameState extends State {
@@ -107,7 +121,8 @@ export class GameState extends State {
         if (!levelKey) {
             throw new Error(`GameState: no level registered for level number ${this.levelNumber}`);
         }
-        this.level = Level.load(this.game.assets, levelKey, 'prologue-tileset');
+        const tilesetKey = LEVEL_TILESET_KEYS[this.levelNumber] ?? 'prologue-tileset';
+        this.level = Level.load(this.game.assets, levelKey, tilesetKey);
         // The Tiled layer is named "terrain", not the documented
         // "Terrain/Collision" - passed explicitly rather than renaming in Tiled.
         // One-way: the level is built from several stacked walkable floors, not
@@ -232,6 +247,20 @@ export class GameState extends State {
         this.merchantPromptEl.hidden = true;
         this.game.overlay.appendChild(this.merchantPromptEl);
 
+        // Lvl 4 Gimmick (see TRAPDOOR_TRIGGER_MARGIN_PX above) - sized to the
+        // Tiled object itself (not a fixed sprite size like Portal), so it
+        // covers exactly the terrain gap it's placed over. Same null-tolerant
+        // pattern as Portal/Merchant.
+        const trapdoorSpawn = this.level.getObjectsByType('Trapdoor')[0];
+        this.trapdoor = trapdoorSpawn
+            ? new Trapdoor(trapdoorSpawn.x, trapdoorSpawn.y, trapdoorSpawn.width, trapdoorSpawn.height, {
+                closed: this.game.assets.getImage('trapdoor-closed'),
+                opens: this.game.assets.getImage('trapdoor-opens'),
+                opensFrameCount: 10,
+                opensFps: 12,
+            }, this.colorZone.greyFilterCSS)
+            : null;
+
         this.hud = new HUD();
         this.damageNumbers = new DamageNumbers(this.game.overlay);
 
@@ -355,6 +384,8 @@ export class GameState extends State {
             }
         }
         this.portal?.update(dt);
+        this.trapdoor?.update(dt);
+        this._updateTrapdoor();
 
         // Jump & Run gaps with no floor below (10_technical-architecture.md
         // Platform level type) currently let the player fall forever and keep
@@ -512,6 +543,29 @@ export class GameState extends State {
         if (inRange && interactPressed) this.merchantDialogue.open(MERCHANT_TEASER_TEXT);
     }
 
+    // Lvl 4 Gimmick - no [E] prompt, no interact press needed, this is purely
+    // proximity-driven: horizontally over the trapdoor and close enough above
+    // it that it reads as "the ground gives way as you step on it" rather
+    // than opening early or late. Trapdoor.trigger() itself no-ops once
+    // already opening/open, so calling this every frame while standing over
+    // it is harmless.
+    _updateTrapdoor() {
+        if (!this.trapdoor) return;
+
+        // Same reveal radius/condition as the portal's own (_updatePortal()
+        // above) - without this a still-grey trapdoor would stand out against
+        // colored ground and give away exactly where it is.
+        if (!this.trapdoor.revealed) {
+            const dist = Math.hypot(this.player.centerX - this.trapdoor.centerX, this.player.visualCenterY - this.trapdoor.centerY);
+            if (dist <= PLAYER_REVEAL_RADIUS) this.trapdoor.revealed = true;
+        }
+
+        const horizontallyOver = this.player.centerX >= this.trapdoor.x && this.player.centerX <= this.trapdoor.x + this.trapdoor.width;
+        const feetNearTop = Math.abs((this.player.y + this.player.height) - this.trapdoor.y) <= TRAPDOOR_TRIGGER_MARGIN_PX;
+
+        if (horizontallyOver && feetNearTop) this.trapdoor.trigger();
+    }
+
     // 01_core-gameplay-loop.md: "Reach the exit portal/level end - back to the
     // Worldmap" - completedLevels lives on Game (see Game.js), not this state,
     // since WorldmapState gets torn down/rebuilt on every visit.
@@ -621,6 +675,7 @@ export class GameState extends State {
         // otherwise render behind.
         this.portal?.render(ctx);
         this.merchant?.render(ctx);
+        this.trapdoor?.render(ctx);
         for (const enemy of this.enemies) {
             if (enemy.buried) continue;
             enemy.render(ctx);
