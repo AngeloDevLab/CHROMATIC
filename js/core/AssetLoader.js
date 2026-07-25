@@ -4,6 +4,12 @@ export class AssetLoader {
         this.json = new Map();
     }
 
+    /**
+     * Loads an image and stores it under a key for later lookup.
+     * @param {string} key - Identifier used by getImage() to retrieve it.
+     * @param {string} src - URL/path to the image file.
+     * @returns {Promise<HTMLImageElement>} Resolves with the loaded image.
+     */
     loadImage(key, src) {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -16,6 +22,12 @@ export class AssetLoader {
         });
     }
 
+    /**
+     * Fetches and parses a JSON file, storing it under a key for later lookup.
+     * @param {string} key - Identifier used by getJSON() to retrieve it.
+     * @param {string} src - URL/path to the JSON file.
+     * @returns {Promise<object>} Resolves with the parsed JSON data.
+     */
     async loadJSON(key, src) {
         const response = await fetch(src);
         if (!response.ok) throw new Error(`Failed to load JSON: ${src}`);
@@ -24,6 +36,11 @@ export class AssetLoader {
         return data;
     }
 
+    /**
+     * Loads every image/JSON entry in a manifest in parallel.
+     * @param {{images?: Object<string,string>, json?: Object<string,string>}} manifest - Key-to-path maps per asset type.
+     * @returns {Promise<void>} Resolves once every entry has loaded.
+     */
     async loadManifest(manifest) {
         const tasks = [
             ...Object.entries(manifest.images ?? {}).map(([key, src]) => this.loadImage(key, src)),
@@ -32,10 +49,18 @@ export class AssetLoader {
         await Promise.all(tasks);
     }
 
+    /**
+     * @param {string} key - Key an image was loaded under.
+     * @returns {HTMLImageElement|undefined} The loaded image, if present.
+     */
     getImage(key) {
         return this.images.get(key);
     }
 
+    /**
+     * @param {string} key - Key a JSON file was loaded under.
+     * @returns {object|undefined} The parsed JSON data, if present.
+     */
     getJSON(key) {
         return this.json.get(key);
     }

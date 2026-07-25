@@ -1,21 +1,31 @@
+// 10_technical-architecture.md 11.7.3: a boss fight's zoom-out is a camera
+// parameter, not a change to the base 640x360 resolution - GameState.render()
+// applies `zoom` as a ctx.scale() around the world draw. 1 = normal (32px/
+// tile); below 1 fits more world into the same buffer (e.g. 0.75 -> ~24px/
+// tile, more field of view). follow() divides viewWidth/viewHeight by zoom
+// to convert screen-space bounds into the matching world-space bounds before
+// centering/clamping against the level.
+
 export class Camera {
+    /**
+     * @param {number} viewWidth - Viewport width in screen pixels (640 at base resolution).
+     * @param {number} viewHeight - Viewport height in screen pixels (360 at base resolution).
+     */
     constructor(viewWidth, viewHeight) {
         this.viewWidth = viewWidth;
         this.viewHeight = viewHeight;
-        // 10_technical-architecture.md 11.7.3: a boss fight's zoom-out is a
-        // camera parameter, not a change to the base 640x360 resolution -
-        // GameState.render() applies this as a ctx.scale() around the world
-        // draw. 1 = normal (32px/tile); below 1 fits more world into the same
-        // buffer (e.g. 0.75 -> ~24px/tile, more field of view).
         this.zoom = 1;
         this.x = 0;
         this.y = 0;
     }
 
+    /**
+     * Centers the camera on a target and clamps it to the level bounds.
+     * @param {{centerX: number, centerY: number}} target - Entity to follow (typically the Player).
+     * @param {number} levelPixelWidth - Level width in world pixels.
+     * @param {number} levelPixelHeight - Level height in world pixels.
+     */
     follow(target, levelPixelWidth, levelPixelHeight) {
-        // At zoom < 1, more world is visible on screen than viewWidth/Height
-        // (screen pixels) actually covers - divide by zoom to get how much
-        // world-space the camera needs to center/clamp against.
         const effectiveWidth = this.viewWidth / this.zoom;
         const effectiveHeight = this.viewHeight / this.zoom;
 
