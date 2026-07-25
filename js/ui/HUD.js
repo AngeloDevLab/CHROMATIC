@@ -10,22 +10,29 @@ const ENEMY_BAR_GAP_PX = 6;
 
 // HUD bar fills are colored rectangles drawn on the canvas, not text
 // (11.8.1) - this only ever draws bars; numbers/labels are the caller's job
-// via the HTML overlay.
+// via the HTML overlay. Dormant enemies (Sentinel.js) stay hidden until
+// actually risen - no HP bar spoiling a buried ambush before it triggers. No
+// `referenceAnim` guard needed - Enemy.js's visualTopY already falls back to
+// `enemy.y` when there isn't one (e.g. Boss.js subclasses still on
+// placeholder rendering, no animations wired in yet - see Wraith.js).
 export class HUD {
-    // Screen-fixed - call outside the camera-translated block.
+    /**
+     * Screen-fixed - call outside the camera-translated block.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     * @param {Player} player
+     */
     renderPlayerBars(ctx, player) {
         this._drawBar(ctx, HEALTH_BAR, player.health / player.maxHealth, '#3a1414', '#d4453f');
         this._drawBar(ctx, SHIELD_BAR, player.shield / player.maxShield, '#123244', '#3fc6e0');
     }
 
-    // World-space (follows the enemy) - call inside the camera-translated
-    // block, alongside enemy rendering.
+    /**
+     * World-space (follows the enemy) - call inside the camera-translated
+     * block, alongside enemy rendering.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     * @param {Enemy} enemy
+     */
     renderEnemyBar(ctx, enemy) {
-        // Dormant (Sentinel.js) stays hidden until it's actually risen - no
-        // HP bar spoiling a buried ambush before it triggers. No `referenceAnim`
-        // guard - Enemy.js's visualTopY already falls back to `enemy.y` when
-        // there isn't one (e.g. Boss.js subclasses still on placeholder
-        // rendering, no animations wired in yet - see Wraith.js).
         if (enemy.dead || enemy.dormant) return;
 
         const rect = {
@@ -37,6 +44,13 @@ export class HUD {
         this._drawBar(ctx, rect, enemy.hp / enemy.maxHp, '#241010', '#d4453f');
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     * @param {{x:number,y:number,width:number,height:number}} rect - Bar bounds.
+     * @param {number} ratio - Fill ratio, clamped to 0-1.
+     * @param {string} bgColor - Background (empty) color.
+     * @param {string} fillColor - Fill color.
+     */
     _drawBar(ctx, rect, ratio, bgColor, fillColor) {
         const clamped = Math.max(0, Math.min(1, ratio));
 

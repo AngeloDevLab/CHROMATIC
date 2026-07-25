@@ -18,6 +18,9 @@ const LEVEL_COUNT = 6;
 const UNAVAILABLE_TITLE = 'Not implemented yet - system not built';
 
 export class DevPanel {
+    /**
+     * @param {Game} game - Owning Game instance.
+     */
     constructor(game) {
         this.game = game;
         this.open = false;
@@ -28,6 +31,9 @@ export class DevPanel {
         window.addEventListener('keydown', this._onKeyDown);
     }
 
+    /**
+     * @param {KeyboardEvent} e
+     */
     _onKeyDown(e) {
         if (e.code !== TOGGLE_KEY_CODE) return;
         this.open ? this._close() : this._render();
@@ -39,24 +45,43 @@ export class DevPanel {
         this.element = null;
     }
 
+    /**
+     * Builds and attaches the panel, then wires up its interactive controls.
+     */
     _render() {
         this.open = true;
-
         this.element = document.createElement('div');
         this.element.className = 'dev-panel';
+        this.element.innerHTML = this._buildMarkup();
 
-        const levelButtons = Array.from({ length: LEVEL_COUNT }, (_, i) => i + 1)
+        this._wireLevelButtons();
+        this._wireToggle('#dev-panel-hitboxes', 'showHitboxes');
+        this._wireToggle('#dev-panel-godmode', 'godmode');
+
+        document.body.appendChild(this.element);
+    }
+
+    /**
+     * @returns {string} One button per level, disabled if not yet registered.
+     */
+    _buildLevelButtons() {
+        return Array.from({ length: LEVEL_COUNT }, (_, i) => i + 1)
             .map((level) => {
                 const available = !!LEVEL_JSON_KEYS[level];
                 return `<button class="dev-panel-level" data-level="${level}" ${available ? '' : 'disabled title="Level not registered yet"'}>${level}</button>`;
             })
             .join('');
+    }
 
-        this.element.innerHTML = `
+    /**
+     * @returns {string} The full panel markup.
+     */
+    _buildMarkup() {
+        return `
             <div class="dev-panel-title">Dev Panel</div>
             <div class="dev-panel-section">
                 <div class="dev-panel-label">Skip to level</div>
-                <div class="dev-panel-levels">${levelButtons}</div>
+                <div class="dev-panel-levels">${this._buildLevelButtons()}</div>
             </div>
             <div class="dev-panel-section">
                 <label class="dev-panel-toggle"><input type="checkbox" id="dev-panel-hitboxes"> Show hitboxes</label>
@@ -67,30 +92,34 @@ export class DevPanel {
                 <button class="dev-panel-stub" disabled title="${UNAVAILABLE_TITLE}">Give Ability</button>
             </div>
         `;
+    }
 
+    /**
+     * Wires each level-skip button. Blurs on click - a clicked <button>
+     * keeps DOM focus, and Space is both our own jump key (InputHandler.js)
+     * and the browser's native "activate the focused button" key on keyup,
+     * so without this, releasing jump during gameplay kept re-firing this
+     * click and resetting the level right back to spawn.
+     */
+    _wireLevelButtons() {
         for (const button of this.element.querySelectorAll('.dev-panel-level:not(:disabled)')) {
             button.addEventListener('click', () => {
-                // A clicked <button> keeps DOM focus - Space is both our own
-                // jump key (InputHandler.js) AND the browser's native "activate
-                // the focused button" key on keyup, so without this, releasing
-                // jump during gameplay kept re-firing this click and resetting
-                // the level right back to spawn. Same reasoning applied to the
-                // checkbox inputs below.
                 button.blur();
                 this.game.stateMachine.change('game', { chapterId: CHAPTER_ID, level: Number(button.dataset.level) });
             });
         }
+    }
 
-        const hitboxesInput = this.element.querySelector('#dev-panel-hitboxes');
-        hitboxesInput.checked = this.showHitboxes;
-        hitboxesInput.addEventListener('change', () => { this.showHitboxes = hitboxesInput.checked; });
-        hitboxesInput.addEventListener('click', () => hitboxesInput.blur());
-
-        const godmodeInput = this.element.querySelector('#dev-panel-godmode');
-        godmodeInput.checked = this.godmode;
-        godmodeInput.addEventListener('change', () => { this.godmode = godmodeInput.checked; });
-        godmodeInput.addEventListener('click', () => godmodeInput.blur());
-
-        document.body.appendChild(this.element);
+    /**
+     * Wires a checkbox to a boolean field on this DevPanel, blurring on
+     * click for the same Space-key reason as _wireLevelButtons().
+     * @param {string} selector - CSS selector for the checkbox input.
+     * @param {string} field - Field on this DevPanel to read/write.
+     */
+    _wireToggle(selector, field) {
+        const input = this.element.querySelector(selector);
+        input.checked = this[field];
+        input.addEventListener('change', () => { this[field] = input.checked; });
+        input.addEventListener('click', () => input.blur());
     }
 }

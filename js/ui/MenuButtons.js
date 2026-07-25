@@ -6,8 +6,14 @@ const MENU_ITEMS = [
 ];
 
 export class MenuButtons {
-    // hasSave: Continue stays visible but disabled/greyed out when no save exists
-    // (08_menu-flow.md 9.3) - always false for now since SaveManager doesn't exist yet.
+    /**
+     * @param {HTMLElement} overlayRoot - Element to mount the button list into.
+     * @param {object} [options]
+     * @param {boolean} [options.hasSave=false] - Whether Continue stays
+     *   enabled (08_menu-flow.md 9.3); always false for now since
+     *   SaveManager doesn't exist yet.
+     * @param {(id: string) => void} [options.onSelect] - Called with a menu item's id on click.
+     */
     constructor(overlayRoot, { hasSave = false, onSelect } = {}) {
         this.overlayRoot = overlayRoot;
         this.hasSave = hasSave;
@@ -15,28 +21,40 @@ export class MenuButtons {
         this.element = null;
     }
 
+    /**
+     * Builds and attaches the button list.
+     */
     mount() {
         this.element = document.createElement('div');
         this.element.className = 'menu-buttons';
 
         for (const item of MENU_ITEMS) {
-            const button = document.createElement('button');
-            button.className = 'menu-button';
-            button.textContent = item.label;
-
-            const disabled = item.id === 'continue' && !this.hasSave;
-            if (disabled) {
-                button.disabled = true;
-            } else {
-                button.addEventListener('click', () => this.onSelect?.(item.id));
-            }
-
-            this.element.appendChild(button);
+            this.element.appendChild(this._createButton(item));
         }
 
         this.overlayRoot.appendChild(this.element);
     }
 
+    /**
+     * @param {{id: string, label: string}} item - Menu item to build a button for.
+     * @returns {HTMLButtonElement}
+     */
+    _createButton(item) {
+        const button = document.createElement('button');
+        button.className = 'menu-button';
+        button.textContent = item.label;
+
+        if (item.id === 'continue' && !this.hasSave) {
+            button.disabled = true;
+        } else {
+            button.addEventListener('click', () => this.onSelect?.(item.id));
+        }
+        return button;
+    }
+
+    /**
+     * Detaches the button list.
+     */
     unmount() {
         this.element?.remove();
         this.element = null;

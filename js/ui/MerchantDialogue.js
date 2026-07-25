@@ -12,6 +12,9 @@ const TITLE = 'Merchant';
 // Panel.js for the backdrop/box chrome, drives its own typewriter reveal on
 // top the same way CutsceneState.js does for cutscene text.
 export class MerchantDialogue {
+    /**
+     * @param {HTMLElement} overlayRoot - Element to mount the panel into.
+     */
     constructor(overlayRoot) {
         this.panel = new Panel(overlayRoot);
         this.isOpen = false;
@@ -21,6 +24,9 @@ export class MerchantDialogue {
         this._revealTimer = 0;
     }
 
+    /**
+     * @param {string} text - Dialogue line to reveal.
+     */
     open(text) {
         this.isOpen = true;
         this._tokens = text.split('');
@@ -40,13 +46,18 @@ export class MerchantDialogue {
         this.panel.close();
     }
 
+    /**
+     * @returns {boolean}
+     */
     get _fullyRevealed() {
         return !this._tokens || this._revealedCount >= this._tokens.length;
     }
 
-    // [E] pressed again while open: fast-forward the typewriter if it's still
-    // typing, otherwise treat the press as "got it" and close - the usual
-    // two-step advance so a fast reader isn't stuck waiting on the reveal.
+    /**
+     * [E] pressed again while open: fast-forward the typewriter if it's
+     * still typing, otherwise treat the press as "got it" and close - the
+     * usual two-step advance so a fast reader isn't stuck waiting on the reveal.
+     */
     advance() {
         if (!this.isOpen) return;
         if (!this._fullyRevealed) {
@@ -57,6 +68,9 @@ export class MerchantDialogue {
         }
     }
 
+    /**
+     * @param {number} dt - Elapsed time in seconds.
+     */
     update(dt) {
         if (!this.isOpen || this._fullyRevealed) return;
 
