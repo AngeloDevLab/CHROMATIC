@@ -11,6 +11,9 @@ const GHOST_FADE_DURATION_SECONDS = 2.5;
 // death spot and fades out, then GameState opens the Game Over panel once
 // update() reports finished.
 export class DeathSequence {
+    /**
+     * @param {HTMLImageElement} ghostImage - Ghost sprite sheet.
+     */
     constructor(ghostImage) {
         this.ghostAnimation = new SpriteAnimation(ghostImage, GHOST_FRAME_SIZE, GHOST_FRAME_SIZE, 13, 10);
         this.active = false;
@@ -20,6 +23,10 @@ export class DeathSequence {
         this._reportedFinished = false;
     }
 
+    /**
+     * @param {number} x - World X of the death spot.
+     * @param {number} y - World Y of the death spot.
+     */
     start(x, y) {
         this.active = true;
         this.x = x;
@@ -29,8 +36,12 @@ export class DeathSequence {
         this.ghostAnimation.reset();
     }
 
-    // Returns true exactly once, the frame the fade-out completes - GameState
-    // opens the Game Over panel on that edge instead of every frame after.
+    /**
+     * @param {number} dt - Elapsed time in seconds.
+     * @returns {boolean} True exactly once, the frame the fade-out
+     *   completes - GameState opens the Game Over panel on that edge
+     *   instead of every frame after.
+     */
     update(dt) {
         this.elapsed += dt;
         this.y -= GHOST_RISE_SPEED * dt;
@@ -43,6 +54,9 @@ export class DeathSequence {
         return false;
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     render(ctx) {
         const alpha = Math.max(0, 1 - this.elapsed / GHOST_FADE_DURATION_SECONDS);
         if (alpha <= 0) return;
