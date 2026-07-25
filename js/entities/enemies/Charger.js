@@ -35,6 +35,13 @@ const DEFAULT_CHARGE_COOLDOWN_SECONDS = 5;
 // than duplicating it, reusing _blockedAhead() as-is so a charge still turns
 // around at a wall/ledge instead of running through it.
 export class Charger extends Enemy {
+    /**
+     * @param {number} x - World X position.
+     * @param {number} y - World Y position.
+     * @param {HTMLImageElement} sprite - Fallback static sprite.
+     * @param {number} width - Hitbox width.
+     * @param {number} height - Hitbox height.
+     */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
         this.hp = CHARGE_HP;
@@ -49,6 +56,13 @@ export class Charger extends Enemy {
         this.chargeTraveled = 0;
     }
 
+    /**
+     * @param {Player} player - Player instance to watch for range/line of sight.
+     * @param {object} [options]
+     * @param {number} [options.chargeSpeed=DEFAULT_CHARGE_SPEED]
+     * @param {number} [options.chargeCooldownSeconds=DEFAULT_CHARGE_COOLDOWN_SECONDS]
+     * @param {number} [options.chargeDistance=DEFAULT_CHARGE_DISTANCE_PX]
+     */
     enableCharge(player, {
         chargeSpeed = DEFAULT_CHARGE_SPEED,
         chargeCooldownSeconds = DEFAULT_CHARGE_COOLDOWN_SECONDS,
@@ -60,75 +74,98 @@ export class Charger extends Enemy {
         this.chargeDistance = chargeDistance;
     }
 
-    // Punishing by design (05_enemies-bosses.md 6.1) to offset the Charger's
-    // comparatively low HP (see CHARGE_HP above) - once a rush starts, a
-    // sword/thrown-sword hit no longer cancels/staggers it (Enemy.js's
-    // applyAttackKnockback, overridden here). Damage still applies as normal
-    // (takeDamage is untouched, hitFlashTimer still fires), only that one
-    // knockback source is voided. Deliberately doesn't touch the base
-    // applyKnockback (Combat.js's contact-damage push) - actually running
-    // into the player still bounces it back and ends the charge the same way
-    // a wall does, instead of clipping straight through.
+    /**
+     * Punishing by design (05_enemies-bosses.md 6.1) to offset the
+     * Charger's comparatively low HP (see CHARGE_HP) - once a rush starts,
+     * a sword/thrown-sword hit no longer cancels/staggers it. Damage still
+     * applies as normal (takeDamage is untouched, hitFlashTimer still
+     * fires), only this one knockback source is voided. Deliberately
+     * doesn't touch the base applyKnockback (Combat.js's contact-damage
+     * push) - actually running into the player still bounces it back and
+     * ends the charge the same way a wall does, instead of clipping straight through.
+     * @param {number} vx - Knockback velocity to apply.
+     */
     applyAttackKnockback(vx) {
         if (this.charging) return;
         super.applyAttackKnockback(vx);
     }
 
+    /**
+     * @param {number} dt - Elapsed time in seconds.
+     */
     _updatePatrol(dt) {
         this.vy += this.gravity * dt;
 
         if (this.chargeCooldownTimer > 0) this.chargeCooldownTimer = Math.max(0, this.chargeCooldownTimer - dt);
 
         if (this.knockbackTimer > 0) {
-            // Only reachable via applyKnockback (contact damage) now, never
-            // applyAttackKnockback (sword/thrown-sword, voided above while
-            // charging) - so a charge still ends here the moment it actually
-            // connects with the player's body, same as running into a wall,
-            // it just can't be staggered by being hit from a distance/side.
-            this._setCharging(false);
-            this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
+            this._updateKnockback(dt);
         } else {
-            if (this.grounded && this._blockedAhead()) {
-                this.facing *= -1;
-                this._setCharging(false);
-            } else if (this.grounded) {
-                // _canSeePlayer() only gates STARTING a fresh charge (cooldown
-                // elapsed and the player's currently in range/level) - once
-                // committed, a charge is meant to be a full-commitment "rush,
-                // then recover" beat (05_enemies-bosses.md 6.1), not something
-                // the player can escape by jumping over the height tolerance
-                // mid-rush. Facing is locked in for the whole charge right
-                // here, not re-aimed every frame - combined with the fixed
-                // chargeDistance below, a charge is a straight dash at a
-                // fixed target, not a homing chase that re-tracks if the
-                // player dodges sideways or doubles back.
-                if (!this.charging && this.chargeCooldownTimer <= 0 && this._canSeePlayer()) {
-                    this.facing = this.player.centerX >= this.centerX ? 1 : -1;
-                    this.chargeTraveled = 0;
-                    this._setCharging(true);
-                } else if (this.charging) {
-                    this.chargeTraveled += this.chargeSpeed * dt;
-                    if (this.chargeTraveled >= this.chargeDistance) this._setCharging(false);
-                }
-            }
-
-            this.vx = (this.charging ? this.chargeSpeed : this.patrolSpeed) * this.facing;
+            this._updateChargeMovement(dt);
         }
 
         this._updateChargeAnimation();
         this.grounded = this.collision.resolve(this, dt);
     }
 
-    // Starts the cooldown exactly on the true -> false edge, not every frame
-    // charging happens to be false (that would never let the timer run out).
+    /**
+     * Ends any active charge the instant contact damage actually connects
+     * (only reachable via applyKnockback, the contact-damage push - never
+     * applyAttackKnockback, voided above while charging), same as running
+     * into a wall. vx is deliberately left untouched here, still whatever
+     * applyKnockback() set it to.
+     * @param {number} dt - Elapsed time in seconds.
+     */
+    _updateKnockback(dt) {
+        this._setCharging(false);
+        this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
+    }
+
+    /**
+     * Turns at a wall/ledge, starts or continues a charge once in range and
+     * off cooldown, and sets vx for whichever state applies. _canSeePlayer()
+     * only gates STARTING a fresh charge - once committed, a charge is a
+     * full-commitment "rush, then recover" beat (05_enemies-bosses.md 6.1),
+     * facing locked in for the whole run rather than re-aimed every frame,
+     * so the player can't escape mid-rush by leaving height tolerance;
+     * combined with the fixed chargeDistance, it's a straight dash at a
+     * fixed target, not a homing chase.
+     * @param {number} dt - Elapsed time in seconds.
+     */
+    _updateChargeMovement(dt) {
+        if (this.grounded && this._blockedAhead()) {
+            this.facing *= -1;
+            this._setCharging(false);
+        } else if (this.grounded) {
+            if (!this.charging && this.chargeCooldownTimer <= 0 && this._canSeePlayer()) {
+                this.facing = this.player.centerX >= this.centerX ? 1 : -1;
+                this.chargeTraveled = 0;
+                this._setCharging(true);
+            } else if (this.charging) {
+                this.chargeTraveled += this.chargeSpeed * dt;
+                if (this.chargeTraveled >= this.chargeDistance) this._setCharging(false);
+            }
+        }
+
+        this.vx = (this.charging ? this.chargeSpeed : this.patrolSpeed) * this.facing;
+    }
+
+    /**
+     * Starts the cooldown exactly on the true -> false edge, not every
+     * frame charging happens to already be false (that would never let the
+     * timer run out).
+     * @param {boolean} value - New charging state.
+     */
     _setCharging(value) {
         if (this.charging && !value) this.chargeCooldownTimer = this.chargeCooldownSeconds;
         this.charging = value;
     }
 
-    // charger-charge.png is a distinct sprite from the walking/idle one - swap
-    // to it while actually charging, same reset-on-switch reasoning as
-    // Player.js's _updateAnimationState so it never starts mid-frame.
+    /**
+     * charger-charge.png is a distinct sprite from the walking/idle one -
+     * swap to it while actually charging, same reset-on-switch reasoning as
+     * Player.js's _updateAnimationState so it never starts mid-frame.
+     */
     _updateChargeAnimation() {
         if (!this.animations?.charge) return;
 
@@ -139,6 +176,9 @@ export class Charger extends Enemy {
         }
     }
 
+    /**
+     * @returns {boolean}
+     */
     _canSeePlayer() {
         if (!this.player || this.player.dead) return false;
         const withinHeight = Math.abs(this.player.centerY - this.centerY) <= CHARGE_HEIGHT_TOLERANCE_PX;

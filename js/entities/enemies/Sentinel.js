@@ -36,8 +36,17 @@ const DEFAULT_AGGRO_RANGE_PX = 80;
 // The gap between the two is the point: the rise is visible (drawn in front,
 // climbing out of the ground over riseDuration) well before it can actually
 // hurt the player, instead of a hard cut from invisible-and-harmless straight
-// to visible-and-dangerous in the same frame.
+// to visible-and-dangerous in the same frame. Once fully risen, the only
+// "life" it shows is facing the player (update()) - it never actually moves
+// toward them.
 export class Sentinel extends Enemy {
+    /**
+     * @param {number} x - World X position.
+     * @param {number} y - World Y position.
+     * @param {HTMLImageElement} sprite - Fallback static sprite.
+     * @param {number} width - Hitbox width.
+     * @param {number} height - Hitbox height.
+     */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
         this.hp = SENTINEL_HP;
@@ -47,17 +56,26 @@ export class Sentinel extends Enemy {
         this.player = null;
         this.aggroRange = DEFAULT_AGGRO_RANGE_PX;
         this.riseDuration = DEFAULT_RISE_DURATION_SECONDS;
-        this.riseProgress = 0; // 0 = fully sunk, 1 = fully risen
+        this.riseProgress = 0;
         this.buried = true;
         this.dormant = true;
     }
 
+    /**
+     * @param {Player} player - Player instance to watch for aggro range.
+     * @param {object} [options]
+     * @param {number} [options.range=DEFAULT_AGGRO_RANGE_PX]
+     * @param {number} [options.riseDuration=DEFAULT_RISE_DURATION_SECONDS]
+     */
     enableTrigger(player, { range = DEFAULT_AGGRO_RANGE_PX, riseDuration = DEFAULT_RISE_DURATION_SECONDS } = {}) {
         this.player = player;
         this.aggroRange = range;
         this.riseDuration = riseDuration;
     }
 
+    /**
+     * @param {number} dt - Elapsed time in seconds.
+     */
     update(dt) {
         super.update(dt);
         if (this.dead) return;
@@ -68,20 +86,24 @@ export class Sentinel extends Enemy {
             this.riseProgress = Math.min(1, this.riseProgress + dt / this.riseDuration);
             if (this.riseProgress >= 1) this.dormant = false;
         } else {
-            // Fully risen - the only "life" it shows once active, since it
-            // never actually moves toward the player.
             this.facing = this.player.centerX >= this.centerX ? 1 : -1;
         }
     }
 
+    /**
+     * @returns {boolean}
+     */
     _playerInRange() {
         if (!this.player || this.player.dead) return false;
         return Math.hypot(this.player.centerX - this.centerX, this.player.centerY - this.centerY) <= this.aggroRange;
     }
 
-    // Only affects rendering (and visualTopY's HP-bar anchor, moot anyway
-    // since HUD.js's dormant check keeps the bar hidden until the rise
-    // finishes) - the actual hitbox (this.x/this.y) never moves.
+    /**
+     * Only affects rendering (and visualTopY's HP-bar anchor, moot anyway
+     * since HUD.js's dormant check keeps the bar hidden until the rise
+     * finishes) - the actual hitbox (this.x/this.y) never moves.
+     * @returns {number}
+     */
     _drawY() {
         return super._drawY() + (1 - this.riseProgress) * BURY_DEPTH_PX;
     }

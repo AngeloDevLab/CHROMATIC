@@ -33,6 +33,17 @@ const SHOT_IMPACT_FRAME = 3;
 // Charger's charge) - a hit landing mid-windup can still shove it around,
 // but doesn't cancel the shot itself.
 export class Shooter extends Enemy {
+    /**
+     * @param {number} x - World X position.
+     * @param {number} y - World Y position.
+     * @param {HTMLImageElement} sprite - Fallback static sprite.
+     * @param {number} width - Hitbox width.
+     * @param {number} height - Hitbox height.
+     *
+     * pendingProjectile is GameState's mailbox for a newly-spawned shot -
+     * read and cleared there right after enemy.update(), since Shooter
+     * itself has no access to the shared enemyProjectiles array.
+     */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
         this.hp = SHOOTER_HP;
@@ -45,45 +56,72 @@ export class Shooter extends Enemy {
         this.shootCooldownTimer = 0;
         this.shooting = false;
         this._shotFired = false;
-        // GameState's mailbox for a newly-spawned shot - read and cleared
-        // there right after enemy.update(), since Shooter itself has no
-        // access to the shared enemyProjectiles array.
         this.pendingProjectile = null;
     }
 
+    /**
+     * @param {Player} player - Player instance to watch for range/line of sight.
+     * @param {HTMLImageElement} projectileSprite - Sprite for spawned shots.
+     * @param {object} [options]
+     * @param {number} [options.cooldownSeconds=DEFAULT_SHOT_COOLDOWN_SECONDS]
+     */
     enableShoot(player, projectileSprite, { cooldownSeconds = DEFAULT_SHOT_COOLDOWN_SECONDS } = {}) {
         this.player = player;
         this.projectileSprite = projectileSprite;
         this.shotCooldownSeconds = cooldownSeconds;
     }
 
+    /**
+     * _updateShooting() is checked unconditionally, independent of
+     * knockback/movement below - the shot is purely animation-frame driven,
+     * so a hit landing mid-windup shouldn't also desync when it actually fires/ends.
+     * @param {number} dt - Elapsed time in seconds.
+     */
     _updatePatrol(dt) {
         this.vy += this.gravity * dt;
 
         if (this.shootCooldownTimer > 0) this.shootCooldownTimer = Math.max(0, this.shootCooldownTimer - dt);
-        // Always checked, independent of knockback below - the shot is
-        // purely animation-frame driven, a hit landing mid-windup shouldn't
-        // also desync when it actually fires/ends.
         if (this.shooting) this._updateShooting();
 
-        if (this.knockbackTimer > 0) {
-            this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
-        } else if (this.shooting) {
-            this.vx = 0;
-        } else if (this.grounded && this._canSeePlayer() && this.shootCooldownTimer <= 0) {
-            this.facing = this.player.centerX >= this.centerX ? 1 : -1;
-            this.shooting = true;
-            this._shotFired = false;
-            this.vx = 0;
-        } else {
-            if (this.grounded && this._blockedAhead()) this.facing *= -1;
-            this.vx = this.patrolSpeed * this.facing;
-        }
+        this._updateMovement(dt);
 
         this._updateAnimationState();
         this.grounded = this.collision.resolve(this, dt);
     }
 
+    /**
+     * Decides this frame's velocity: knockback overrides everything else,
+     * holding still while mid-shot, starting a new shot the instant the
+     * player comes into view off cooldown, otherwise falls back to normal patrol.
+     * @param {number} dt - Elapsed time in seconds.
+     */
+    _updateMovement(dt) {
+        if (this.knockbackTimer > 0) {
+            this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
+        } else if (this.shooting) {
+            this.vx = 0;
+        } else if (this.grounded && this._canSeePlayer() && this.shootCooldownTimer <= 0) {
+            this._startShooting();
+        } else {
+            if (this.grounded && this._blockedAhead()) this.facing *= -1;
+            this.vx = this.patrolSpeed * this.facing;
+        }
+    }
+
+    /**
+     * Locks facing toward the player and begins the shot windup.
+     */
+    _startShooting() {
+        this.facing = this.player.centerX >= this.centerX ? 1 : -1;
+        this.shooting = true;
+        this._shotFired = false;
+        this.vx = 0;
+    }
+
+    /**
+     * Spawns the actual projectile at SHOT_IMPACT_FRAME, and ends the shot
+     * (starting the cooldown) once the animation finishes.
+     */
     _updateShooting() {
         const shootAnim = this.animations.shoot;
         if (!shootAnim) {
@@ -103,9 +141,11 @@ export class Shooter extends Enemy {
         }
     }
 
-    // shooter-shooting.png is a distinct sprite from the walking/idle one -
-    // same reset-on-switch reasoning as Charger.js's _updateChargeAnimation
-    // so it never starts mid-frame.
+    /**
+     * shooter-shooting.png is a distinct sprite from the walking/idle one -
+     * same reset-on-switch reasoning as Charger.js's _updateChargeAnimation
+     * so it never starts mid-frame.
+     */
     _updateAnimationState() {
         if (!this.animations?.shoot) return;
 
@@ -116,6 +156,9 @@ export class Shooter extends Enemy {
         }
     }
 
+    /**
+     * @returns {boolean}
+     */
     _canSeePlayer() {
         if (!this.player || this.player.dead) return false;
         const withinHeight = Math.abs(this.player.centerY - this.centerY) <= SHOOTER_HEIGHT_TOLERANCE_PX;

@@ -24,10 +24,17 @@ const ENEMY_SPRITE_SETS = {
     },
 };
 
-// Own SpriteAnimation instance per enemy - sharing one across all of them
-// would advance its frame timer once per enemy per game frame (animation
-// playing N times too fast for N enemies). Returns null (filtered out by the
-// caller) for a spawn name with no registered sprite.
+/**
+ * Builds and wires up an enemy from a Tiled EnemySpawn object. Own
+ * SpriteAnimation instance per enemy - sharing one across all of them would
+ * advance its frame timer once per enemy per game frame (animation playing
+ * N times too fast for N enemies).
+ * @param {AssetLoader} assets - Loader holding enemy sprites.
+ * @param {Collision} collision - Level collision for patrol/charge movement.
+ * @param {Player} player - Player instance enemies aggro/react to.
+ * @param {object} spawn - Flattened Tiled EnemySpawn object ({ name, x, y }).
+ * @returns {Enemy|null} The constructed enemy, or null for an unregistered spawn name.
+ */
 export function createEnemy(assets, collision, player, spawn) {
     const spriteSet = ENEMY_SPRITE_SETS[spawn.name?.toLowerCase()];
     if (!spriteSet) {
@@ -37,37 +44,66 @@ export function createEnemy(assets, collision, player, spawn) {
 
     const typeName = spawn.name.toLowerCase();
     const sprite = assets.getImage(spriteSet.running);
-    const EnemyClass = typeName === 'charger' ? Charger
-        : typeName === 'sentinel' ? Sentinel
-        : typeName === 'shooter' ? Shooter
-        : Enemy;
+    const EnemyClass = _resolveEnemyClass(typeName);
     const enemy = new EnemyClass(spawn.x, spawn.y, sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE);
 
+    enemy.setAnimations(_buildAnimations(assets, sprite, spriteSet));
+    _enableBehavior(enemy, collision, player, assets, spriteSet);
+    return enemy;
+}
+
+/**
+ * @param {string} typeName - Lowercased EnemySpawn name.
+ * @returns {typeof Enemy} The enemy subclass to instantiate.
+ */
+function _resolveEnemyClass(typeName) {
+    if (typeName === 'charger') return Charger;
+    if (typeName === 'sentinel') return Sentinel;
+    if (typeName === 'shooter') return Shooter;
+    return Enemy;
+}
+
+/**
+ * `dead` plays once on death instead of vanishing instantly - see Enemy.js's
+ * deathAnimationFinished/_enterDeathAnimation(). `shoot` (Shooter only) is a
+ * 6-frame animation (shooter-shooting.png) that plays once per shot rather
+ * than looping - same reasoning as Player.js's attack animation.
+ * @param {AssetLoader} assets - Loader holding enemy sprites.
+ * @param {HTMLImageElement} sprite - Running/idle sprite, also used for the 'running' animation.
+ * @param {object} spriteSet - This type's entry from ENEMY_SPRITE_SETS.
+ * @returns {Object<string, SpriteAnimation>}
+ */
+function _buildAnimations(assets, sprite, spriteSet) {
     const animations = {
         running: new SpriteAnimation(sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 10),
-        // Plays once on death instead of vanishing instantly - see
-        // Enemy.js's deathAnimationFinished/_enterDeathAnimation().
         dead: new SpriteAnimation(assets.getImage(spriteSet.dead), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 12, { loop: false }),
     };
     if (spriteSet.charge) {
         animations.charge = new SpriteAnimation(assets.getImage(spriteSet.charge), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 14);
     }
     if (spriteSet.shoot) {
-        // 6-frame shoot animation (shooter-shooting.png), plays once per shot
-        // rather than looping - same reasoning as Player.js's attack animation.
         animations.shoot = new SpriteAnimation(assets.getImage(spriteSet.shoot), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 6, 12, { loop: false });
     }
-    enemy.setAnimations(animations);
+    return animations;
+}
 
-    // Sentinel never patrols (05_enemies-bosses.md 6.1: "Static") - skips
-    // enablePatrol entirely rather than gating movement some other way, so it
-    // has no collision/gravity dependency at all, just sits where Tiled placed it.
+/**
+ * Wires each enemy's movement/aggro behavior. Sentinel never patrols
+ * (05_enemies-bosses.md 6.1: "Static") - skips enablePatrol entirely rather
+ * than gating movement some other way, so it has no collision/gravity
+ * dependency at all, just sits where Tiled placed it.
+ * @param {Enemy} enemy - Freshly constructed enemy to wire up.
+ * @param {Collision} collision - Level collision for patrol/charge movement.
+ * @param {Player} player - Player instance enemies aggro/react to.
+ * @param {AssetLoader} assets - Loader holding enemy sprites.
+ * @param {object} spriteSet - This type's entry from ENEMY_SPRITE_SETS.
+ */
+function _enableBehavior(enemy, collision, player, assets, spriteSet) {
     if (enemy instanceof Sentinel) {
         enemy.enableTrigger(player);
-    } else {
-        enemy.enablePatrol(collision);
-        if (enemy instanceof Charger) enemy.enableCharge(player);
-        if (enemy instanceof Shooter) enemy.enableShoot(player, assets.getImage(spriteSet.projectile));
+        return;
     }
-    return enemy;
+    enemy.enablePatrol(collision);
+    if (enemy instanceof Charger) enemy.enableCharge(player);
+    if (enemy instanceof Shooter) enemy.enableShoot(player, assets.getImage(spriteSet.projectile));
 }

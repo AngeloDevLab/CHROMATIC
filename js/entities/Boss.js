@@ -16,47 +16,65 @@ const ENRAGE_TIME_SCALE = 0.65;
 // moveset (Wraith.js today, a second boss family later): the vulnerability-
 // window damage bonus, phase/enrage timing, and non-square rendering
 // (Enemy.render() assumes a square renderSize, which doesn't fit a tall/wide
-// boss sheet like the Wraith's 128x256).
+// boss sheet like the Wraith's 128x256). No sprite/animations wired up for
+// any Boss subclass yet (session decision: build the state machine now, swap
+// in real art once the PixelLab export lands) - render() falls back to
+// _renderPlaceholder()'s tinted box until then.
 export class Boss extends Enemy {
+    /**
+     * @param {number} x - World X position.
+     * @param {number} y - World Y position.
+     * @param {HTMLImageElement} sprite - Fallback static sprite.
+     * @param {number} width - Hitbox width.
+     * @param {number} height - Hitbox height.
+     *
+     * vulnerable: landed/exposed window (05_enemies-bosses.md 6.2.1) -
+     * subclasses flip this during their own state machine (see Wraith.js),
+     * takeDamage() just reacts to it. telegraphing: windup telegraph
+     * (05_enemies-bosses.md 6.3.1's "short visible windup") - separate from
+     * `vulnerable` since they're different beats of the same attack; only
+     * used by _renderPlaceholder() until real animations exist.
+     */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
-        // Landed/exposed window (05_enemies-bosses.md 6.2.1) - subclasses flip
-        // this during their own state machine (see Wraith.js), takeDamage()
-        // below just reacts to it.
         this.vulnerable = false;
-        // Windup telegraph (05_enemies-bosses.md 6.3.1's "short visible
-        // windup") - separate from `vulnerable` since they're different beats
-        // of the same attack; only used by _renderPlaceholder() below until
-        // real animations exist.
         this.telegraphing = false;
     }
 
-    // Doubles incoming damage instead of gating "can be hit at all" behind a
-    // separate flag, so melee/ranged/Combat.js need zero boss-specific code -
-    // same reasoning as Charger.js overriding applyAttackKnockback instead of
-    // Combat.js branching on enemy type.
+    /**
+     * Doubles incoming damage instead of gating "can be hit at all" behind a
+     * separate flag, so melee/ranged/Combat.js need zero boss-specific code -
+     * same reasoning as Charger.js overriding applyAttackKnockback instead
+     * of Combat.js branching on enemy type.
+     * @param {number} amount - Damage to apply.
+     */
     takeDamage(amount) {
         super.takeDamage(this.vulnerable ? amount * VULNERABLE_DAMAGE_MULTIPLIER : amount);
     }
 
+    /**
+     * @returns {boolean}
+     */
     get enraged() {
         return this.hp <= this.maxHp * ENRAGE_HP_FRACTION;
     }
 
-    // Multiplies onto a duration (windup/vulnerable/attack-interval - see
-    // Wraith.js) - below 1 so "faster" always means "shorter" at every call
-    // site instead of a speed value that'd need inverting.
+    /**
+     * Multiplies onto a duration (windup/vulnerable/attack-interval - see
+     * Wraith.js) - below 1 so "faster" always means "shorter" at every call
+     * site instead of a speed value that'd need inverting.
+     * @returns {number}
+     */
     get timeScale() {
         return this.enraged ? ENRAGE_TIME_SCALE : 1;
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     render(ctx) {
         if (this.dead && this.deathAnimationFinished) return;
 
-        // No sprite/animations wired yet for any Boss subclass (session
-        // decision: build the state machine now, swap in real art once the
-        // PixelLab export lands) - simple colored box stands in, tinted by
-        // state so the timing is still readable while testing.
         if (!this.sprite || !this.animations) {
             this._renderPlaceholder(ctx);
             return;
@@ -68,10 +86,17 @@ export class Boss extends Enemy {
             return;
         }
 
-        // Scaled by height only, width follows the sheet's own aspect ratio -
-        // same technique as Player.js's attack pose, needed here because
-        // every Wraith frame is 128x256 (tall), not the 64x64 square
-        // Enemy.render() assumes.
+        this._renderBossFrame(ctx, anim);
+    }
+
+    /**
+     * Scaled by height only, width follows the sheet's own aspect ratio -
+     * same technique as Player.js's attack pose, needed here because every
+     * Wraith frame is 128x256 (tall), not the 64x64 square Enemy.render() assumes.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     * @param {SpriteAnimation} anim - Currently playing animation.
+     */
+    _renderBossFrame(ctx, anim) {
         const renderHeight = this.renderSize;
         const renderWidth = renderHeight * (anim.frameWidth / anim.frameHeight);
         const drawY = this.y + this.height - this.referenceAnim.groundLineRatio * renderHeight;
@@ -89,6 +114,11 @@ export class Boss extends Enemy {
         ctx.restore();
     }
 
+    /**
+     * Simple colored box stands in for real art, tinted by state so the
+     * timing is still readable while testing.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     _renderPlaceholder(ctx) {
         ctx.save();
         ctx.globalAlpha = this.dead ? 0.35 : 1;
