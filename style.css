@@ -101,25 +101,6 @@ body {
   pointer-events: none;
 }
 
-#fullscreen-btn {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  width: 36px;
-  height: 36px;
-  border: none;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.45);
-  color: #f2f2f2;
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-#fullscreen-btn:hover {
-  background: rgba(0, 0, 0, 0.7);
-}
-
 .menu-buttons {
   position: absolute;
   top: 105px;
@@ -239,6 +220,21 @@ body {
   font-size: 13px;
   opacity: 0.75;
   line-height: 1.4;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0;
+  font-size: 14px;
+}
+
+.settings-row input[type="range"] {
+  flex: 1;
+  max-width: 180px;
+  accent-color: #f2f2f2;
 }
 
 .cutscene-text {
@@ -487,8 +483,8 @@ body {
 }
 
 /* Dev Panel (js/ui/DevPanel.js) - fixed outside #ui-overlay, deliberately
-   unscaled (see #fullscreen-btn above) so it stays readable at any window/
-   game scale. Toggled with the physical key above Tab/left of 1 (Backquote). */
+   unscaled so it stays readable at any window/game scale. Toggled with the
+   physical key above Tab/left of 1 (Backquote). */
 .dev-panel {
   position: fixed;
   top: 12px;

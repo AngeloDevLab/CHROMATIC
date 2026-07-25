@@ -3,8 +3,7 @@ import { LEVEL_JSON_KEYS } from '../states/GameState.js';
 // Fixed to the document, deliberately outside #ui-overlay - that overlay is
 // scaled together with the canvas (Game._handleResize) to stay consistent
 // with in-game HUD/menus, but a dev tool reads better at a constant size
-// regardless of window/game scale, same reasoning as #fullscreen-btn in
-// index.html.
+// regardless of window/game scale.
 const TOGGLE_KEY_CODE = 'Backquote';
 
 // Prologue only, matches WorldmapState's level-skip target - no chapter

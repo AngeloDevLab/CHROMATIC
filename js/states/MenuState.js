@@ -7,6 +7,7 @@ import { ColorZone } from '../mechanics/ColorZone.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 import { MenuButtons } from '../ui/MenuButtons.js';
 import { Panel } from '../ui/Panel.js';
+import { buildSettingsBody, wireSettingsPanel } from '../ui/SettingsPanel.js';
 
 const PLAYER_SPEED = 60;
 const ENEMY_SPEED = 70;
@@ -32,7 +33,6 @@ const DIFFICULTIES = [
 // disabled until a SaveManager exists. New Game opens Difficulty selection
 // below, which continues into CutsceneState -> WorldmapState (08_menu-flow.md 9.2).
 const PANEL_CONTENT = {
-    settings: { title: 'Settings', body: '<p>Audio, Controls, and Language settings - coming soon.</p>' },
     info: {
         title: 'Info',
         body: `
@@ -155,9 +155,19 @@ export class MenuState extends State {
             this._openDifficultySelect();
             return;
         }
+        if (id === 'settings') {
+            this._openSettings();
+            return;
+        }
 
         const content = PANEL_CONTENT[id];
         if (content) this.panel.open(content.title, content.body);
+    }
+
+    _openSettings() {
+        this.panel.open('Settings', buildSettingsBody(this.game), {
+            onMount: (root) => wireSettingsPanel(root, this.game),
+        });
     }
 
     _openDifficultySelect() {

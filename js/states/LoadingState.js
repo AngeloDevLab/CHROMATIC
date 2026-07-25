@@ -12,12 +12,41 @@ export class LoadingState extends State {
 
     async _load() {
         try {
-            await this._loadManifest();
-            this.game.stateMachine.change('menu');
+            await Promise.all([this._loadManifest(), this._loadSounds()]);
+            this._waitForContinue();
         } catch (error) {
             console.error(error);
             this.label.textContent = `Failed to load: ${error.message}. Reload the page to try again.`;
             this.label.classList.add('error');
+        }
+    }
+
+    /**
+     * Gates the state transition behind one user gesture. Assets are ready
+     * at this point, but both a saved fullscreen preference (Fullscreen
+     * API) and the SoundManager's AudioContext can only be (re-)applied/
+     * resumed inside a click/keypress handler, never on load.
+     */
+    _waitForContinue() {
+        this.label.textContent = 'Press any key to continue';
+        const proceed = () => {
+            document.removeEventListener('keydown', proceed);
+            document.removeEventListener('pointerdown', proceed);
+            this._applyFullscreenPreference();
+            this.game.sound.resume();
+            this.game.music.start();
+            this.game.stateMachine.change('menu');
+        };
+        document.addEventListener('keydown', proceed);
+        document.addEventListener('pointerdown', proceed);
+    }
+
+    /**
+     * Re-enters fullscreen if the player had it on last session.
+     */
+    _applyFullscreenPreference() {
+        if (this.game.save.get('fullscreen', false) && !document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => { });
         }
     }
 
@@ -88,6 +117,26 @@ export class LoadingState extends State {
                 'lv4-level': 'assets/levels/Lv_4.json',
                 'lv5-level': 'assets/levels/Lv_5.json',
             },
+        });
+    }
+
+    /**
+     * Loads the ambient OST rotation and the boss track. 'ost-00'..'ost-07'
+     * are the generic playlist (see main.js's MusicPlaylist); 'ost-08'
+     * ("The Iron Sentinel") is reserved for boss encounters and deliberately
+     * left out of that rotation.
+     */
+    async _loadSounds() {
+        await this.game.sound.loadManifest({
+            'ost-00': 'assets/sounds/ost/00_The_Color_Returns.mp3',
+            'ost-01': 'assets/sounds/ost/01_Whispers_of_the_Dawn.mp3',
+            'ost-02': 'assets/sounds/ost/02_The_Road_to_Dawn.mp3',
+            'ost-03': 'assets/sounds/ost/03_The_First_Dawn.mp3',
+            'ost-04': 'assets/sounds/ost/04_Faded_Kingdom.mp3',
+            'ost-05': 'assets/sounds/ost/05_Echoes_of_the_Forgotten.mp3',
+            'ost-06': 'assets/sounds/ost/06_Whispers_in_the_Hollows.mp3',
+            'ost-07': 'assets/sounds/ost/07_The_Hollow_Between.mp3',
+            'ost-08': 'assets/sounds/ost/08_The_Iron_Sentinel.mp3',
         });
     }
 
