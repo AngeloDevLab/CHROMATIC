@@ -164,20 +164,30 @@ export class Collision {
         const bottomEdge = entity.y + entity.height;
 
         if (this.wallLayerName && this._rowSolid(this.wallLayerName, bottomEdge, entity.x, entity.x + entity.width)) {
-            entity.y = Math.floor(bottomEdge / tileSize) * tileSize - entity.height;
-            entity.vy = 0;
-            return true;
+            return this._snapOntoSurface(entity, bottomEdge, tileSize);
         }
 
         if (this._rowSolid(this.layerName, bottomEdge, entity.x, entity.x + entity.width)) {
             const surfaceY = Math.floor(bottomEdge / tileSize) * tileSize;
             if (this.oneWay && previousBottom > surfaceY + 1) return false;
-
-            entity.y = surfaceY - entity.height;
-            entity.vy = 0;
-            return true;
+            return this._snapOntoSurface(entity, bottomEdge, tileSize);
         }
         return false;
+    }
+
+    /**
+     * Snaps the entity's bottom edge to the tile boundary at/above
+     * bottomEdge and zeroes its fall speed - shared by both the wall-layer
+     * and primary-layer catch branches above.
+     * @param {Entity} entity - Entity to snap onto the surface.
+     * @param {number} bottomEdge - Entity's bottom edge this frame.
+     * @param {number} tileSize - Level tile size in pixels.
+     * @returns {true}
+     */
+    _snapOntoSurface(entity, bottomEdge, tileSize) {
+        entity.y = Math.floor(bottomEdge / tileSize) * tileSize - entity.height;
+        entity.vy = 0;
+        return true;
     }
 
     /**

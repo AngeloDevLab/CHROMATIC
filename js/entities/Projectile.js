@@ -66,19 +66,30 @@ export class Projectile extends Entity {
         const stepDx = totalDx / steps;
 
         for (let i = 0; i < steps; i++) {
-            const leadingEdgeX = this.direction > 0 ? this.x + this.width + stepDx : this.x + stepDx;
-            if (collision.isSolidAt(leadingEdgeX, this.centerY)) {
-                this.dead = true;
-                return;
-            }
-
-            this.x += stepDx;
-            this.traveled += Math.abs(stepDx);
-            if (this.traveled >= MAX_TRAVEL_PX) {
-                this.dead = true;
-                return;
-            }
+            if (this._sweepStep(stepDx, collision)) return;
         }
+    }
+
+    /**
+     * Advances one sub-step and checks for a wall hit or max-travel despawn.
+     * @param {number} stepDx - This sub-step's X delta.
+     * @param {Collision} collision - Level collision to check against.
+     * @returns {boolean} Whether the projectile died this step.
+     */
+    _sweepStep(stepDx, collision) {
+        const leadingEdgeX = this.direction > 0 ? this.x + this.width + stepDx : this.x + stepDx;
+        if (collision.isSolidAt(leadingEdgeX, this.centerY)) {
+            this.dead = true;
+            return true;
+        }
+
+        this.x += stepDx;
+        this.traveled += Math.abs(stepDx);
+        if (this.traveled >= MAX_TRAVEL_PX) {
+            this.dead = true;
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -106,23 +117,33 @@ export class Projectile extends Entity {
         if (!this.trailSprite) return;
 
         for (let i = TRAIL_ECHO_COUNT; i >= 1; i--) {
-            const behindPx = i * TRAIL_ECHO_SPACING_PX;
-            const traveledAtEcho = this.traveled - behindPx;
-            if (traveledAtEcho < 0) continue;
-
-            const frame = Math.floor(traveledAtEcho / TRAIL_ECHO_SPACING_PX) % TRAIL_FRAME_COUNT;
-            const echoX = this.centerX - this.direction * behindPx;
-
-            ctx.save();
-            ctx.globalAlpha = 1 - i / (TRAIL_ECHO_COUNT + 1);
-            ctx.translate(echoX, this.centerY);
-            ctx.rotate(traveledAtEcho * ROTATION_PER_PX * this.direction);
-            ctx.drawImage(
-                this.trailSprite,
-                frame * TRAIL_SOURCE_FRAME_SIZE, 0, TRAIL_SOURCE_FRAME_SIZE, TRAIL_SOURCE_FRAME_SIZE,
-                -TRAIL_RENDER_SIZE / 2, -TRAIL_RENDER_SIZE / 2, TRAIL_RENDER_SIZE, TRAIL_RENDER_SIZE
-            );
-            ctx.restore();
+            this._renderEcho(ctx, i);
         }
+    }
+
+    /**
+     * Draws one trail echo at position `i` behind the blade; skips it if
+     * that position is behind where the blade actually started (traveledAtEcho < 0).
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     * @param {number} i - Echo index, 1 (nearest) to TRAIL_ECHO_COUNT (farthest).
+     */
+    _renderEcho(ctx, i) {
+        const behindPx = i * TRAIL_ECHO_SPACING_PX;
+        const traveledAtEcho = this.traveled - behindPx;
+        if (traveledAtEcho < 0) return;
+
+        const frame = Math.floor(traveledAtEcho / TRAIL_ECHO_SPACING_PX) % TRAIL_FRAME_COUNT;
+        const echoX = this.centerX - this.direction * behindPx;
+
+        ctx.save();
+        ctx.globalAlpha = 1 - i / (TRAIL_ECHO_COUNT + 1);
+        ctx.translate(echoX, this.centerY);
+        ctx.rotate(traveledAtEcho * ROTATION_PER_PX * this.direction);
+        ctx.drawImage(
+            this.trailSprite,
+            frame * TRAIL_SOURCE_FRAME_SIZE, 0, TRAIL_SOURCE_FRAME_SIZE, TRAIL_SOURCE_FRAME_SIZE,
+            -TRAIL_RENDER_SIZE / 2, -TRAIL_RENDER_SIZE / 2, TRAIL_RENDER_SIZE, TRAIL_RENDER_SIZE
+        );
+        ctx.restore();
     }
 }
