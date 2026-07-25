@@ -39,6 +39,9 @@ export class DevPanel {
         this.open ? this._close() : this._render();
     }
 
+    /**
+     * Detaches the panel and clears its open state.
+     */
     _close() {
         this.open = false;
         this.element?.remove();

@@ -78,10 +78,16 @@ export class InputHandler {
         document.addEventListener('visibilitychange', this._onVisibilityChange);
     }
 
+    /**
+     * Releases all held movement actions when the tab becomes hidden.
+     */
     _onVisibilityChange() {
         if (document.hidden) this._releaseAllActions();
     }
 
+    /**
+     * Zeroes every held movement action (used on blur/tab-hidden).
+     */
     _releaseAllActions() {
         this.actions.left = false;
         this.actions.right = false;
@@ -117,6 +123,9 @@ export class InputHandler {
         if (action) this.actions[action] = false;
     }
 
+    /**
+     * Registers an edge-triggered attack press.
+     */
     _onMouseDown() {
         this._presses.attack = true;
     }

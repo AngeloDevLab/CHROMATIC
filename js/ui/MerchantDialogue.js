@@ -41,6 +41,9 @@ export class MerchantDialogue {
         });
     }
 
+    /**
+     * Closes the dialogue panel.
+     */
     close() {
         this.isOpen = false;
         this.panel.close();
