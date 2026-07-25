@@ -11,11 +11,21 @@ export class Collision {
     // which the one-way primary layer deliberately never does. Tolerates a
     // level that doesn't have this layer yet (same "missing layer" handling
     // as the primary one) - opt-in per level as it gets painted in Tiled.
-    constructor(level, layerName = 'Terrain/Collision', { oneWay = false, wallLayerName = null } = {}) {
+    //
+    // noDropLayerName: an optional third layer marking specific one-way
+    // platforms as exempt from Player.js's Drop-Through-Platform ability -
+    // still a normal landable-from-above one-way floor otherwise, S/Down
+    // just does nothing while standing on one (see isNoDropBelow()). Needed
+    // once a level relies on specific platforms staying put (Lvl 4/5's
+    // gimmick/secret layouts - the player shouldn't be able to fall through a
+    // platform that's meant to be the actual intended path, only the
+    // deliberately-placed gaps/trapdoors).
+    constructor(level, layerName = 'Terrain/Collision', { oneWay = false, wallLayerName = null, noDropLayerName = null } = {}) {
         this.level = level;
         this.layerName = layerName;
         this.oneWay = oneWay;
         this.wallLayerName = wallLayerName;
+        this.noDropLayerName = noDropLayerName;
     }
 
     isSolidAt(pxX, pxY) {
@@ -179,5 +189,14 @@ export class Collision {
     _solidAtRow(pxY, entity) {
         return this._rowSolid(this.layerName, pxY, entity.x, entity.x + entity.width)
             || (!!this.wallLayerName && this._rowSolid(this.wallLayerName, pxY, entity.x, entity.x + entity.width));
+    }
+
+    // Player.js checks this alongside hasFloorBelow() before honoring a drop
+    // press - true when the platform the entity is currently resting on (the
+    // row right at its own feet, not the gap below like hasFloorBelow scans)
+    // is marked on the noDropLayerName layer.
+    isNoDropBelow(entity) {
+        if (!this.noDropLayerName) return false;
+        return this._rowSolid(this.noDropLayerName, entity.y + entity.height, entity.x, entity.x + entity.width);
     }
 }

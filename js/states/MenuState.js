@@ -1,5 +1,6 @@
 import { State } from './State.js';
 import { Level } from '../world/Level.js';
+import { buildTilesetRegistry } from '../world/TilesetRegistry.js';
 import { Player } from '../entities/Player.js';
 import { Enemy } from '../entities/Enemy.js';
 import { ColorZone } from '../mechanics/ColorZone.js';
@@ -47,7 +48,7 @@ const PANEL_CONTENT = {
 
 export class MenuState extends State {
     enter() {
-        this.level = Level.load(this.game.assets, 'menu-background-level', 'menu-tileset');
+        this.level = Level.load(this.game.assets, 'menu-background-level', buildTilesetRegistry(this.game.assets));
         const groundSurfaceY = this.level.findGroundSurfaceY();
 
         this.backgroundCanvas = document.createElement('canvas');

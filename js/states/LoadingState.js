@@ -24,7 +24,6 @@ export class LoadingState extends State {
     async _loadManifest() {
         await this.game.assets.loadManifest({
             images: {
-                'menu-tileset': 'assets/images/tilesets/tileset_grass.png',
                 'guardian-idle': 'assets/images/character/idle.png',
                 'guardian-running': 'assets/images/character/running.png',
                 'guardian-jump': 'assets/images/character/jump.png',
@@ -36,13 +35,12 @@ export class LoadingState extends State {
                 'menu-parallax-bg': 'assets/images/backgrounds/forest_bg.png',
                 'cutscene-beach-bg': 'assets/images/backgrounds/beach_bg.png',
                 'worldmap-prologue-bg': 'assets/images/backgrounds/worldmap_prolog.png',
-                // Shared by every Prologue level so far (see LEVEL_JSON_KEYS in
-                // GameState.js) - not "lv1-tileset" since Lv_2 reuses it too.
+                // Every tileset a level might reference - resolved to the
+                // right image/gid-range per tile by world/TilesetRegistry.js,
+                // not hardcoded to one shared tileset per level any more.
                 'prologue-tileset': 'assets/images/tilesets/tileset_grass.png',
-                // Lv_4's cave-interior sections paint with this on top of the
-                // shared grass tileset (see composeTileset() below) - not
-                // reused standalone anywhere yet.
                 'tileset-gravel': 'assets/images/tilesets/tileset_gravel.png',
+                'tileset-scifilab': 'assets/images/tilesets/tileset_scifilab.png',
                 'enemy-patroller-walking-idle': 'assets/images/enemys/patroller/patroller-walking-idle.png',
                 'enemy-patroller-dead': 'assets/images/enemys/patroller/patroller-dead.png',
                 'enemy-charger-walking-idle': 'assets/images/enemys/charger/charger-walking-idle.png',
@@ -61,6 +59,14 @@ export class LoadingState extends State {
                 // 128x32 frame, opens is a 10-frame 128x32 strip (1280x32).
                 'trapdoor-closed': 'assets/images/objects/trapdoor-closed.png',
                 'trapdoor-opens': 'assets/images/objects/trapdoor-opens.png',
+                // Lvl 5 Secret Room (entities/SecretDoor.js) - closed/open are
+                // single 32x64 frames, opens is a 7-frame 32x64 strip (224x64).
+                'secretdoor-closed': 'assets/images/objects/secretdoor-closed.png',
+                'secretdoor-open': 'assets/images/objects/secretdoor-open.png',
+                'secretdoor-opens': 'assets/images/objects/secretdoor-opens.png',
+                // Lvl 5 Secret Room (entities/BuffTerminal.js) - single static
+                // 32x64 frame, no animation.
+                'buffterminal': 'assets/images/objects/buffterminal.png',
                 // Wraith of the Shifting Sands (Lvl 3 Miniboss, entities/bosses/
                 // Wraith.js) - each a fixed 128x256 frame (see the earlier PixelLab
                 // sizing discussion). idle loops; the rest are one-shot transitions
@@ -80,14 +86,9 @@ export class LoadingState extends State {
                 'lv2-level': 'assets/levels/Lv_2.json',
                 'lv3-level': 'assets/levels/Lv_3.json',
                 'lv4-level': 'assets/levels/Lv_4.json',
+                'lv5-level': 'assets/levels/Lv_5.json',
             },
         });
-
-        // Lv_4 paints with both the shared grass tileset (gid 1-20) and the
-        // gravel one (gid 21-40) - AssetLoader.composeTileset() stitches them
-        // into one combined image matching that same gid numbering, so
-        // Level.js's single-tileset-image assumption still holds.
-        this.game.assets.composeTileset('lv4-tileset', ['prologue-tileset', 'tileset-gravel']);
     }
 
     exit() {

@@ -1,9 +1,16 @@
 const TILE_SIZE = 32;
 
 export class Level {
-    constructor(data, tilesetImage, tileSize = TILE_SIZE) {
+    // tilesetRegistry: { [tsxBasename]: { image, columns } } - Tiled's own
+    // per-level `tilesets` array (firstgid + a source path to each .tsx)
+    // already says which gid ranges belong to which tileset; this just
+    // supplies the actual loaded image + column count for each one, keyed by
+    // that .tsx's filename. Lets a level mix tilesets with different images
+    // AND different column counts (a single shared image/column-count for
+    // the whole level used to be assumed - broke once a level mixed a 5- and
+    // a 9-column tileset, see getTileSourceRect() below).
+    constructor(data, tilesetRegistry, tileSize = TILE_SIZE) {
         this.data = data;
-        this.tilesetImage = tilesetImage;
         this.tileSize = tileSize;
 
         this.widthInTiles = data.width;
@@ -11,7 +18,16 @@ export class Level {
         this.pixelWidth = this.widthInTiles * tileSize;
         this.pixelHeight = this.heightInTiles * tileSize;
 
-        this.tilesetColumns = Math.floor(this.tilesetImage.width / tileSize);
+        // Sorted ascending by firstGid so _tilesetFor()'s scan can stop at
+        // the last one whose firstGid is still <= the gid being looked up.
+        this.tilesets = data.tilesets
+            .map((ts) => {
+                const basename = ts.source.split('/').pop().replace(/\.tsx$/, '');
+                const entry = tilesetRegistry[basename];
+                if (!entry) throw new Error(`Level: no tileset registered for "${basename}"`);
+                return { firstGid: ts.firstgid, image: entry.image, columns: entry.columns };
+            })
+            .sort((a, b) => a.firstGid - b.firstGid);
 
         this.layers = {};
         this.layerOrder = [];
@@ -48,20 +64,34 @@ export class Level {
         return this.objects.filter((obj) => obj.type === type);
     }
 
-    static load(assetLoader, jsonKey, tilesetKey) {
+    static load(assetLoader, jsonKey, tilesetRegistry) {
         const data = assetLoader.getJSON(jsonKey);
-        const tilesetImage = assetLoader.getImage(tilesetKey);
-        if (!data || !tilesetImage) {
-            throw new Error(`Level.load: assets not ready (${jsonKey} / ${tilesetKey})`);
+        if (!data) {
+            throw new Error(`Level.load: JSON not ready (${jsonKey})`);
         }
-        return new Level(data, tilesetImage);
+        return new Level(data, tilesetRegistry);
+    }
+
+    // Last tileset (in firstGid order) that this gid could belong to - Tiled
+    // itself numbers gids as one continuous sequence across every tileset a
+    // level uses, in firstgid order, so the "current" tileset for a gid is
+    // whichever one started most recently at or before it.
+    _tilesetFor(gid) {
+        let found = this.tilesets[0];
+        for (const tileset of this.tilesets) {
+            if (tileset.firstGid <= gid) found = tileset;
+            else break;
+        }
+        return found;
     }
 
     getTileSourceRect(gid) {
-        const tileIndex = gid - 1;
+        const tileset = this._tilesetFor(gid);
+        const localIndex = gid - tileset.firstGid;
         return {
-            sx: (tileIndex % this.tilesetColumns) * this.tileSize,
-            sy: Math.floor(tileIndex / this.tilesetColumns) * this.tileSize,
+            image: tileset.image,
+            sx: (localIndex % tileset.columns) * this.tileSize,
+            sy: Math.floor(localIndex / tileset.columns) * this.tileSize,
         };
     }
 
@@ -73,12 +103,12 @@ export class Level {
             const gid = tiles[i];
             if (gid === 0) continue;
 
-            const { sx, sy } = this.getTileSourceRect(gid);
+            const { image, sx, sy } = this.getTileSourceRect(gid);
             const col = i % this.widthInTiles;
             const row = Math.floor(i / this.widthInTiles);
 
             ctx.drawImage(
-                this.tilesetImage,
+                image,
                 sx, sy, this.tileSize, this.tileSize,
                 col * this.tileSize, row * this.tileSize, this.tileSize, this.tileSize
             );
@@ -101,12 +131,12 @@ export class Level {
         this._topPaddingCache ??= new Map();
         if (this._topPaddingCache.has(gid)) return this._topPaddingCache.get(gid);
 
-        const { sx, sy } = this.getTileSourceRect(gid);
+        const { image, sx, sy } = this.getTileSourceRect(gid);
         const canvas = document.createElement('canvas');
         canvas.width = this.tileSize;
         canvas.height = this.tileSize;
         const ctx = canvas.getContext('2d');
-        ctx.drawImage(this.tilesetImage, sx, sy, this.tileSize, this.tileSize, 0, 0, this.tileSize, this.tileSize);
+        ctx.drawImage(image, sx, sy, this.tileSize, this.tileSize, 0, 0, this.tileSize, this.tileSize);
 
         const { data } = ctx.getImageData(0, 0, this.tileSize, this.tileSize);
         let topPadding = this.tileSize;

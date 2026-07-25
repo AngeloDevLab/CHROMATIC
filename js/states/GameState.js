@@ -1,5 +1,6 @@
 import { State } from './State.js';
 import { Level } from '../world/Level.js';
+import { buildTilesetRegistry } from '../world/TilesetRegistry.js';
 import { Player } from '../entities/Player.js';
 import { createEnemy } from '../entities/EnemyFactory.js';
 import { Wraith } from '../entities/bosses/Wraith.js';
@@ -8,6 +9,8 @@ import { Projectile } from '../entities/Projectile.js';
 import { Portal } from '../entities/Portal.js';
 import { Merchant } from '../entities/Merchant.js';
 import { Trapdoor } from '../entities/Trapdoor.js';
+import { SecretDoor, SECRET_DOOR_PRISMA_COST } from '../entities/SecretDoor.js';
+import { BuffTerminal } from '../entities/BuffTerminal.js';
 import { Collision } from '../utils/Collision.js';
 import { Camera } from '../utils/Camera.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
@@ -96,20 +99,15 @@ const MERCHANT_TEASER_TEXT = "Heh, another wanderer with color to spare. Slay th
 // ENEMY_SPRITE_SETS), not a separate custom property. Names that don't
 // match a registered type (e.g. a typo in Tiled) are skipped with a console
 // warning rather than spawning the wrong thing.
-// Most Prologue levels share the same tileset image ('prologue-tileset' in
-// LoadingState.js) - LEVEL_TILESET_KEYS below only needs an entry for a level
-// that paints with something else/more (Lv_4's combined grass+gravel image,
-// see AssetLoader.composeTileset()), defaulting to 'prologue-tileset'
-// otherwise.
+// Which tileset(s) a level's own `tilesets` array actually needs is resolved
+// generically now (TilesetRegistry.js) - no per-level tileset lookup needed
+// here any more, Level.load() just gets the whole registry every time.
 export const LEVEL_JSON_KEYS = {
     1: 'lv1-level',
     2: 'lv2-level',
     3: 'lv3-level',
     4: 'lv4-level',
-};
-
-const LEVEL_TILESET_KEYS = {
-    4: 'lv4-tileset',
+    5: 'lv5-level',
 };
 
 export class GameState extends State {
@@ -121,8 +119,7 @@ export class GameState extends State {
         if (!levelKey) {
             throw new Error(`GameState: no level registered for level number ${this.levelNumber}`);
         }
-        const tilesetKey = LEVEL_TILESET_KEYS[this.levelNumber] ?? 'prologue-tileset';
-        this.level = Level.load(this.game.assets, levelKey, tilesetKey);
+        this.level = Level.load(this.game.assets, levelKey, buildTilesetRegistry(this.game.assets));
         // The Tiled layer is named "terrain", not the documented
         // "Terrain/Collision" - passed explicitly rather than renaming in Tiled.
         // One-way: the level is built from several stacked walkable floors, not
@@ -131,8 +128,12 @@ export class GameState extends State {
         // always fully solid regardless of the one-way terrain above - lets a
         // level mark specific ledge/corner tiles as real walls (blocks sideways
         // movement too) without losing one-way behavior everywhere else.
-        // Tolerates not existing yet - opt-in per level as it gets painted in.
-        this.collision = new Collision(this.level, 'terrain', { oneWay: true, wallLayerName: 'walls' });
+        // `noDrop` is a third optional layer marking specific one-way floors
+        // as exempt from Drop-Through-Platform (Player.js) - needed once a
+        // level (Lvl 4/5) relies on some platforms staying the actual
+        // intended path rather than something the player can just S through.
+        // Both tolerate not existing yet - opt-in per level as painted in.
+        this.collision = new Collision(this.level, 'terrain', { oneWay: true, wallLayerName: 'walls', noDropLayerName: 'noDrop' });
         this.camera = new Camera(this.game.width, this.game.height);
 
         this.levelCanvas = document.createElement('canvas');
@@ -196,6 +197,10 @@ export class GameState extends State {
         const playerStart = this.level.getObjectsByType('PlayerStart')[0] ?? FALLBACK_SPAWN;
         this.player = new Player(playerStart.x, playerStart.y, animations);
         this.player.enableControl(this.game.input, this.collision);
+        // Secret Room buffs (docs/GDD/02_game-structure.md 2.5) persist on
+        // Game (see its own comment), not this Player instance - re-applied
+        // here every time a fresh one is constructed.
+        for (const buffId of this.game.buffs) this.player.applyBuff(buffId);
 
         // "miniboss" bypasses the regular EnemyFactory - Wraith.js doesn't fit
         // its generic sprite-sheet wiring (different frame size/animation set/
@@ -260,6 +265,42 @@ export class GameState extends State {
                 opensFps: 12,
             }, this.colorZone.greyFilterCSS)
             : null;
+
+        // Secret Room (Lvl 5 Gimmick, docs/GDD/02_game-structure.md 2.5) -
+        // same null-tolerant pattern as everything else above. "Only visible
+        // once the player has colored the surrounding area" needs no extra
+        // code at all - it's just the same greyFilterCSS/revealed treatment
+        // as Portal/Trapdoor, so it looks identical to unrevealed terrain
+        // until then.
+        const secretDoorSpawn = this.level.getObjectsByType('SecretDoor')[0];
+        this.secretDoor = secretDoorSpawn
+            ? new SecretDoor(secretDoorSpawn.x, secretDoorSpawn.y, secretDoorSpawn.width, secretDoorSpawn.height, {
+                closed: this.game.assets.getImage('secretdoor-closed'),
+                open: this.game.assets.getImage('secretdoor-open'),
+                opens: this.game.assets.getImage('secretdoor-opens'),
+                opensFrameCount: 7,
+                opensFps: 12,
+            }, this.colorZone.greyFilterCSS)
+            : null;
+        this.secretDoorPromptEl = document.createElement('div');
+        this.secretDoorPromptEl.className = 'interact-prompt';
+        this.secretDoorPromptEl.textContent = `[E] Open (${SECRET_DOOR_PRISMA_COST} Prisma)`;
+        this.secretDoorPromptEl.hidden = true;
+        this.game.overlay.appendChild(this.secretDoorPromptEl);
+
+        // Gated on secretDoor.isOpen (see _updateBuffTerminal()), not its own
+        // separate reveal/color state - it sits inside the room the door
+        // already guards.
+        const buffTerminalSpawn = this.level.getObjectsByType('BuffTerminal')[0];
+        this.buffTerminal = buffTerminalSpawn
+            ? new BuffTerminal(buffTerminalSpawn.x, buffTerminalSpawn.y, buffTerminalSpawn.width, buffTerminalSpawn.height, this.game.assets.getImage('buffterminal'))
+            : null;
+        this.buffTerminalPromptEl = document.createElement('div');
+        this.buffTerminalPromptEl.className = 'interact-prompt';
+        this.buffTerminalPromptEl.textContent = '[E] Choose Buff';
+        this.buffTerminalPromptEl.hidden = true;
+        this.game.overlay.appendChild(this.buffTerminalPromptEl);
+        this.buffChoiceOpen = false;
 
         this.hud = new HUD();
         this.damageNumbers = new DamageNumbers(this.game.overlay);
@@ -331,16 +372,32 @@ export class GameState extends State {
         this.interactPromptEl?.remove();
         this.merchantPromptEl?.remove();
         this.merchantDialogue?.close();
+        this.secretDoorPromptEl?.remove();
+        this.buffTerminalPromptEl?.remove();
         this.damageNumbers?.clear();
         this.panel?.close();
     }
 
     update(dt) {
         // Always drain the press regardless of death state, same reasoning as
-        // the attack click - but ignore it once dead, Escape does nothing during
-        // or after the death sequence (the Game Over panel handles that instead).
+        // the attack click - but Escape means something different depending
+        // on what's currently open:
+        // - Merchant dialogue: nothing (bugfix - Escape used to open Pause on
+        //   top of it, which then left `merchantDialogue.isOpen` stuck true
+        //   forever once Resume closed the Pause panel over it, permanently
+        //   freezing update() at that modal's own early-return below).
+        // - Buff choice: closes that panel instead of opening Pause (its own
+        //   window-level Escape listener is disabled - see
+        //   _openBuffChoicePanel()'s closeOnEscape: false - specifically so
+        //   this is the only thing that reacts to the press, instead of both
+        //   this and Panel.js's own listener firing off the same keypress).
+        // - Otherwise (or once dead): normal Pause toggle, none while dead
+        //   (the Game Over panel handles that instead).
         const pausePressed = this.game.input.consumePausePress();
-        if (pausePressed && !this.deathSequence.active) this._togglePause();
+        if (pausePressed && !this.deathSequence.active) {
+            if (this.buffChoiceOpen) this.panel.close();
+            else if (!this.merchantDialogue.isOpen) this._togglePause();
+        }
         if (this.paused) return;
 
         // Merchant dialogue (MerchantDialogue.js) freezes gameplay the same
@@ -354,6 +411,11 @@ export class GameState extends State {
             return;
         }
 
+        // Buff choice panel (see _openBuffChoicePanel()) - same freeze
+        // pattern as the Merchant dialogue above, driven entirely by the
+        // panel's own DOM button clicks rather than the game input state.
+        if (this.buffChoiceOpen) return;
+
         if (this._hitStopTimer > 0) {
             this._hitStopTimer = Math.max(0, this._hitStopTimer - dt);
             return;
@@ -365,6 +427,15 @@ export class GameState extends State {
         this.player.godmode = this.game.devPanel.godmode;
 
         this.player.update(dt);
+        // Bugfix: a closed SecretDoor was purely visual (like Portal/Merchant/
+        // Trapdoor, none of which need to physically block anything) - the
+        // player could just walk straight into the Secret Room without ever
+        // paying the Prisma cost. Not routed through Collision.js's tile-grid
+        // resolution (the door is a dynamic entity, not baked into a tile
+        // layer) - a simple AABB push-out right after the player's own
+        // movement resolves.
+        if (this.secretDoor && !this.secretDoor.isOpen) this._blockSecretDoor();
+
         for (const enemy of this.enemies) {
             enemy.update(dt);
             // Shooter.js's mailbox for a shot fired this frame - it has no
@@ -386,6 +457,7 @@ export class GameState extends State {
         this.portal?.update(dt);
         this.trapdoor?.update(dt);
         this._updateTrapdoor();
+        this.secretDoor?.update(dt);
 
         // Jump & Run gaps with no floor below (10_technical-architecture.md
         // Platform level type) currently let the player fall forever and keep
@@ -474,11 +546,13 @@ export class GameState extends State {
 
         this.camera.follow(this.player, this.level.pixelWidth, this.level.pixelHeight);
         // Consumed once here rather than inside each of _updatePortal()/
-        // _updateMerchant() - both would otherwise race to drain the same
-        // press, and whichever ran first would silently starve the other.
+        // _updateMerchant()/etc. - they'd otherwise race to drain the same
+        // press, and whichever ran first would silently starve the others.
         const interactPressed = this.game.input.consumeInteractPress();
         this._updatePortal(interactPressed);
         this._updateMerchant(interactPressed);
+        this._updateSecretDoor(interactPressed);
+        this._updateBuffTerminal(interactPressed);
         // Once the death sequence's full-darken sweep finishes, stop feeding
         // position updates entirely - otherwise this falls through to the
         // normal per-frame reveal-at-(x,y) behavior and punches a fresh
@@ -566,6 +640,79 @@ export class GameState extends State {
         if (horizontallyOver && feetNearTop) this.trapdoor.trigger();
     }
 
+    // AABB push-out along whichever axis has the smaller overlap - a closed
+    // SecretDoor is the only entity in the game that needs to physically
+    // block the player (see the update() call site above for why this isn't
+    // just part of Collision.js).
+    _blockSecretDoor() {
+        const door = this.secretDoor;
+        const player = this.player;
+        const overlapping = player.x < door.x + door.width && player.x + player.width > door.x
+            && player.y < door.y + door.height && player.y + player.height > door.y;
+        if (!overlapping) return;
+
+        const overlapLeft = (player.x + player.width) - door.x;
+        const overlapRight = (door.x + door.width) - player.x;
+        const overlapTop = (player.y + player.height) - door.y;
+        const overlapBottom = (door.y + door.height) - player.y;
+
+        if (Math.min(overlapLeft, overlapRight) < Math.min(overlapTop, overlapBottom)) {
+            player.x = overlapLeft < overlapRight ? door.x - player.width : door.x + door.width;
+            player.vx = 0;
+        } else {
+            player.y = overlapTop < overlapBottom ? door.y - player.height : door.y + door.height;
+            player.vy = 0;
+        }
+    }
+
+    // Secret Room entrance (Lvl 5 Gimmick, docs/GDD/02_game-structure.md 2.5)
+    // - [E] in range pays SECRET_DOOR_PRISMA_COST and starts the door
+    // opening; same reveal-before-color treatment as _updateTrapdoor() above.
+    _updateSecretDoor(interactPressed) {
+        if (!this.secretDoor) return;
+
+        if (!this.secretDoor.revealed) {
+            const dist = Math.hypot(this.player.centerX - this.secretDoor.centerX, this.player.visualCenterY - this.secretDoor.centerY);
+            if (dist <= PLAYER_REVEAL_RADIUS) this.secretDoor.revealed = true;
+        }
+
+        const inRange = !this.secretDoor.isOpen && !this.player.dead
+            && Math.hypot(this.player.centerX - this.secretDoor.centerX, this.player.centerY - this.secretDoor.centerY) <= PORTAL_INTERACT_RANGE_PX;
+
+        this.secretDoorPromptEl.hidden = !inRange;
+        if (inRange) {
+            this.secretDoorPromptEl.style.left = `${(this.secretDoor.centerX - this.camera.x) * this.camera.zoom}px`;
+            this.secretDoorPromptEl.style.top = `${(this.secretDoor.y - this.camera.y) * this.camera.zoom}px`;
+        }
+
+        if (inRange && interactPressed) {
+            if (this.player.consumeShield(SECRET_DOOR_PRISMA_COST)) {
+                this.secretDoor.trigger();
+            } else {
+                this.damageNumbers.spawnStatus(this.player.centerX, this.player.visualTopY, 'Not enough Prisma');
+            }
+        }
+    }
+
+    // Buff Terminal (Lvl 5 Gimmick) - only interactable once the SecretDoor is
+    // open (or there simply isn't one placed) and hasn't already been used;
+    // opens the buff-choice panel rather than granting anything directly.
+    _updateBuffTerminal(interactPressed) {
+        if (!this.buffTerminal) return;
+
+        const doorOpen = !this.secretDoor || this.secretDoor.isOpen;
+        const inRange = doorOpen && !this.buffTerminal.used && !this.player.dead
+            && Math.hypot(this.player.centerX - this.buffTerminal.centerX, this.player.centerY - this.buffTerminal.centerY) <= PORTAL_INTERACT_RANGE_PX;
+
+        this.buffTerminalPromptEl.hidden = !inRange;
+        if (inRange) {
+            this.buffTerminalPromptEl.style.left = `${(this.buffTerminal.centerX - this.camera.x) * this.camera.zoom}px`;
+            this.buffTerminalPromptEl.style.top = `${(this.buffTerminal.y - this.camera.y) * this.camera.zoom}px`;
+        }
+
+        if (inRange && interactPressed) this._openBuffChoicePanel();
+    }
+
     // 01_core-gameplay-loop.md: "Reach the exit portal/level end - back to the
     // Worldmap" - completedLevels lives on Game (see Game.js), not this state,
     // since WorldmapState gets torn down/rebuilt on every visit.
@@ -598,13 +745,15 @@ export class GameState extends State {
     // Renders a [{ id, label, onClick }] choice list into a Panel - shared by
     // the Pause and Game Over panels below, which are otherwise identical
     // except for their title/choices.
-    _openChoicePanel(title, choices, { dismissible = true } = {}) {
+    _openChoicePanel(title, choices, { dismissible = true, closeOnEscape, onClose } = {}) {
         const buttonsHTML = choices
             .map((choice) => `<button class="difficulty-option" data-action="${choice.id}">${choice.label}</button>`)
             .join('');
 
         this.panel.open(title, `<div class="difficulty-options">${buttonsHTML}</div>`, {
             dismissible,
+            closeOnEscape,
+            onClose,
             onMount: (root) => {
                 for (const choice of choices) {
                     root.querySelector(`[data-action="${choice.id}"]`).addEventListener('click', choice.onClick);
@@ -620,6 +769,35 @@ export class GameState extends State {
             { id: 'retry', label: 'Retry', onClick: () => this.game.stateMachine.change('game', { chapterId: this.chapterId, level: this.levelNumber }) },
             { id: 'menu', label: 'Main Menu', onClick: () => this.game.stateMachine.change('menu') },
         ], { dismissible: false });
+    }
+
+    // Secret Room reward (docs/GDD/02_game-structure.md 2.5) - dismissible
+    // (session decision: a player who doesn't want to choose right now can
+    // back out with ×/backdrop) since the terminal itself has no cost of its
+    // own and stays unused, so they can just walk up and try again later;
+    // the Prisma cost was already paid to open the door, not this.
+    // closeOnEscape: false - Escape is instead handled explicitly in
+    // update() (closing this panel there, not via Panel's own window
+    // listener), so a single Escape press can't both dismiss this panel
+    // *and* immediately re-trigger Pause a frame later from the same press.
+    // onClose resets buffChoiceOpen regardless of *how* the panel closed (a
+    // choice, ×/backdrop, or update()'s own close() call below) - see
+    // Panel.js's own onClose comment for why that beats resetting it from
+    // every close path individually.
+    _openBuffChoicePanel() {
+        this.buffChoiceOpen = true;
+        this._openChoicePanel('Choose a Buff', [
+            { id: 'maxHealth', label: '+20 Max Health', onClick: () => this._chooseBuff('maxHealth') },
+            { id: 'shieldRegen', label: '+0.5 Shield Regen/s', onClick: () => this._chooseBuff('shieldRegen') },
+            { id: 'maxShield', label: '+20 Max Shield', onClick: () => this._chooseBuff('maxShield') },
+        ], { dismissible: true, closeOnEscape: false, onClose: () => { this.buffChoiceOpen = false; } });
+    }
+
+    _chooseBuff(buffId) {
+        this.game.buffs.add(buffId);
+        this.player.applyBuff(buffId);
+        this.buffTerminal.used = true;
+        this.panel.close();
     }
 
     // Pause: paused freezes update() (see update()'s early return) while
@@ -676,6 +854,8 @@ export class GameState extends State {
         this.portal?.render(ctx);
         this.merchant?.render(ctx);
         this.trapdoor?.render(ctx);
+        this.secretDoor?.render(ctx);
+        this.buffTerminal?.render(ctx);
         for (const enemy of this.enemies) {
             if (enemy.buried) continue;
             enemy.render(ctx);

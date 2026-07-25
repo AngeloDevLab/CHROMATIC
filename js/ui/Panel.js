@@ -8,11 +8,24 @@ export class Panel {
     // onMount: optional callback receiving the panel's root element, for callers
     // that need to wire up interactive content inside bodyHTML (e.g. buttons)
     // instead of just static text.
+    // onClose: optional callback fired whenever this panel actually closes,
+    // by whichever path (an explicit choice calling close() itself, or a
+    // dismissible panel's own ×/backdrop/Escape) - lets a caller with its own
+    // "is this open" flag (e.g. GameState's buffChoiceOpen) reset it in
+    // exactly one place regardless of how the panel went away, instead of
+    // needing every close path to remember to do it.
     // dismissible: when false, omits the × button and the backdrop-click/Escape
     // close handlers - for panels with no "cancel" path (e.g. Game Over), where
     // the player must pick one of the panel's own options instead.
-    open(title, bodyHTML, { onMount, dismissible = true } = {}) {
+    // closeOnEscape: defaults to `dismissible`, but can be forced off while
+    // still allowing backdrop/× - for a caller (e.g. GameState's buff-choice
+    // panel) that needs to handle Escape itself instead of Panel's own
+    // window-level listener, so the two don't both react to the same
+    // keypress (Panel closing the panel *and* the caller separately treating
+    // that same Escape as "open Pause" a frame later).
+    open(title, bodyHTML, { onMount, onClose, dismissible = true, closeOnEscape = dismissible } = {}) {
         this.close();
+        this._onClose = onClose ?? null;
 
         this.element = document.createElement('div');
         this.element.className = 'panel-backdrop';
@@ -29,6 +42,8 @@ export class Panel {
                 if (event.target === this.element) this.close();
             });
             this.element.querySelector('.panel-close').addEventListener('click', () => this.close());
+        }
+        if (closeOnEscape) {
             window.addEventListener('keydown', this._onKeyDown);
         }
 
@@ -42,6 +57,9 @@ export class Panel {
         this.element.remove();
         this.element = null;
         window.removeEventListener('keydown', this._onKeyDown);
+        const onClose = this._onClose;
+        this._onClose = null;
+        onClose?.();
     }
 
     _onKeyDown(event) {

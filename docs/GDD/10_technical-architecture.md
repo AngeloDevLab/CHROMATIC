@@ -60,6 +60,8 @@ Levels are built in [Tiled](https://www.mapeditor.org/) and exported as JSON (no
 |---|---|---|
 | Background | Tile layer | Purely visual, no collision |
 | terrain | Tile layer | Solid ground - see one-way behavior below. `utils/Collision.js` takes the exact layer name per level (not hardcoded), so this can vary per level if needed |
+| walls | Tile layer, optional | Always fully solid from every direction, regardless of `terrain`'s one-way mode - marks specific ledge/corner tiles (or a boss arena's cover segments, see [05_enemies-bosses.md](05_enemies-bosses.md) 6.3.1) that should actually block sideways movement/projectiles. Opt-in per level (`Collision.js`'s `wallLayerName`) - tolerates not existing yet on a level that doesn't need it |
+| noDrop | Tile layer, optional | Marks specific `terrain` platforms as exempt from Drop-Through-Platform (`Player.js`/[03_mechanics.md](03_mechanics.md) 4.2) - still a normal one-way floor otherwise, S/Down just does nothing while standing on one. For a level (Gimmick/Secret) where some platforms are the actual intended path rather than something the player should be able to fall through at will. Opt-in per level (`Collision.js`'s `noDropLayerName`) |
 | Decoration | Tile layer | Purely visual, never collidable. If a decoration element should block movement (e.g. a desk), that tile belongs in terrain instead |
 | Objects | Object layer (Tiled markers, not painted tiles) | Player start, enemy spawns, Secret Room trigger, boss trigger, exit portal, checkpoint, doors - see 11.6.2 |
 
@@ -133,18 +135,17 @@ Deliberately **no** larger field of view on larger screens - otherwise players w
 - Player: 32x64 collision hitbox (1x2 tiles). The sprite itself is drawn larger and centered over that hitbox - render size is computed at runtime from how much transparent padding the current sprite sheet carries (`Player.js`), so the *visible* character measures roughly 64px tall regardless of how much padding any given animation's frame has, instead of the hitbox growing/shrinking with it
 - Enemy: 32x32 up to 64x64 depending on type (multiples of 32)
 - Door: 32x64
-- Tilemap size is not limited by the canvas - the map can be arbitrarily large, `Camera.js` scrolls with the player. Width guidelines: Combat level ~30-40 tiles, Exploration level with Secret Rooms ~80-120 tiles
-- Height guidelines (field of view is 11.25 tiles tall at zoom 1.0):
+- Tilemap size is not limited by the canvas - the map can be arbitrarily large, `Camera.js` scrolls with the player. Width/height guidelines by level type (field of view is 20x11.25 tiles at zoom 1.0), revised this session against the levels actually built so far:
 
-| Level Type | Height (tiles) | Reasoning |
-|---|---|---|
-| Combat | ~15-20 | Little verticality needed |
-| Secret/Exploration | ~20-30 | Room for branches to Secret Rooms |
-| Special/Gimmick | ~25-35 | Tension moments like "water rising" need height |
-| Platform | ~40-60+ | Vertical climbing, relevant once Wall Jump unlocks (Chap 2+) |
-| Boss level | ~20-30 | Should roughly match the boss zoom field of view (~26-27 tiles, see 11.7.3), otherwise an empty border shows when the camera zooms out |
+| Level Type | Width (tiles) | Height (tiles) | Reasoning |
+|---|---|---|---|
+| Combat | ~80-150 | ~20-30 | Room to fight across multiple screens without towering verticality - confirmed against Lv_1 (150x30)/Lv_2 (80x30) |
+| Secret/Exploration | ~100-140 | ~35-50 | Networked, multiple branches - lean toward the taller end to bury the Secret Room itself off the main path (e.g. underground, some corridors deliberately dead-ending) rather than it being obviously reachable |
+| Special/Gimmick | ~60-100 | ~30-40 | Or flipped (~30-40 x ~60-100) for a vertically-paced gimmick instead - orientation follows whichever axis the specific gimmick's tension plays out on ("water rising" wants height, a chase/timed sequence might want width), not a fixed rule. Confirmed against Lv_4 (60x40) |
+| Platform | ~50-70 | ~60-100 | Narrow and vertical, relevant once Wall Jump unlocks (Chap 2+) |
+| Boss level | ~30-40 | ~20-25 | ~1.5-2 screens, enclosed - should roughly match the boss zoom field of view (see 11.7.3) so an empty border doesn't show once the camera zooms out. Still tentative - needs final alignment with actual boss pacing/ability space (short travel distances, but enough room for the moveset) once an arena is fully built; Lv_3 (36x21) is the closest current reference |
 
-Prologue/Chap 1 stay at a max of ~35 tiles height without Wall Jump.
+Note: Secret/Exploration and taller Special/Gimmick instances above already exceed the older "~35 tiles max without Wall Jump" guidance (e.g. Lv_4 at 40) - not a problem in practice as long as the extra height is crossed via drops/stacked one-way floors rather than continuous upward climbing, but worth keeping in mind when laying out a level that tall.
 
 ### 11.7.3 Camera Zoom (Boss Fights)
 

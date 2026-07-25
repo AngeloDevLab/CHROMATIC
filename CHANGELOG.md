@@ -6,6 +6,18 @@ Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to le
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-07-25
+
+### Added
+- Secret Room (Lvl 5 Gimmick, `docs/GDD/02_game-structure.md` 2.5): `SecretDoor` (closed/opening/open, costs 50 Prisma to open, physically blocks the path while closed) leads to `BuffTerminal`, which opens a dismissible 3-way buff-choice panel (+20 Max Health / +0.5 Shield Regen per sec / +20 Max Shield). Chosen buffs persist across level reloads/retries via `Game.buffs`, reapplied to every fresh `Player` instance through `Player.applyBuff()`.
+- Multi-tileset level support: `Level.js` now resolves each tile's gid against whichever of a level's tilesets it actually belongs to, via a small shared registry (`world/TilesetRegistry.js`) mapping each Tiled tileset's basename to its image + column count. Lvl 5 mixes three tilesets (grass/gravel/scifilab) with different column counts, which the previous approach (stitching same-width images into one, added for Lvl 4) couldn't have handled correctly.
+- `Panel.js`: `onClose` callback (fires however a panel closes - an explicit choice or a dismissal) and `closeOnEscape` (independent of `dismissible`) - needed so the buff-choice panel can be dismissible by backdrop/× without competing with `GameState`'s own Escape/Pause handling reacting to the same keypress.
+- Lvl 5 registered and reachable.
+
+### Fixed
+- Escape while the Merchant dialogue or buff-choice panel was open used to open Pause on top of/instead of it, leaving that modal's own "is open" flag stuck true forever once Resume closed the Pause panel over it - permanently freezing gameplay. Escape is now routed correctly depending on what's currently open.
+- A closed `SecretDoor` didn't block movement (unlike a real gate) - the player could just walk straight into the Secret Room without ever paying the Prisma cost.
+
 ## [0.6.1] - 2026-07-25
 
 ### Added

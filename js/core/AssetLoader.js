@@ -32,32 +32,6 @@ export class AssetLoader {
         await Promise.all(tasks);
     }
 
-    // Stitches multiple same-width tileset images into one, stacked
-    // top-to-bottom in the given order, and registers the result under `key`
-    // - lets a level span more than one Tiled tileset (matches Tiled's own
-    // global gid numbering: firstgid order is exactly "concatenate tilesets
-    // in this order") without Level.js needing to know about multiple images
-    // or gid ranges. Only correct when every source tileset's own tile count
-    // is an exact multiple of its column count (true for every tileset in
-    // this project so far, no partial last row) - a partial row would
-    // misalign the next tileset's first tile.
-    composeTileset(key, sourceKeys) {
-        const images = sourceKeys.map((sourceKey) => this.images.get(sourceKey));
-        const canvas = document.createElement('canvas');
-        canvas.width = images[0].width;
-        canvas.height = images.reduce((sum, image) => sum + image.height, 0);
-
-        const ctx = canvas.getContext('2d');
-        let y = 0;
-        for (const image of images) {
-            ctx.drawImage(image, 0, y);
-            y += image.height;
-        }
-
-        this.images.set(key, canvas);
-        return canvas;
-    }
-
     getImage(key) {
         return this.images.get(key);
     }

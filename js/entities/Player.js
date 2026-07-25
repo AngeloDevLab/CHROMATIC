@@ -15,6 +15,13 @@ const MAX_SHIELD = 100;
 // 03_mechanics.md 4.5: "50 points (1 Secret Room) take about 50 seconds from empty".
 const SHIELD_REGEN_PER_SECOND = 1;
 
+// Secret Room buff amounts (docs/GDD/02_game-structure.md 2.5) - GDD names
+// the three buff types but not their magnitude, first-guess round numbers
+// same reasoning as every other tuning constant in this codebase.
+const BUFF_MAX_HEALTH_BONUS = 20;
+const BUFF_SHIELD_REGEN_BONUS = 0.5;
+const BUFF_MAX_SHIELD_BONUS = 20;
+
 // attack.png frame where the blade reaches full extension - the swing resolves
 // its hit exactly once, here, via consumeAttackImpact() (see Combat.js).
 const ATTACK_IMPACT_FRAME = 4;
@@ -109,6 +116,28 @@ export class Player extends Entity {
         this.health = MAX_HEALTH;
         this.maxShield = MAX_SHIELD;
         this.shield = MAX_SHIELD;
+        // Instance field (not the module constant directly) so a Secret
+        // Room's Shield Regen buff (see applyBuff() below) can raise it per
+        // Player instance instead of needing a second global constant.
+        this.shieldRegenPerSecond = SHIELD_REGEN_PER_SECOND;
+    }
+
+    // Secret Room permanent buffs (docs/GDD/02_game-structure.md 2.5) -
+    // GameState.js calls this once per buff ID already in Game.buffs right
+    // after constructing a fresh Player, since buffs live on Game (see its
+    // own comment) but need re-applying to every new Player instance. Also
+    // tops off current health/shield to match the new max, same reasoning as
+    // the constructor starting full.
+    applyBuff(buffId) {
+        if (buffId === 'maxHealth') {
+            this.maxHealth += BUFF_MAX_HEALTH_BONUS;
+            this.health = this.maxHealth;
+        } else if (buffId === 'shieldRegen') {
+            this.shieldRegenPerSecond += BUFF_SHIELD_REGEN_BONUS;
+        } else if (buffId === 'maxShield') {
+            this.maxShield += BUFF_MAX_SHIELD_BONUS;
+            this.shield = this.maxShield;
+        }
     }
 
     // Instant kill bypassing Shield/invincibility entirely - falling out of the
@@ -263,7 +292,7 @@ export class Player extends Entity {
     }
 
     _updateControlled(dt) {
-        this.shield = Math.min(this.maxShield, this.shield + SHIELD_REGEN_PER_SECOND * dt);
+        this.shield = Math.min(this.maxShield, this.shield + this.shieldRegenPerSecond * dt);
 
         // Always drain the click flag, even mid-swing or mid-air - otherwise a
         // click that arrives while unable to act right now would queue up and
@@ -322,11 +351,15 @@ export class Player extends Entity {
 
         // Drop-Through-Platform (03_mechanics.md 4.2, replaces Duck) - only if
         // there's an actual floor to land on below (Collision.hasFloorBelow),
-        // otherwise this would just walk the player into the kill-plane/pit.
+        // otherwise this would just walk the player into the kill-plane/pit,
+        // and only if the current platform isn't tagged no-drop
+        // (Collision.isNoDropBelow - a level can mark specific one-way floors
+        // as the actual intended path, exempt from being dropped through).
         // The resolve() call right below immediately overwrites `grounded`
         // with this frame's real result anyway, so the nudge is the only
         // thing that actually matters here.
-        if (this.input.consumeDropPress() && !this.attacking && this.grounded && this.collision.hasFloorBelow(this)) {
+        if (this.input.consumeDropPress() && !this.attacking && this.grounded
+            && this.collision.hasFloorBelow(this) && !this.collision.isNoDropBelow(this)) {
             this.y += DROP_NUDGE_PX;
         }
 

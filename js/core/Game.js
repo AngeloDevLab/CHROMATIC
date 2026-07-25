@@ -32,6 +32,13 @@ export class Game {
         // No persistence across page reloads yet - see TODO.md's LocalStorage
         // save system entry, this becomes the natural save/load target later.
         this.completedLevels = new Set();
+        // Permanent character buffs earned from Secret Rooms
+        // (docs/GDD/02_game-structure.md 2.5) - same "lives on Game, not the
+        // state" reasoning as completedLevels above, since a fresh Player
+        // instance is constructed every time GameState.enter() runs and needs
+        // these re-applied (see Player.applyBuff()). Values are buff IDs
+        // ('maxHealth'/'shieldRegen'/'maxShield'), not amounts.
+        this.buffs = new Set();
 
         this._lastTime = 0;
         this._accumulator = 0;

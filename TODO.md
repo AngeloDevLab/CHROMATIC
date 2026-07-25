@@ -2,6 +2,10 @@
 
 Working list of what's next. Update together at the end of a session (see `CHANGELOG.md` for what's already shipped) - this file tracks intent, not history.
 
+## Architecture (next up, high priority)
+
+- **`GameState.js` has grown into a god object** - boss spawning, Merchant/Trapdoor/SecretDoor/BuffTerminal wiring, combat resolution glue, panel/pause/game-over handling, HUD wiring, camera, color mechanic, all living in one file/class. Needs splitting up before more systems (Templateboss, Token economy, Worldmap color reveal) get piled on top and make it worse. No concrete split plan yet - first task of the next session.
+
 ## Game feel
 
 - **Fine-tuning: jumping directly over a Patroller still takes contact damage.** Noticed during playtesting, not urgent - likely the contact hitbox/timing grazes the jump arc. Revisit later.
@@ -30,7 +34,7 @@ Working list of what's next. Update together at the end of a session (see `CHANG
 ## Boss (Wraith of the Shifting Sands, Lvl 3 Miniboss)
 
 - Every timing/distance constant in `entities/bosses/Wraith.js` (attack interval, firing/vulnerable hold durations, walk speed, top margin) is a first-guess, same reasoning as the rest of the roster - needs real playtesting once Lv_3's arena is actually finished, not just resized.
-- Merchant teaser (`entities/Merchant.js`) needs a `Merchant`-class object placed in Lv_3.tmx (Tiled) and re-exported - the trigger/dialogue code is ready and waiting, `this.merchant` stays `null` without it.
+- Merchant teaser (`entities/Merchant.js`) is placed in Lv_3 now and reachable, but has reported problems that haven't been diagnosed yet - revisit next session (deliberately not touched this session, separate from the boss-room work).
 - No Templateboss yet (Lvl 6, Wraith of the Grey City) - `05_enemies-bosses.md` 6.3.1's shared-moveset design means it should extend `Wraith.js` rather than duplicate it (vertical beam alternative, side-switch during the vulnerable window, faster enrage alternation), but that subclass doesn't exist.
 - Camera zoom-out and the beam's room-darken effect (`ColorZone.darkenAllExcept()`) were both applied to the Miniboss as deliberate deviations from `05_enemies-bosses.md` 6.2/6.2.1 (documented as Templateboss/Chapterboss-only) - worth reconciling with the GDD text at some point, currently just a code-level decision.
 - Wraith's contact damage reuses the same 40 (Signature Hit Damage) as the beam - GDD has no separate passive-touch value for bosses, same "placeholder pending real balancing" situation Combat.js already flags for the regular roster.
@@ -39,17 +43,23 @@ Working list of what's next. Update together at the end of a session (see `CHANG
 
 - Lvl 4 is done and reachable: wall + trapdoor funnel (`entities/Trapdoor.js`), the fall itself is just a real gap in the `terrain` layer (no physics code needed), 6 Sentinel spawns, single `ExitPortal` (a leftover second one - originally meant for a double-jump skip that isn't obtainable this early - was removed from Tiled this session), and it participates in the color mechanic (grey until revealed, same as Portal.js).
 - `opensFrameCount`/`opensFps` (10 frames/12fps, set where `GameState.js`'s `enter()` constructs the Trapdoor) are a first-guess, needs a look once you've actually seen the break animation play at speed.
-- `AssetLoader.composeTileset()` (used for Lv_4's combined grass+gravel tileset) only works correctly when every source tileset's tile count is an exact multiple of its column count - true for every tileset in the project so far, but worth remembering if a future multi-tileset level's tilesets don't divide evenly (a partial last row would misalign everything after it).
+
+## Secret Room (Lvl 5)
+
+- Lvl 5 is done and reachable: `SecretDoor` (costs 50 Prisma to open, now physically blocks the path while closed) leads to `BuffTerminal`, which opens a dismissible 3-way buff-choice panel (+20 Max Health / +0.5 Shield Regen per sec / +20 Max Shield, see `Player.js`'s `applyBuff()`). Chosen buffs persist across level reloads via `Game.buffs`.
+- Buff magnitudes (+20/+20/+0.5) are first-guess, same reasoning as every other tuning constant in this codebase - needs real playtesting, especially relative to enemy damage values.
+- Only one buff can ever be picked in the whole Prologue (one Secret Room) - the three-way choice panel is built generically enough to reuse once Chap 1 adds more Secret Rooms, but that's untested since it can't happen yet.
+- Multi-tileset levels (`world/TilesetRegistry.js`) need a manual registry entry (image key + column count) per new Tiled tileset added to the project - not automatic, easy to forget when adding tileset art.
 
 ## Content/systems still needed for v1 (Prologue, per docs/GDD/11_scope-milestones.md)
 
 - Per-level background layering: every Prologue level bakes in the same shared forest backdrop (`GameState.js`, reusing the main menu's background image) as its base, and each level additionally paints its own `background` Tiled tile layer on top (Lv_1/Lv_2/Lv_3 all have one now) - lets a level (e.g. the planned cave-interior Gimmick level) cover the shared forest backdrop entirely with its own art where needed, instead of it showing through. The whole earlier depth-parallax detour (JS-composited layers, independently-scrolling attempt, `assets/images/backgrounds/parallax/`) is moot now - simpler to just paint overrides in Tiled directly.
-- Lv_3 and Lv_4 are now registered (`GameState.js`'s `LEVEL_JSON_KEYS`, `LoadingState.js`'s manifest) and reachable in-game. Lv_5/6 don't exist yet at all (Prologue needs 6 total).
-- `walls` collision layer (`Collision.js`, always fully solid regardless of the one-way terrain layer) exists in code now - Lv_1/2/3/4 all have a `walls` tile layer painted in now (Lv_3's mainly for the Wraith's beam to have real cover, see the Boss section above). Worth a pass over each level to check for other spots where the one-way terrain's lack of horizontal blocking lets the player clip through what should be a solid ledge/wall.
-- Each level needs an `ExitPortal` object placed in Tiled for the level-complete/portal flow to work - Lv_1/2/3/4 all have one now.
+- Lv_3/4/5 are now registered (`GameState.js`'s `LEVEL_JSON_KEYS`, `LoadingState.js`'s manifest) and reachable in-game. Lv_6 doesn't exist yet at all (Prologue needs 6 total).
+- `walls`/`noDrop` collision layers (`Collision.js`, always fully solid / exempt from Drop-Through-Platform regardless of the one-way terrain layer) exist in code now - Lv_1/2/3/4/5 all have a `walls` layer painted in (Lv_3's mainly for the Wraith's beam to have real cover, Lv_4/5's for their gimmick/secret layouts to keep the intended path from being dropped through, see the Boss/Gimmick/Secret Room sections above). Worth a pass over each level to check for other spots where the one-way terrain's lack of horizontal blocking lets the player clip through what should be a solid ledge/wall.
+- Each level needs an `ExitPortal` object placed in Tiled for the level-complete/portal flow to work - Lv_1-5 all have one now.
 - Miniboss done (Wraith of the Shifting Sands, see the Boss section above) - Templateboss (Lvl 6) still not built.
 - Token economy + Merchant - Merchant teaser NPC exists (see Boss section above) but that's flavor only, not the real post-Templateboss shop/Token spend from 05_enemies-bosses.md 6.2.
-- Secret Room + permanent character buff system (see `docs/GDD/02_game-structure.md` 2.5) - documented only, not built. A free/low-cost Lore-Secret variant was designed alongside this and cut for scope, see `docs/GDD/_ideas-inbox.md`.
+- Secret Room + permanent character buff system (see `docs/GDD/02_game-structure.md` 2.5) - **done**, see the Secret Room section above. A free/low-cost Lore-Secret variant was designed alongside this and cut for scope, see `docs/GDD/_ideas-inbox.md`.
 - Touch controls (desktop/keyboard only right now).
 - LocalStorage save system - `Game.completedLevels` (session-only right now, resets on reload) is the intended save/load target once this exists.
 - Audio: Web Audio API GainNode hierarchy (Master -> Music/SFX/Ambience), tracks need downloading + wiring in - see the earlier music-architecture discussion (generic ambient playlist + dedicated boss track leaning).
