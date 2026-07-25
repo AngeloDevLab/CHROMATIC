@@ -22,6 +22,15 @@ python -m http.server
 
 Then open the served `index.html`. There is no test suite, linter, or build/watch command in this repo.
 
+## Code Style
+
+These conventions apply to new code from here on. They're not retroactive: existing files get brought in line gradually through periodic cleanup passes (manually triggered, not automated), not all at once.
+
+- **Function length**: max ~14 lines. If a function needs to be longer, split it into smaller functions rather than stretching the limit.
+- **JSDoc**: every function gets a JSDoc block (`@param`/`@returns` as needed).
+- **Comments**: no inline "why" prose scattered through function bodies. If a file has something non-obvious worth explaining (a tricky invariant, a workaround, the reasoning behind an unusual choice), put it once in a comment block at the top of the file instead of repeating context near individual lines.
+- No linter enforces these (the project has no build step/`package.json`, see above) - they're applied by whoever is writing or reviewing the code.
+
 ## Architecture
 
 **Boot sequence** (`js/main.js`): creates a single `Game` instance, attaches `AssetLoader`/`InputHandler`, registers all `State` instances with the `StateMachine`, then switches to `'loading'` and starts the render loop.
