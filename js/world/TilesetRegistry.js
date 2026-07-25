@@ -11,6 +11,12 @@ const TILESET_KEYS = {
     tileset_scifilab: { imageKey: 'tileset-scifilab', columns: 9 },
 };
 
+/**
+ * Resolves each known tileset basename to its already-loaded image and
+ * column count, ready for Level.js to look up by tileset name.
+ * @param {AssetLoader} assets - Loader holding the tileset images.
+ * @returns {Object<string, {image: HTMLImageElement, columns: number}>}
+ */
 export function buildTilesetRegistry(assets) {
     const registry = {};
     for (const [basename, { imageKey, columns }] of Object.entries(TILESET_KEYS)) {
