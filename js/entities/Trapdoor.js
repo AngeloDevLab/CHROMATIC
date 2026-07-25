@@ -18,16 +18,14 @@ const PLACEHOLDER_OPENING_SECONDS = 0.3;
 // gone. The turf just breaks away and stays broken - there's no separate
 // "open" pose to hold afterward, so nothing renders once opening finishes.
 export class Trapdoor extends Entity {
-    // width/height come from the Tiled object itself (not a fixed constant
-    // like Portal.js's SIZE) - session decision: size it to exactly cover
-    // the terrain gap it's dressing, rather than a fixed sprite footprint.
-    // sprites: optional (undefined until real art exists) - falls back to a
-    // flat-color placeholder per state instead of Portal.js's real
-    // SpriteAnimation strip.
-    // greyFilterCSS: same color-mechanic participation as Portal.js - stays
-    // grey (matching the terrain's own unrevealed look) until the player's
-    // reveal radius reaches it, otherwise a still-grey trapdoor would stick
-    // out against colored ground and give away exactly where it is.
+    /**
+     * @param {number} x - World X position.
+     * @param {number} y - World Y position.
+     * @param {number} width - Width from the Tiled object (sized to exactly cover the terrain gap, not a fixed sprite footprint like Portal.js's SIZE).
+     * @param {number} height - Height from the Tiled object.
+     * @param {{closed: HTMLImageElement, opens: HTMLImageElement, opensFrameCount: number, opensFps: number}|null} [sprites=null] - Optional (undefined until real art exists); falls back to a flat-color placeholder per state.
+     * @param {string|null} [greyFilterCSS=null] - Same color-mechanic participation as Portal.js - stays grey until the player's reveal radius reaches it, so a still-grey trapdoor doesn't stick out against colored ground and give away its position.
+     */
     constructor(x, y, width, height, sprites = null, greyFilterCSS = null) {
         super(x, y, width, height);
         this.sprites = sprites;
@@ -40,6 +38,9 @@ export class Trapdoor extends Entity {
         this.revealed = false;
     }
 
+    /**
+     * Starts the closed -> opening transition; no-op if already triggered.
+     */
     trigger() {
         if (this.state !== 'closed') return;
         this.state = 'opening';
@@ -47,6 +48,9 @@ export class Trapdoor extends Entity {
         this.opensAnimation?.reset();
     }
 
+    /**
+     * @param {number} dt - Elapsed time in seconds.
+     */
     update(dt) {
         if (this.state !== 'opening') return;
 
@@ -59,6 +63,9 @@ export class Trapdoor extends Entity {
         }
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     render(ctx) {
         if (this.state === 'gone') return;
 
@@ -71,6 +78,9 @@ export class Trapdoor extends Entity {
         ctx.restore();
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     _renderSprite(ctx) {
         if (this.state === 'opening') {
             this.opensAnimation.draw(ctx, this.x, this.y, this.width, this.height);
@@ -79,6 +89,9 @@ export class Trapdoor extends Entity {
         }
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     _renderPlaceholder(ctx) {
         ctx.save();
         ctx.fillStyle = this.state === 'opening' ? '#b06a3a' : '#6b4a2f';

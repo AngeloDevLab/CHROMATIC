@@ -16,6 +16,14 @@ export const SECRET_DOOR_PRISMA_COST = 50;
 // logic (see _updateSecretDoor()), this class only tracks/renders state -
 // same split of responsibility as Portal.js.
 export class SecretDoor extends Entity {
+    /**
+     * @param {number} x - World X position.
+     * @param {number} y - World Y position.
+     * @param {number} width - Width from the Tiled object.
+     * @param {number} height - Height from the Tiled object.
+     * @param {{closed: HTMLImageElement, open: HTMLImageElement, opens: HTMLImageElement, opensFrameCount: number, opensFps: number}|null} [sprites=null] - Falls back to a flat-color placeholder if absent.
+     * @param {string|null} [greyFilterCSS=null] - CSS filter matching the terrain's unrevealed grey treatment.
+     */
     constructor(x, y, width, height, sprites = null, greyFilterCSS = null) {
         super(x, y, width, height);
         this.sprites = sprites;
@@ -28,10 +36,16 @@ export class SecretDoor extends Entity {
         this.revealed = false;
     }
 
+    /**
+     * @returns {boolean}
+     */
     get isOpen() {
         return this.state === 'open';
     }
 
+    /**
+     * Starts the closed -> opening transition; no-op if already triggered.
+     */
     trigger() {
         if (this.state !== 'closed') return;
         this.state = 'opening';
@@ -39,6 +53,9 @@ export class SecretDoor extends Entity {
         this.opensAnimation?.reset();
     }
 
+    /**
+     * @param {number} dt - Elapsed time in seconds.
+     */
     update(dt) {
         if (this.state !== 'opening') return;
 
@@ -51,6 +68,9 @@ export class SecretDoor extends Entity {
         }
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     render(ctx) {
         ctx.save();
         if (!this.revealed) ctx.filter = this.greyFilterCSS;
@@ -61,6 +81,9 @@ export class SecretDoor extends Entity {
         ctx.restore();
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     _renderSprite(ctx) {
         if (this.state === 'opening') {
             this.opensAnimation.draw(ctx, this.x, this.y, this.width, this.height);
@@ -70,6 +93,9 @@ export class SecretDoor extends Entity {
         }
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     _renderPlaceholder(ctx) {
         ctx.save();
         ctx.fillStyle = this.state === 'open' ? '#3fc6e0' : this.state === 'opening' ? '#7fd8ea' : '#1f4a56';

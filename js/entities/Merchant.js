@@ -8,9 +8,17 @@ const WIDTH = 32;
 const HEIGHT = 64;
 
 export class Merchant extends Entity {
+    /**
+     * @param {number} x - World X position.
+     * @param {number} y - World Y position.
+     */
     constructor(x, y) {
         super(x, y, WIDTH, HEIGHT);
     }
 
+    /**
+     * No-op until real art exists (see the top-of-file note).
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     render(ctx) {}
 }

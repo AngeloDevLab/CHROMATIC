@@ -13,16 +13,22 @@ const OPENS_FPS = 12;
 // every enemy is dead (_levelFullyRevealed) - never flips back off, so this
 // never needs to reverse the transition. Interact range/[E] handling lives in
 // GameState (see isOpen below), this class only tracks/renders the state.
+// greyFilterCSS is GameState's own ColorZone.greyFilterCSS, so the portal's
+// unrevealed look matches the terrain's grey treatment exactly rather than a
+// second, potentially-drifting copy of the same tint constants. Unlike
+// Player/Enemy (always full color, see ColorZone.js's own design note on why
+// a scrolling/moving thing can't participate in the terrain's reveal), the
+// portal sits at one fixed world position for the whole level, so a simple
+// one-way `revealed` flag (GameState.js flips it once the player gets close,
+// or immediately on the level's full-reveal) can track it directly without
+// needing a real per-pixel reveal mechanism.
 export class Portal extends Entity {
-    // greyFilterCSS: GameState's own ColorZone.greyFilterCSS, so the portal's
-    // unrevealed look matches the terrain's grey treatment exactly rather
-    // than a second, potentially-drifting copy of the same tint constants.
-    // Unlike Player/Enemy (always full color, see ColorZone.js's own design
-    // note on why a scrolling/moving thing can't participate in the terrain's
-    // reveal), the portal sits at one fixed world position for the whole
-    // level, so a simple one-way `revealed` flag (GameState.js flips it once
-    // the player gets close, or immediately on the level's full-reveal) can
-    // track it directly without needing a real per-pixel reveal mechanism.
+    /**
+     * @param {number} x - World X position.
+     * @param {number} y - World Y position.
+     * @param {{closed: HTMLImageElement, open: HTMLImageElement, opens: HTMLImageElement}} sprites
+     * @param {string} greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
+     */
     constructor(x, y, sprites, greyFilterCSS) {
         super(x, y, SIZE, SIZE);
         this.closedSprite = sprites.closed;
@@ -34,13 +40,20 @@ export class Portal extends Entity {
         this.revealed = false;
     }
 
-    // Only true once the opening animation has fully played - GameState gates
-    // the [E] interact prompt on this rather than on `active` directly, so
-    // the player sees the full opening beat before it's actually usable.
+    /**
+     * Only true once the opening animation has fully played - GameState
+     * gates the [E] interact prompt on this rather than on `active`
+     * directly, so the player sees the full opening beat before it's
+     * actually usable.
+     * @returns {boolean}
+     */
     get isOpen() {
         return this.state === 'open';
     }
 
+    /**
+     * @param {number} dt - Elapsed time in seconds.
+     */
     update(dt) {
         if (this.active && this.state === 'closed') {
             this.state = 'opening';
@@ -53,6 +66,9 @@ export class Portal extends Entity {
         }
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     render(ctx) {
         ctx.save();
         if (!this.revealed) ctx.filter = this.greyFilterCSS;

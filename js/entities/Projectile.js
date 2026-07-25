@@ -33,9 +33,16 @@ const TRAIL_ECHO_COUNT = 3;
 // Straight horizontal throw (03_mechanics.md 4.3's "Sword Throw") - no
 // gravity, thrown weapons in this game fly level rather than arcing.
 export class Projectile extends Entity {
-    // Takes a center position rather than top-left, so callers (GameState.js)
-    // can spawn it flush with the player's own centerY/leading edge without
-    // needing to know PROJECTILE_SIZE themselves.
+    /**
+     * @param {number} spawnCenterX - Spawn center X, not top-left, so callers
+     *   (GameState.js) can spawn it flush with the player's own centerY/
+     *   leading edge without needing to know PROJECTILE_WIDTH themselves.
+     * @param {number} spawnCenterY - Spawn center Y.
+     * @param {1|-1} direction - Travel direction.
+     * @param {HTMLImageElement} sprite - Blade sprite.
+     * @param {number} damage - Damage dealt on hit.
+     * @param {HTMLImageElement} trailSprite - Motion-blur trail sprite sheet.
+     */
     constructor(spawnCenterX, spawnCenterY, direction, sprite, damage, trailSprite) {
         super(spawnCenterX - PROJECTILE_WIDTH / 2, spawnCenterY - PROJECTILE_HEIGHT / 2, PROJECTILE_WIDTH, PROJECTILE_HEIGHT);
         this.direction = direction;
@@ -47,6 +54,12 @@ export class Projectile extends Entity {
         this.dead = false;
     }
 
+    /**
+     * Sweeps forward in small steps, checking for a solid tile at each one,
+     * so a fast throw can't tunnel through a thin wall in a single frame.
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {Collision} collision - Level collision to check against.
+     */
     update(dt, collision) {
         const totalDx = this.vx * dt;
         const steps = Math.max(1, Math.ceil(Math.abs(totalDx) / SWEEP_STEP_PX));
@@ -68,6 +81,9 @@ export class Projectile extends Entity {
         }
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     render(ctx) {
         if (this.dead) return;
 
@@ -81,7 +97,11 @@ export class Projectile extends Entity {
         ctx.restore();
     }
 
-    // Farthest echo first so the nearest (most opaque) one paints on top.
+    /**
+     * Draws the ghost-trail echoes, farthest first so the nearest (most
+     * opaque) one paints on top.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     _renderTrail(ctx) {
         if (!this.trailSprite) return;
 
