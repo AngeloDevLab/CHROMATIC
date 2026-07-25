@@ -1,3 +1,8 @@
+// Key -> logical action name. Movement/jump/drop are held states read via
+// isDown(); attack/pause/interact are edge-triggered one-shot presses (see
+// _presses below) since a mouse click or Escape/E tap should fire exactly
+// once, not keep re-triggering every frame the input happens to still read
+// as active.
 const KEY_MAP = {
     ArrowLeft: 'left', KeyA: 'left',
     ArrowRight: 'right', KeyD: 'right',
@@ -5,66 +10,70 @@ const KEY_MAP = {
     ArrowDown: 'drop', KeyS: 'drop',
 };
 
+// Every edge-triggered action (attack/jump/drop/pause/interact) follows the
+// same consume-once contract: consumeXPress() returns true at most once per
+// press and clears itself, so callers can poll every frame regardless of
+// whether they're currently able to act on it right now (Player.js stashes
+// a jump press into its own buffer window instead of losing one that
+// arrived a few frames before landing; a click during an ongoing attack
+// doesn't queue up and fire late once the swing ends). clearXPress()
+// discards a pending press without consuming it as a real action - used
+// when switching screens, so a leftover Escape/click/E from the previous
+// screen doesn't instantly pause/attack/interact on the very next one.
+// Jump and drop each *also* have a held state in `actions` (jump's for
+// Player.js's variable jump height; drop's kept purely for symmetry with
+// jump's repeat-guard, nothing else reads it) - both edge-triggered presses
+// are guarded against the browser's own keydown auto-repeat in _onKeyDown,
+// so holding the key doesn't re-trigger the press every repeat tick.
+// mousedown/contextmenu are scoped to the canvas, not window: a click on UI
+// (worldmap "Start Level", menu panels, ...) would otherwise queue up an
+// attack that fires the instant GameState's Player exists next frame, and
+// right-click is reserved for gameplay (planned), so the browser's own
+// context menu is suppressed only over the canvas, not the HTML overlay.
+// blur/visibilitychange both release all held actions: a held key's keyup
+// never reaches the page if focus leaves the window/tab first (Alt+Tab,
+// switching apps/tabs), and either event can fire without the other
+// depending on how focus was lost.
 export class InputHandler {
+    /**
+     * @param {HTMLCanvasElement} canvas - Canvas to scope mouse/context-menu handling to.
+     */
     constructor(canvas) {
-        // `drop` (Drop-Through-Platform, Player.js) only needs the edge-
-        // triggered press below, not a held state like the movement keys -
-        // it's kept here anyway purely as the same repeat-guard `jump` uses
-        // (see _onKeyDown), not read anywhere else.
+        this._initState();
+        this._bindHandlers();
+        this._registerListeners(canvas);
+    }
+
+    /**
+     * Sets up held-action state (`actions`) and edge-triggered press state
+     * (`_presses`) - see the top-of-file note for the distinction.
+     */
+    _initState() {
         this.actions = { left: false, right: false, jump: false, drop: false };
-        // Attack is a discrete click, not a held state like the movement keys -
-        // tracked separately as an edge-triggered flag consumed (and cleared) by
-        // consumeAttackPress(), so a click fires the swing exactly once instead of
-        // every frame the mouse button happens to still be down.
-        this._attackPressed = false;
+        this._presses = { attack: false, jump: false, drop: false, pause: false, interact: false };
+    }
 
-        // Same edge-triggered pattern as attack - Escape toggles pause once per
-        // press instead of every frame it happens to still be held.
-        this._pausePressed = false;
-
-        // Edge-triggered jump press, alongside the held state in `actions.jump`
-        // (Player.js uses the held state for variable jump height, and this for
-        // jump buffering) - guarded against the browser's own keydown auto-repeat
-        // in _onKeyDown, or holding the key would re-trigger this every repeat tick.
-        this._jumpPressed = false;
-
-        // Same edge-triggered pattern as jump (guarded the same way against
-        // keydown auto-repeat) - Drop-Through-Platform is a discrete "drop
-        // once" action, not something that should keep re-triggering while
-        // the key is held.
-        this._dropPressed = false;
-
-        // Same edge-triggered pattern as attack/pause - used for the level-end
-        // portal (GameState.js), a discrete "use it" action rather than a held
-        // state.
-        this._interactPressed = false;
-
+    /**
+     * Pre-binds every handler once so add/removeEventListener reference the
+     * same function identity.
+     */
+    _bindHandlers() {
         this._onKeyDown = this._onKeyDown.bind(this);
         this._onKeyUp = this._onKeyUp.bind(this);
         this._onMouseDown = this._onMouseDown.bind(this);
         this._onContextMenu = this._onContextMenu.bind(this);
         this._releaseAllActions = this._releaseAllActions.bind(this);
         this._onVisibilityChange = this._onVisibilityChange.bind(this);
+    }
 
+    /**
+     * @param {HTMLCanvasElement} canvas - Canvas to scope mouse/context-menu handling to.
+     */
+    _registerListeners(canvas) {
         window.addEventListener('keydown', this._onKeyDown);
         window.addEventListener('keyup', this._onKeyUp);
-        // Scoped to the game canvas, not window - a click on a UI button
-        // (worldmap "Start Level", menu panels, ...) would otherwise also queue
-        // up an attack that fires the instant GameState's Player exists on the
-        // very next frame, since nothing had consumed it yet.
         canvas.addEventListener('mousedown', this._onMouseDown);
-        // Right-click is reserved for gameplay (planned) - suppress the
-        // browser's own copy/inspect context menu over the canvas so it
-        // doesn't pop up mid-game. Scoped to the canvas like mousedown above,
-        // so right-clicking HTML overlay UI still gets the normal menu.
         canvas.addEventListener('contextmenu', this._onContextMenu);
-
-        // A held key's keyup never reaches the page if focus leaves the window/
-        // tab first (Alt+Tab, clicking another app, switching tabs) - without
-        // this, `actions` would keep reporting it held forever, walking the
-        // player off on their own with nothing actually pressed. Both events
-        // covered since either can fire without the other depending on how
-        // focus was lost.
         window.addEventListener('blur', this._releaseAllActions);
         document.addEventListener('visibilitychange', this._onVisibilityChange);
     }
@@ -80,104 +89,92 @@ export class InputHandler {
         this.actions.drop = false;
     }
 
+    /**
+     * @param {KeyboardEvent} e - The browser keydown event.
+     */
     _onKeyDown(e) {
         if (e.code === 'Escape') {
-            this._pausePressed = true;
+            this._presses.pause = true;
             return;
         }
         if (e.code === 'KeyE') {
-            this._interactPressed = true;
+            this._presses.interact = true;
             return;
         }
 
         const action = KEY_MAP[e.code];
         if (!action) return;
-        if (action === 'jump' && !this.actions.jump) this._jumpPressed = true;
-        if (action === 'drop' && !this.actions.drop) this._dropPressed = true;
+        if (action === 'jump' && !this.actions.jump) this._presses.jump = true;
+        if (action === 'drop' && !this.actions.drop) this._presses.drop = true;
         this.actions[action] = true;
     }
 
+    /**
+     * @param {KeyboardEvent} e - The browser keyup event.
+     */
     _onKeyUp(e) {
         const action = KEY_MAP[e.code];
         if (action) this.actions[action] = false;
     }
 
     _onMouseDown() {
-        this._attackPressed = true;
+        this._presses.attack = true;
     }
 
+    /**
+     * @param {MouseEvent} e - The browser contextmenu event.
+     */
     _onContextMenu(e) {
         e.preventDefault();
     }
 
+    /**
+     * @param {'left'|'right'|'jump'|'drop'} action - Held movement action to check.
+     * @returns {boolean} Whether the action is currently held.
+     */
     isDown(action) {
         return !!this.actions[action];
     }
 
-    // Returns true at most once per click - call this every frame regardless of
-    // whether the caller is currently able to act on it, so a click during an
-    // ongoing attack doesn't queue up and fire late once the swing ends.
-    consumeAttackPress() {
-        if (!this._attackPressed) return false;
-        this._attackPressed = false;
+    /**
+     * @param {string} name - Key into _presses.
+     * @returns {boolean} Whether a press was pending (and is now consumed).
+     */
+    _consumePress(name) {
+        if (!this._presses[name]) return false;
+        this._presses[name] = false;
         return true;
     }
 
-    // Discards a stale click queued up from a previous screen (e.g. clicking
-    // the Worldmap background, which also fires this same canvas-scoped
-    // mousedown) so it doesn't fire an attack the instant a new Player exists.
-    clearAttackPress() {
-        this._attackPressed = false;
+    /**
+     * @param {string} name - Key into _presses.
+     */
+    _clearPress(name) {
+        this._presses[name] = false;
     }
 
-    // Same "at most once per press" contract as consumeAttackPress() - callers
-    // poll every frame regardless of whether a jump can currently be taken, so
-    // Player.js can stash it into its own jump-buffer window instead of losing
-    // a press that arrived a few frames before landing.
-    consumeJumpPress() {
-        if (!this._jumpPressed) return false;
-        this._jumpPressed = false;
-        return true;
-    }
+    /** @returns {boolean} Whether an attack click was pending. */
+    consumeAttackPress() { return this._consumePress('attack'); }
 
-    clearJumpPress() {
-        this._jumpPressed = false;
-    }
+    clearAttackPress() { this._clearPress('attack'); }
 
-    // Same "at most once per press" contract as consumeJumpPress().
-    consumeDropPress() {
-        if (!this._dropPressed) return false;
-        this._dropPressed = false;
-        return true;
-    }
+    /** @returns {boolean} Whether a jump press was pending. */
+    consumeJumpPress() { return this._consumePress('jump'); }
 
-    clearDropPress() {
-        this._dropPressed = false;
-    }
+    clearJumpPress() { this._clearPress('jump'); }
 
-    consumePausePress() {
-        if (!this._pausePressed) return false;
-        this._pausePressed = false;
-        return true;
-    }
+    /** @returns {boolean} Whether a drop press was pending. */
+    consumeDropPress() { return this._consumePress('drop'); }
 
-    // Same reasoning as clearAttackPress() - an Escape press from a previous
-    // screen shouldn't instantly pause the very next GameState.
-    clearPausePress() {
-        this._pausePressed = false;
-    }
+    clearDropPress() { this._clearPress('drop'); }
 
-    // Same "at most once per press" contract as consumeAttackPress()/
-    // consumeJumpPress() - GameState drains this every frame regardless of
-    // whether the portal is actually in range/active right now, so a stray
-    // press while out of range doesn't linger and fire late once in range.
-    consumeInteractPress() {
-        if (!this._interactPressed) return false;
-        this._interactPressed = false;
-        return true;
-    }
+    /** @returns {boolean} Whether a pause press was pending. */
+    consumePausePress() { return this._consumePress('pause'); }
 
-    clearInteractPress() {
-        this._interactPressed = false;
-    }
+    clearPausePress() { this._clearPress('pause'); }
+
+    /** @returns {boolean} Whether an interact press was pending. */
+    consumeInteractPress() { return this._consumePress('interact'); }
+
+    clearInteractPress() { this._clearPress('interact'); }
 }
