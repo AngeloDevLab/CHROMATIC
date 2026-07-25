@@ -1,6 +1,9 @@
 import { State } from './State.js';
 
 export class LoadingState extends State {
+    /**
+     * Shows the loading label and kicks off asset/sound loading.
+     */
     enter() {
         this.label = document.createElement('div');
         this.label.className = 'loading-label';
@@ -10,6 +13,11 @@ export class LoadingState extends State {
         this._load();
     }
 
+    /**
+     * Loads every asset/sound manifest in parallel, then gates the state
+     * transition behind a user gesture; shows an error message instead if
+     * anything fails to load.
+     */
     async _load() {
         try {
             await Promise.all([this._loadManifest(), this._loadSounds()]);
@@ -50,6 +58,9 @@ export class LoadingState extends State {
         }
     }
 
+    /**
+     * Loads every image/level JSON the Prologue can reference.
+     */
     async _loadManifest() {
         await this.game.assets.loadManifest({
             images: {
@@ -140,10 +151,16 @@ export class LoadingState extends State {
         });
     }
 
+    /**
+     * Removes the loading label.
+     */
     exit() {
         this.label?.remove();
     }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     render(ctx) {
         ctx.fillStyle = '#111318';
         ctx.fillRect(0, 0, this.game.width, this.game.height);

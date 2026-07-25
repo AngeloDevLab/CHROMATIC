@@ -29,15 +29,17 @@ const PROLOGUE_NODES = [
 const NODE_SIZE = 64;
 
 export class WorldmapState extends State {
+    /**
+     * this.completedLevels reads Game.completedLevels rather than owning its
+     * own Set - this state is torn down/rebuilt on every visit
+     * (enter()/exit()), so a local Set here would forget completions the
+     * instant the player left for a level and came back. No persistence
+     * across page reloads yet (see TODO.md's LocalStorage save system entry).
+     */
     enter() {
         this.background = this.game.assets.getImage('worldmap-prologue-bg');
         this._computeFit();
 
-        // Lives on Game, not this state - this state is torn down/rebuilt on
-        // every visit (enter()/exit()), so a local Set here would forget
-        // completions the instant the player left for a level and came back.
-        // No persistence across page reloads yet (see TODO.md's LocalStorage
-        // save system entry).
         this.completedLevels = this.game.completedLevels;
         this.selectedIndex = null;
 
@@ -48,6 +50,9 @@ export class WorldmapState extends State {
         this.game.canvas.addEventListener('click', this._onCanvasClick);
     }
 
+    /**
+     * Builds the top chapter-selection bar (only Prologue enabled).
+     */
     _buildChapterBar() {
         this.chapterBar = document.createElement('div');
         this.chapterBar.className = 'chapter-bar';
@@ -68,6 +73,9 @@ export class WorldmapState extends State {
         this.game.overlay.appendChild(this.chapterBar);
     }
 
+    /**
+     * Builds one button element per Prologue node and lays them out.
+     */
     _buildNodes() {
         this.nodeContainer = document.createElement('div');
         this.nodeContainer.className = 'worldmap-nodes';
@@ -87,9 +95,11 @@ export class WorldmapState extends State {
         this._layoutNodes();
     }
 
-    // Contain-fit (whole image visible, letterboxed) rather than cover-fit
-    // (cropped) - the source image is 3:1 while the viewport is ~1.78:1, and
-    // cropping would cut off the beach start / castle end of the path.
+    /**
+     * Contain-fit (whole image visible, letterboxed) rather than cover-fit
+     * (cropped) - the source image is 3:1 while the viewport is ~1.78:1, and
+     * cropping would cut off the beach start / castle end of the path.
+     */
     _computeFit() {
         const w = this.game.width;
         const h = this.game.height;
@@ -101,6 +111,10 @@ export class WorldmapState extends State {
         this.bgOffsetY = (h - this.bgDrawHeight) / 2;
     }
 
+    /**
+     * @param {number} index - Index into PROLOGUE_NODES.
+     * @returns {{x:number,y:number}} Screen-space position of that node.
+     */
     _nodeScreenPos(index) {
         const data = PROLOGUE_NODES[index];
         return {
@@ -109,14 +123,21 @@ export class WorldmapState extends State {
         };
     }
 
-    // completedLevels stores the Tiled/GameState level *number*
-    // (PROLOGUE_NODES[i].level, 1-based), not the array index - matters once
-    // node order and level number can diverge (e.g. a reordered Special/Secret
-    // node).
+    /**
+     * completedLevels stores the Tiled/GameState level *number*
+     * (PROLOGUE_NODES[i].level, 1-based), not the array index - matters
+     * once node order and level number can diverge (e.g. a reordered
+     * Special/Secret node).
+     * @param {number} index - Index into PROLOGUE_NODES.
+     * @returns {boolean}
+     */
     _isLocked(index) {
         return index > 0 && !this.completedLevels.has(PROLOGUE_NODES[index - 1].level);
     }
 
+    /**
+     * @param {number} index - Index into PROLOGUE_NODES.
+     */
     _selectNode(index) {
         if (this._isLocked(index)) return;
         this.selectedIndex = index;
@@ -124,6 +145,11 @@ export class WorldmapState extends State {
         this._showInfoCard(index);
     }
 
+    /**
+     * locked/completed both overlay the same always-visible default badge
+     * (see .worldmap-node::before in style.css) - mutually exclusive in
+     * practice, a completed level was necessarily unlocked to begin with.
+     */
     _layoutNodes() {
         for (let i = 0; i < PROLOGUE_NODES.length; i++) {
             const el = this.nodeElements[i];
@@ -132,37 +158,53 @@ export class WorldmapState extends State {
             el.style.left = `${x - NODE_SIZE / 2}px`;
             el.style.top = `${y - NODE_SIZE / 2}px`;
             el.disabled = this._isLocked(i);
-            // locked/completed both overlay the same always-visible default
-            // badge (see .worldmap-node::before in style.css) - mutually
-            // exclusive in practice, a completed level was necessarily
-            // unlocked to begin with.
             el.classList.toggle('locked', this._isLocked(i));
             el.classList.toggle('completed', this.completedLevels.has(PROLOGUE_NODES[i].level));
             el.classList.toggle('selected', this.selectedIndex === i);
         }
     }
 
+    /**
+     * @param {number} index - Index into PROLOGUE_NODES.
+     */
     _showInfoCard(index) {
         this._closeInfoCard();
-
         const data = PROLOGUE_NODES[index];
-        const secretsTotal = data.hasSecret ? 1 : 0;
-        const secretsFound = this.completedLevels.has(data.level) ? secretsTotal : 0;
 
         this.infoCard = document.createElement('div');
         this.infoCard.className = 'worldmap-info-card';
-        this.infoCard.innerHTML = `
+        this.infoCard.innerHTML = this._buildInfoCardMarkup(data);
+        this._wireInfoCard(index);
+        this.game.overlay.appendChild(this.infoCard);
+        this._positionInfoCard();
+    }
+
+    /**
+     * @param {{level:number,type:string,hasSecret:boolean}} data - This node's static data.
+     * @returns {string} Info card markup.
+     */
+    _buildInfoCardMarkup(data) {
+        const secretsTotal = data.hasSecret ? 1 : 0;
+        const secretsFound = this.completedLevels.has(data.level) ? secretsTotal : 0;
+        return `
             <div class="worldmap-info-title">Lvl ${data.level}</div>
             <div class="worldmap-info-type">${data.type}</div>
             <div class="worldmap-info-secrets">Secrets: ${secretsFound}/${secretsTotal}</div>
             <button class="worldmap-info-start">Start</button>
         `;
-        this.infoCard.addEventListener('click', (event) => event.stopPropagation());
-        this.infoCard.querySelector('.worldmap-info-start').addEventListener('click', () => this._enterLevel(index));
-        this.game.overlay.appendChild(this.infoCard);
-        this._positionInfoCard();
     }
 
+    /**
+     * @param {number} index - Index into PROLOGUE_NODES.
+     */
+    _wireInfoCard(index) {
+        this.infoCard.addEventListener('click', (event) => event.stopPropagation());
+        this.infoCard.querySelector('.worldmap-info-start').addEventListener('click', () => this._enterLevel(index));
+    }
+
+    /**
+     * Positions the info card next to its selected node.
+     */
     _positionInfoCard() {
         if (!this.infoCard || this.selectedIndex === null) return;
 
@@ -171,22 +213,34 @@ export class WorldmapState extends State {
         this.infoCard.style.top = `${y - 20}px`;
     }
 
+    /**
+     * Removes the info card, if open.
+     */
     _closeInfoCard() {
         this.infoCard?.remove();
         this.infoCard = null;
     }
 
+    /**
+     * @param {number} index - Index into PROLOGUE_NODES.
+     */
     _enterLevel(index) {
         const data = PROLOGUE_NODES[index];
         this.game.stateMachine.change('game', { chapterId: 'prologue', level: data.level });
     }
 
+    /**
+     * Deselects the current node (background click).
+     */
     _onCanvasClick() {
         this.selectedIndex = null;
         this._closeInfoCard();
         this._layoutNodes();
     }
 
+    /**
+     * Tears down the chapter bar/nodes/info card and the canvas listener.
+     */
     exit() {
         this.game.canvas.removeEventListener('click', this._onCanvasClick);
 
@@ -195,8 +249,14 @@ export class WorldmapState extends State {
         this._closeInfoCard();
     }
 
+    /**
+     * @param {number} dt - Elapsed time in seconds.
+     */
     update(dt) {}
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     render(ctx) {
         ctx.fillStyle = '#12141a';
         ctx.fillRect(0, 0, this.game.width, this.game.height);
