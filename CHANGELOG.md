@@ -6,6 +6,20 @@ Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to le
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-26
+
+### Added
+- `SaveSystem` (`js/core/SaveSystem.js`): generic JSON-over-localStorage wrapper for player preferences/progress. Currently only backs Settings preferences (fullscreen, volumes, mute) - `Game.completedLevels`/`Game.buffs` are still session-only, migrating those over is still open.
+- `SoundManager` (`js/core/SoundManager.js`): Web Audio GainNode hierarchy (Master -> Music/SFX/Ambience), crossfade music playback, mute (zeroes Master without touching the individual bus volumes those sliders represent), and a perceptual (squared) volume curve instead of raw linear gain - a linear slider felt "loud" far too early in testing.
+- `MusicPlaylist` (`js/core/MusicPlaylist.js`): shuffles through the OST's ambient tracks (`ost-00`..`ost-07`), crossfading track to track as each one ends. `ost-08` ("The Iron Sentinel") is reserved for boss encounters and deliberately excluded from the rotation - not yet wired into an actual boss trigger.
+- Real Settings panel (`js/ui/SettingsPanel.js`): Master/Music/SFX volume sliders, Mute All, and a Fullscreen checkbox, replacing the "coming soon" placeholder. Controls/Language remain placeholders (no rebinding UI or i18n system exists yet).
+- `LoadingState` now gates the menu transition behind a "press any key" prompt - satisfies both the Fullscreen API's and Web Audio's user-gesture requirement in one place, re-applies a saved fullscreen preference, and starts the OST rotation.
+- 9 OST tracks added under `assets/sounds/ost/`.
+
+### Changed
+- Removed the persistent fullscreen corner button (previously always visible via `index.html`) now that Settings covers it - fullscreen is currently only reachable from the main menu, not mid-level, until a Pause state exists (deliberately deferred, see TODO.md).
+- Applied CLAUDE.md's Code Style conventions (JSDoc per function, ~14-line function length, top-of-file-only comments) across nearly the entire codebase: `core/`, `utils/`, `world/`, all of `entities/` (including the full enemy/boss roster), `mechanics/`, `ui/`, and `states/` except `GameState.js`. No behavior changes - verified via syntax checks plus scripted scans for oversized functions, stray inline comments, and missing JSDoc blocks across every touched file. `GameState.js`, `Player.js`, `ColorZone.js`, and `Wraith.js`/`WraithBeam.js` are deliberately still untouched, reserved for a dedicated future session given their size and centrality (see TODO.md's Architecture section).
+
 ## [0.6.2] - 2026-07-25
 
 ### Added

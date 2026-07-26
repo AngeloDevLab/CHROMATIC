@@ -4,7 +4,8 @@ Working list of what's next. Update together at the end of a session (see `CHANG
 
 ## Architecture (next up, high priority)
 
-- **`GameState.js` has grown into a god object** - boss spawning, Merchant/Trapdoor/SecretDoor/BuffTerminal wiring, combat resolution glue, panel/pause/game-over handling, HUD wiring, camera, color mechanic, all living in one file/class. Needs splitting up before more systems (Templateboss, Token economy, Worldmap color reveal) get piled on top and make it worse. No concrete split plan yet - first task of the next session.
+- **`GameState.js` has grown into a god object** - boss spawning, Merchant/Trapdoor/SecretDoor/BuffTerminal wiring, combat resolution glue, panel/pause/game-over handling, HUD wiring, camera, color mechanic, all living in one file/class. Needs splitting up before more systems (Templateboss, Token economy, Worldmap color reveal) get piled on top and make it worse. Session 2026-07-26 applied CLAUDE.md's Code Style conventions (JSDoc, ~14-line functions, top-of-file-only comments) across the rest of the codebase as prep (see CHANGELOG 0.7.0), but deliberately left `GameState.js`/`Player.js`/`ColorZone.js`/`Wraith.js`/`WraithBeam.js` untouched - still no concrete split plan for those four. Leading direction discussed but not yet planned in detail: split into more `State`s (PauseState/BossState/BuffState/GameOverState - already named as planned in CLAUDE.md's States section) rather than just breaking `GameState` up into internal helper modules. First task of the next session: actually draft that plan before touching any of the four big files.
+- **Boss fight (Wraith of the Shifting Sands) doesn't feel good overall** - flagged 2026-07-26, needs a dedicated revisit beyond just the individual timing constants already tracked below. Directly blocks Abilities/Token economy: the Merchant's real shop only unlocks after a boss is dead (05_enemies-bosses.md 6.2), so the ability system can't be meaningfully built/tested until the boss encounter itself is fun. Tackle before or alongside the GameState/BossState split above, not after.
 
 ## Game feel
 
@@ -61,6 +62,6 @@ Working list of what's next. Update together at the end of a session (see `CHANG
 - Token economy + Merchant - Merchant teaser NPC exists (see Boss section above) but that's flavor only, not the real post-Templateboss shop/Token spend from 05_enemies-bosses.md 6.2.
 - Secret Room + permanent character buff system (see `docs/GDD/02_game-structure.md` 2.5) - **done**, see the Secret Room section above. A free/low-cost Lore-Secret variant was designed alongside this and cut for scope, see `docs/GDD/_ideas-inbox.md`.
 - Touch controls (desktop/keyboard only right now).
-- LocalStorage save system - `Game.completedLevels` (session-only right now, resets on reload) is the intended save/load target once this exists.
-- Audio: Web Audio API GainNode hierarchy (Master -> Music/SFX/Ambience), tracks need downloading + wiring in - see the earlier music-architecture discussion (generic ambient playlist + dedicated boss track leaning).
+- LocalStorage save system - `SaveSystem` (`js/core/SaveSystem.js`) now exists and backs Settings preferences (fullscreen, volumes, mute), but `Game.completedLevels`/`Game.buffs` (session-only right now, reset on reload) still aren't migrated onto it.
+- Audio - Web Audio GainNode hierarchy, OST ambient rotation, and volume/mute Settings controls are now built (`SoundManager`/`MusicPlaylist`/`SettingsPanel`, see CHANGELOG 0.7.0). Still open: SFX (hit/jump/sword/pickup etc. - no files exist yet) and wiring `ost-08` ("The Iron Sentinel") into an actual boss-encounter trigger.
 - A lot of this is blocked on art/assets currently in progress (levels, enemy sprites) rather than on code.
