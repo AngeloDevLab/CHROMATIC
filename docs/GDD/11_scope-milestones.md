@@ -54,20 +54,20 @@ Tracks actual status against the 12.1 checklist - update this instead of trying 
 
 | Item | Status |
 |---|---|
-| Prologue levels (6) | Lv 1-2 done and reachable, Lv 3 exported but not yet wired into `GameState.js`/`LoadingState.js`, Lv 4-6 (Miniboss/Special/Secret/Templateboss) not built |
+| Prologue levels (6) | Lv 1-5 done, registered, and reachable (`LevelSession.js`'s `LEVEL_JSON_KEYS`, `LoadingState.js`'s manifest). Lv 6 (Templateboss) not built. |
 | Enemy types (Patroller, Charger, Shooter, Sentinel) | 4/4 implemented - balance values still first-guess, see `TODO.md` |
-| Miniboss + Templateboss | Not built |
-| Combat system (melee + ranged) | Done, balance still first-guess (see `TODO.md`) |
+| Miniboss + Templateboss | Miniboss (Wraith of the Shifting Sands, Lvl 3) done and rebalanced (HP/contact-damage/enrage, CHANGELOG 0.8.0) - remaining tuning constants still first-guess, see `TODO.md`. Templateboss (Lvl 6, Wraith of the Grey City) not built - its HP/damage tier is already set in 05_enemies-bosses.md 6.5's revised table. |
+| Combat system (melee + ranged) | Done, regular-enemy balance still first-guess (see `TODO.md`); boss-side damage-number/vulnerable-window bugs fixed this session (CHANGELOG 0.8.0) |
 | Color mechanic (in-level) | Done |
 | Color mechanic (Worldmap reveal) | Not built |
 | Shield/Prisma system | Done |
 | Difficulty selection | Done |
-| Secret Room + buff system | Not built (documented only, see `TODO.md`) |
-| Token economy + Merchant | Not built |
+| Secret Room + buff system | Done (CHANGELOG 0.6.2) - buff magnitudes still first-guess, see `TODO.md` |
+| Token economy + Merchant | Not built - Merchant teaser NPC exists (dialogue only, `entities/Merchant.js`), no real shop/Token spend yet |
 | Worldmap chapter bar | Done (all 6 chapters listed, only Prologue unlocked) |
 | Touch controls | Not built (keyboard/mouse only) |
 | Landscape mode check | Not built |
-| LocalStorage save | Not built (`Game.completedLevels` is session-only) |
+| LocalStorage save | Partial - `SaveSystem.js` (CHANGELOG 0.7.0) exists and backs Settings preferences (fullscreen, volumes, mute); `Game.completedLevels`/`Game.buffs` are still session-only, not yet migrated |
 | Main menu core (Start/Continue/Settings/Info) | Done |
 | Legal pages (Credits/Imprint/Privacy) | Placeholder only ("coming soon" text, `MenuState.js`) |
 | Intro cutscene | Done |

@@ -6,6 +6,27 @@ Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to le
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-26
+
+### Added
+- `StateMachine.push()`/`pop()` (`js/core/StateMachine.js`): overlay states (Pause/GameOver/Buff) stack on top of whatever's currently running without exiting it - the state underneath keeps its entities/timers exactly as they were and keeps rendering its last frame behind the overlay. `change()` now unwinds the whole stack (not just `current`) before entering the target state.
+- `PauseState`/`GameOverState`/`BuffState` (`js/states/`): extracted out of `GameState.js`'s ad-hoc `Panel` + boolean-flag handling - now real, reusable states pushed via the stack above, so any level-hosting state (including the new `BossState` below) gets them for free.
+- `BossState` + `LevelSession` (`js/states/`): `GameState.js`'s ~900-line body split in two. `LevelSession` owns everything a running level needs (Level/Collision/Camera/ColorZone/Player/enemies/HUD/interactables/combat resolution) with no `enter()`/`exit()` contract of its own; `GameState` and the new `BossState` are thin wrappers (32-95 lines) that construct one and delegate `update()`/`render()` to it. Routed at level-load time via `isBossLevel()` (checks a level's `EnemySpawn` objects for a Miniboss/Boss), not a mid-session trigger.
+- `Interactables` + `CombatCoordinator` (`js/mechanics/`): `LevelSession` itself further split. `Interactables` owns Portal/Merchant/Trapdoor/SecretDoor/BuffTerminal (spawn, prompts, render); `CombatCoordinator` owns the melee/ranged attack decision, both projectile pools, and the hit-stop timer they drive.
+- `Game.resizeBuffer()`/`resetBuffer()`: `BossState` now renders into a dedicated buffer sized to exactly match its arena (Lv_3: 960x512) instead of the base 640x360, so there's no empty border around the fight. Resized before the first frame (no visible mid-scene cut); the physical on-screen box grows/shrinks via a brief CSS transition instead of snapping.
+- Boss HP bar + name label, top-center (`HUD.renderBossBar()`, `BossState.js`) - shifts color once `Boss.enraged` (Phase 2) as a visible tell for the speed-up, previously only readable from the moveset ticking faster.
+
+### Changed
+- Boss balancing overhauled (`Wraith.js`, `docs/GDD/05_enemies-bosses.md` 6.5, all from this session's playtesting): Miniboss HP 150 -> 300 (150 read as weaker than the player's own ~200 Health+Shield pool). The GDD's whole boss-tier table revised 150/250/400 -> 300/400/500 to keep the Miniboss meaningfully below Templateboss/Chapterboss rather than landing on the old Templateboss number. Wraith's contact damage split from the beam's Signature Hit Damage (both were incorrectly the same 40 - contact is now a separate 10, matching every other enemy's `DEFAULT_CONTACT_DAMAGE`). Enrage time-scale 0.65 -> 0.5 (barely noticeable before) and now also speeds up the side-to-side walk, via its own dedicated value rather than `timeScale` inverted (a speed needs the opposite scaling direction from a duration).
+- The zoomed-out boss camera (`BOSS_CAMERA_ZOOM`) removed in favor of the dedicated arena-sized buffer above - showing more world at normal tile scale read better in playtesting than shrinking sprites/tiles to fit more into the base buffer.
+- `Enemy.takeDamage()`/`Boss.takeDamage()` now return the amount actually applied (doubled during `vulnerable`, 0 if already dead) - `Combat.js`'s damage-number popups use this instead of assuming the caller's pre-multiplier amount is what landed.
+- Convention cleanup (JSDoc, ~14-line functions, top-of-file-only comments, see CLAUDE.md) applied to `LevelSession.js`, `Wraith.js`, and `WraithBeam.js` - three of the four big files still outstanding from the Group 1-7 pass (CHANGELOG 0.7.0). `Wraith.js`'s `update()` and constructor were both split into named helper methods (`_tickTimers`/`_trackActiveBeam`/`_updateFacing`/`_updateState`, `_initAnchors`/`_initStateMachine`/`_initBeamMailbox`); `_updateState`'s state-machine dispatch was also converted from an `if`/`else if` chain to a `switch` (one discriminant against several literal states is the textbook case for it, and it reads better without repeating `this.state ===` seven times). `Player.js`/`ColorZone.js` remain for a future pass.
+
+### Fixed
+- Wraith's `vulnerable` (double-damage) window stayed active through its entire `toIdle` pose morph and the walk to the arena's other side, only resetting once fully idle again - a hit landed anywhere in that multi-second stretch was doubled regardless of whether the wraith still visually looked exposed.
+- `#ui-overlay` stayed sized to the base 640x360 in CSS regardless of `BossState`'s bigger buffer - Pause's panel (and anything else centered in the overlay) centered on that stale smaller sub-region instead of the actual arena canvas, reading as pinned toward the top-left.
+- Damage numbers for a boosted (`vulnerable`) hit displayed the pre-multiplier base amount instead of what actually landed (see `Enemy.takeDamage()` change above).
+
 ## [0.7.0] - 2026-07-26
 
 ### Added
