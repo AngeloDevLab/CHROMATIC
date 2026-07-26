@@ -12,12 +12,20 @@ import { Entity } from '../Entity.js';
 // Wraith.js drives this entirely through trackY(), see that class for why.
 // Same x/y/width/height/damage/direction/dead/update/render shape as
 // ShooterProjectile.js otherwise, so it still plugs straight into
-// GameState's existing enemyProjectiles pipeline (resolveEnemyProjectileHits
-// in Combat.js, which kills it on the first hit) with no changes needed there.
+// LevelSession's existing enemyProjectiles pipeline
+// (resolveEnemyProjectileHits in Combat.js, which kills it on the first
+// hit) with no changes needed there.
 const THICKNESS_PX = 36;
 const STEP_PX = 8;
 
 export class WraithBeam extends Entity {
+    /**
+     * @param {number} spawnCenterX - World X the beam fires from (the wraith's own X, fixed for its whole lifetime).
+     * @param {number} spawnCenterY - World Y (center) the beam starts at.
+     * @param {1|-1} direction - Which way the beam fires.
+     * @param {Collision} collision - Level collision, for the `walls` scan in _rescan().
+     * @param {number} damage - Damage dealt to the player on hit (Combat.js).
+     */
     constructor(spawnCenterX, spawnCenterY, direction, collision, damage) {
         super(spawnCenterX, spawnCenterY - THICKNESS_PX / 2, 0, THICKNESS_PX);
 
@@ -34,12 +42,15 @@ export class WraithBeam extends Entity {
         this._rescan(spawnCenterY);
     }
 
-    // Re-derives x/y/width for the wraith's CURRENT height - scans fresh
-    // against `walls` every call instead of once, so a wall segment that
-    // only covers part of the arena's height actually blocks the beam once
-    // it descends to that row, rather than the reach computed way back at
-    // the top (where a wall usually isn't even present) staying locked in
-    // for the whole ensuing glide down.
+    /**
+     * Re-derives x/y/width for the wraith's CURRENT height - scans fresh
+     * against `walls` every call instead of once, so a wall segment that
+     * only covers part of the arena's height actually blocks the beam once
+     * it descends to that row, rather than the reach computed way back at
+     * the top (where a wall usually isn't even present) staying locked in
+     * for the whole ensuing glide down.
+     * @param {number} centerY - The wraith's current center Y.
+     */
     _rescan(centerY) {
         const levelEdgeX = this.direction === 1 ? this._collision.level.pixelWidth : 0;
 
@@ -55,13 +66,22 @@ export class WraithBeam extends Entity {
         this.y = centerY - this.height / 2;
     }
 
-    // Wraith.js calls this every frame while it's still firing/descending.
+    /**
+     * Wraith.js calls this every frame while it's still firing/descending.
+     * @param {number} centerY - The wraith's current center Y.
+     */
     trackY(centerY) {
         this._rescan(centerY);
     }
 
+    /**
+     * No-op - see the top-of-file note on why Wraith.js drives this entirely through trackY().
+     */
     update() {}
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
     render(ctx) {
         if (this.dead || this.width <= 0) return;
 

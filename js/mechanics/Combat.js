@@ -131,9 +131,9 @@ function _damageOverlappingEnemies(hitbox, enemies, facing) {
     const hits = [];
     for (const enemy of enemies) {
         if (!enemy.dead && rectsOverlap(hitbox, enemy)) {
-            enemy.takeDamage(PLAYER_ATTACK_DAMAGE);
+            const applied = enemy.takeDamage(PLAYER_ATTACK_DAMAGE);
             enemy.applyAttackKnockback(facing * ENEMY_KNOCKBACK_SPEED);
-            hits.push({ enemy, amount: PLAYER_ATTACK_DAMAGE });
+            hits.push({ enemy, amount: applied });
         }
     }
     return hits;
@@ -183,10 +183,10 @@ function _hitFirstOverlappingEnemy(projectile, enemies) {
     for (const enemy of enemies) {
         if (enemy.dead || !rectsOverlap(projectile, enemy)) continue;
 
-        enemy.takeDamage(projectile.damage);
+        const applied = enemy.takeDamage(projectile.damage);
         enemy.applyAttackKnockback(projectile.direction * ENEMY_KNOCKBACK_SPEED);
         projectile.dead = true;
-        return { enemy, amount: projectile.damage };
+        return { enemy, amount: applied };
     }
     return null;
 }

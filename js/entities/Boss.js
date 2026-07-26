@@ -7,9 +7,11 @@ const VULNERABLE_DAMAGE_MULTIPLIER = 2;
 
 // 05_enemies-bosses.md 6.2.1: "same moveset repeats faster" once a boss drops
 // to half HP or below - shared threshold/scale so a future Templateboss
-// enrages the same way without re-deriving this.
+// enrages the same way without re-deriving this. 0.65 (35% faster) read as
+// barely noticeable in playtesting; 0.5 (twice the cycle speed) is the value
+// that actually reads as a real phase change.
 const ENRAGE_HP_FRACTION = 0.5;
-const ENRAGE_TIME_SCALE = 0.65;
+const ENRAGE_TIME_SCALE = 0.5;
 
 // Entity -> Enemy -> Boss -> Templateboss (CLAUDE.md's stated hierarchy) -
 // this layer holds what every boss tier shares regardless of its own specific
@@ -39,17 +41,26 @@ export class Boss extends Enemy {
         super(x, y, sprite, width, height);
         this.vulnerable = false;
         this.telegraphing = false;
+        // Display name for BossState.js's top-center HP bar label (e.g.
+        // 05_enemies-bosses.md's "Wraith of the Shifting Sands") - subclasses
+        // set this themselves after calling super(), null here is only a
+        // fallback for a Boss subclass that hasn't set one yet.
+        this.name = null;
     }
 
     /**
      * Doubles incoming damage instead of gating "can be hit at all" behind a
      * separate flag, so melee/ranged/Combat.js need zero boss-specific code -
      * same reasoning as Charger.js overriding applyAttackKnockback instead
-     * of Combat.js branching on enemy type.
+     * of Combat.js branching on enemy type. Returns Enemy.takeDamage()'s own
+     * return value (the doubled amount, or 0 if already dead) so Combat.js's
+     * damage-number popups show what actually landed, not the caller's
+     * pre-multiplier amount.
      * @param {number} amount - Damage to apply.
+     * @returns {number} The amount actually applied.
      */
     takeDamage(amount) {
-        super.takeDamage(this.vulnerable ? amount * VULNERABLE_DAMAGE_MULTIPLIER : amount);
+        return super.takeDamage(this.vulnerable ? amount * VULNERABLE_DAMAGE_MULTIPLIER : amount);
     }
 
     /**

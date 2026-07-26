@@ -105,12 +105,17 @@ export class Enemy extends Entity {
 
     /**
      * @param {number} amount - Damage to apply.
+     * @returns {number} The amount actually applied (0 if already dead) -
+     *   Boss.js's override doubles this during its vulnerable window, so
+     *   Combat.js reads this return value for damage-number display instead
+     *   of assuming its own pre-multiplier amount was what actually landed.
      */
     takeDamage(amount) {
-        if (this.dead) return;
+        if (this.dead) return 0;
         this.hp = Math.max(0, this.hp - amount);
         if (this.hp === 0) this._enterDeathAnimation();
         this.hitFlashTimer = HIT_FLASH_SECONDS;
+        return amount;
     }
 
     /**

@@ -91,6 +91,12 @@ Zone 3 "stronger variants" (see [02_game-structure.md](02_game-structure.md) 2.4
 
 | Tier | HP | Signature Hit Damage | Player hits until boss dead (approx.) |
 |---|---|---|---|
-| Miniboss | 150 | 40 | ~15 |
-| Templateboss | 250 | 70 | ~25 |
-| Chapterboss | 400 | 100 (= Normal Boss-Hit from 5.3) | ~40 |
+| Miniboss | 300 | 40 | ~30 |
+| Templateboss | 400 | 70 | ~40 |
+| Chapterboss | 500 | 100 (= Normal Boss-Hit from 5.3) | ~50 |
+
+Revised from an earlier 150/250/400 draft (session playtesting: 150 read as
+weaker than the player's own ~200 Health+Shield pool, which shouldn't be true
+for a boss) - a clean round 300/400/500 progression instead, keeping the
+Miniboss meaningfully below the later tiers now that the gap is 100 HP per
+tier rather than 100/150.
