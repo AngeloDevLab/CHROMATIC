@@ -1,4 +1,5 @@
 import { State } from './State.js';
+import { isBossLevel } from './LevelSession.js';
 
 // 02_game-structure.md 2.1 - only Prologue is active at game start, the rest
 // unlock as previous chapters are completed.
@@ -226,7 +227,8 @@ export class WorldmapState extends State {
      */
     _enterLevel(index) {
         const data = PROLOGUE_NODES[index];
-        this.game.stateMachine.change('game', { chapterId: 'prologue', level: data.level });
+        const target = isBossLevel(this.game.assets, data.level) ? 'boss' : 'game';
+        this.game.stateMachine.change(target, { chapterId: 'prologue', level: data.level });
     }
 
     /**

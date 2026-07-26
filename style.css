@@ -470,6 +470,43 @@ body {
   white-space: nowrap;
 }
 
+/* BossState.js's top-center HP bar label - screen-fixed like .hud-value,
+   left/top set inline per-frame since the bar centers on the current
+   buffer width (varies per boss arena), not a fixed position. */
+.boss-name-label {
+  position: absolute;
+  transform: translate(-50%, 0);
+  font-family: 'Jersey 10', monospace;
+  font-size: 16px;
+  color: #f2f2f2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+/* HUD.js's renderBossBar() shifts the bar's own fill to the same color once
+   boss.enraged (Boss.js) - Phase 2's only visible tell besides the moveset
+   itself ticking faster. */
+.boss-name-label.enraged {
+  color: #ff8a3f;
+}
+
+/* BossState.js's HP value readout ("150/150"), right below the canvas bar -
+   session decision: never below 16px for this boss-arena text, unlike
+   .hud-value's 10px player numbers - the boss buffer renders at a lower
+   effective on-screen scale than a normal level's (see BossState.js's own
+   comment on why), so anything this small already reads as too small there. */
+.boss-hp-label {
+  position: absolute;
+  transform: translate(-50%, 0);
+  font-family: 'Jersey 10', monospace;
+  font-size: 16px;
+  color: rgba(242, 242, 242, 0.85);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .panel-close {
   position: absolute;
   top: 10px;

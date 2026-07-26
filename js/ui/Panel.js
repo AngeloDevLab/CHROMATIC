@@ -18,9 +18,10 @@ export class Panel {
      * @param {() => void} [options.onClose] - Called whenever this panel
      *   actually closes, by whichever path (an explicit choice calling
      *   close() itself, or a dismissible panel's own ×/backdrop/Escape) -
-     *   lets a caller with its own "is this open" flag (e.g. GameState's
-     *   buffChoiceOpen) reset it in exactly one place regardless of how the
-     *   panel went away, instead of needing every close path to remember to do it.
+     *   lets a caller with its own "is this open" state (e.g. BuffState.js
+     *   popping itself off the StateMachine stack) react in exactly one
+     *   place regardless of how the panel went away, instead of needing
+     *   every close path to remember to do it.
      * @param {boolean} [options.dismissible=true] - When false, omits the ×
      *   button and the backdrop-click/Escape close handlers - for panels
      *   with no "cancel" path (e.g. Game Over), where the player must pick
@@ -95,5 +96,29 @@ export class Panel {
      */
     _onKeyDown(event) {
         if (event.key === 'Escape') this.close();
+    }
+
+    /**
+     * Convenience wrapper around open() for the common "title + a list of
+     * buttons" shape (Pause/Game Over/Buff choice) - builds the buttons'
+     * markup and wires each one's onClick, so callers only ever hand over
+     * data instead of building HTML themselves.
+     * @param {string} title
+     * @param {{id: string, label: string, onClick: () => void}[]} choices
+     * @param {object} [options] - Forwarded to open() (dismissible, closeOnEscape, onClose).
+     */
+    openChoices(title, choices, options = {}) {
+        const buttonsHTML = choices
+            .map((choice) => `<button class="difficulty-option" data-action="${choice.id}">${choice.label}</button>`)
+            .join('');
+
+        this.open(title, `<div class="difficulty-options">${buttonsHTML}</div>`, {
+            ...options,
+            onMount: (root) => {
+                for (const choice of choices) {
+                    root.querySelector(`[data-action="${choice.id}"]`).addEventListener('click', choice.onClick);
+                }
+            },
+        });
     }
 }

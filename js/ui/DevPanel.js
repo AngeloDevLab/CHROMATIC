@@ -1,4 +1,4 @@
-import { LEVEL_JSON_KEYS } from '../states/GameState.js';
+import { LEVEL_JSON_KEYS, isBossLevel } from '../states/LevelSession.js';
 
 // Fixed to the document, deliberately outside #ui-overlay - that overlay is
 // scaled together with the canvas (Game._handleResize) to stay consistent
@@ -108,7 +108,9 @@ export class DevPanel {
         for (const button of this.element.querySelectorAll('.dev-panel-level:not(:disabled)')) {
             button.addEventListener('click', () => {
                 button.blur();
-                this.game.stateMachine.change('game', { chapterId: CHAPTER_ID, level: Number(button.dataset.level) });
+                const level = Number(button.dataset.level);
+                const target = isBossLevel(this.game.assets, level) ? 'boss' : 'game';
+                this.game.stateMachine.change(target, { chapterId: CHAPTER_ID, level });
             });
         }
     }

@@ -8,6 +8,18 @@ const ENEMY_BAR_WIDTH = 32;
 const ENEMY_BAR_HEIGHT = 4;
 const ENEMY_BAR_GAP_PX = 6;
 
+// BossState.js's top-center HP bar - wider/taller than the floating
+// per-enemy bar above, since it's the sole focus of a boss encounter.
+// Horizontally centered dynamically (see renderBossBar() below), not a
+// fixed x, since BossState's own buffer width varies per arena. HEIGHT/
+// TOP_PX exported (same reasoning as HEALTH_BAR/SHIELD_BAR above) so
+// BossState.js's own name label (above) and HP value label (below) can
+// position themselves relative to this canvas-drawn bar without
+// duplicating these numbers a second time.
+const BOSS_BAR_WIDTH = 200;
+export const BOSS_BAR_HEIGHT = 10;
+export const BOSS_BAR_TOP_PX = 26;
+
 // HUD bar fills are colored rectangles drawn on the canvas, not text
 // (11.8.1) - this only ever draws bars; numbers/labels are the caller's job
 // via the HTML overlay. Dormant enemies (Sentinel.js) stay hidden until
@@ -42,6 +54,28 @@ export class HUD {
             height: ENEMY_BAR_HEIGHT,
         };
         this._drawBar(ctx, rect, enemy.hp / enemy.maxHp, '#241010', '#d4453f');
+    }
+
+    /**
+     * Screen-fixed, horizontally centered on the current buffer width - call
+     * outside the camera-translated block. BossState.js owns the boss-name
+     * HTML label that goes with this (11.8's text-vs-canvas boundary), this
+     * only ever draws the fill. Fill color shifts to Phase 2's enrage color
+     * once boss.enraged (Boss.js) is true - a visible tell for the speed-up,
+     * since otherwise the only sign is the moveset itself ticking faster.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     * @param {Enemy} boss
+     * @param {number} gameWidth - Current buffer width (varies per boss arena).
+     */
+    renderBossBar(ctx, boss, gameWidth) {
+        const rect = {
+            x: gameWidth / 2 - BOSS_BAR_WIDTH / 2,
+            y: BOSS_BAR_TOP_PX,
+            width: BOSS_BAR_WIDTH,
+            height: BOSS_BAR_HEIGHT,
+        };
+        const fillColor = boss.enraged ? '#ff8a3f' : '#d4453f';
+        this._drawBar(ctx, rect, boss.hp / boss.maxHp, '#241010', fillColor);
     }
 
     /**

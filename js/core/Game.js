@@ -30,6 +30,13 @@ import { StateMachine } from './StateMachine.js';
 const FIXED_DT = 1 / 60;
 const FRAME_TIME_CAP_SECONDS = 0.05;
 
+// resizeBuffer()'s viewport CSS transition (see that method) - how long the
+// on-screen game box takes to grow/shrink into its new size, e.g. switching
+// into BossState's own arena-sized buffer. First-guess, same reasoning as
+// every other timing constant in this codebase - needs a real look once
+// there's an actual boss arena buffer swap to watch it against.
+const BUFFER_RESIZE_TRANSITION_SECONDS = 0.3;
+
 export class Game {
     /**
      * @param {string} canvasId - DOM id of the game <canvas>.
@@ -43,6 +50,11 @@ export class Game {
 
         this.width = this.canvas.width;
         this.height = this.canvas.height;
+        // Base resolution as shipped in index.html's <canvas> attributes -
+        // resizeBuffer()/resetBuffer() below read this rather than
+        // hardcoding 640x360 a second time.
+        this._baseWidth = this.width;
+        this._baseHeight = this.height;
 
         this.stateMachine = new StateMachine(this);
         this._initSharedState();
@@ -84,7 +96,54 @@ export class Game {
 
         this.viewport.style.width = `${this.width * scale}px`;
         this.viewport.style.height = `${this.height * scale}px`;
+        // #ui-overlay's own width/height default to 640x360 in style.css
+        // (--game-width/--game-height) - only ever correct for the base
+        // buffer. Session bugfix: BossState.js's arena-sized buffer left the
+        // overlay at that stale 640x360 box, scaled but never resized, so
+        // anything centered inside it (e.g. Pause's panel, inset:0 on
+        // .panel-backdrop) centered on that smaller sub-region instead of
+        // the actual (bigger) boss canvas - reading as pinned toward the
+        // top-left. Setting these here, inline, overrides the CSS default
+        // to always match the current buffer.
+        this.overlay.style.width = `${this.width}px`;
+        this.overlay.style.height = `${this.height}px`;
         this.overlay.style.transform = `scale(${scale})`;
+    }
+
+    /**
+     * Switches the internal render resolution away from the base 640x360 -
+     * used by BossState for its own arena-sized buffer. Changing the canvas
+     * element's own width/height clears its pixel buffer and resets 2D
+     * context state, but
+     * nothing here relies on that surviving a resize (every frame redraws
+     * from scratch, see _loop()'s clearRect + this.imageSmoothingEnabled is
+     * never set, only the CSS `image-rendering: pixelated` on the element,
+     * which isn't affected). The viewport's CSS transition makes the
+     * on-screen box grow/shrink smoothly instead of snapping, then clears
+     * itself so a later window-drag resize (via the resize listener calling
+     * _handleResize() directly, never this method) tracks the cursor
+     * instantly again rather than lagging behind an active transition.
+     * @param {number} width
+     * @param {number} height
+     */
+    resizeBuffer(width, height) {
+        this.viewport.style.transition = `width ${BUFFER_RESIZE_TRANSITION_SECONDS}s ease, height ${BUFFER_RESIZE_TRANSITION_SECONDS}s ease`;
+
+        this.canvas.width = width;
+        this.canvas.height = height;
+        this.width = width;
+        this.height = height;
+        this._handleResize();
+
+        setTimeout(() => { this.viewport.style.transition = ''; }, BUFFER_RESIZE_TRANSITION_SECONDS * 1000);
+    }
+
+    /**
+     * Restores the base 640x360 buffer - the inverse of resizeBuffer(),
+     * called once a dedicated-resolution state (BossState) exits.
+     */
+    resetBuffer() {
+        this.resizeBuffer(this._baseWidth, this._baseHeight);
     }
 
     /**

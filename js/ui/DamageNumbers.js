@@ -11,9 +11,8 @@ const STATUS_DURATION_SECONDS = 1.2;
 // position from world coordinates every frame, since #ui-overlay doesn't
 // scroll with Camera.js the way the canvas does. update()'s position math is
 // multiplied by camera.zoom (Camera.js) to match render()'s own
-// ctx.scale(zoom)+translate - without this, a boss fight's zoomed-out camera
-// (GameState's BOSS_CAMERA_ZOOM) would leave these drifting away from the
-// entity they're floating over.
+// ctx.scale(zoom)+translate - without this, any camera zoom below 1 would
+// leave these drifting away from the entity they're floating over.
 export class DamageNumbers {
     /**
      * @param {HTMLElement} overlay - Element to spawn popups into.

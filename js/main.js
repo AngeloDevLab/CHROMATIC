@@ -10,6 +10,10 @@ import { MenuState } from './states/MenuState.js';
 import { CutsceneState } from './states/CutsceneState.js';
 import { WorldmapState } from './states/WorldmapState.js';
 import { GameState } from './states/GameState.js';
+import { BossState } from './states/BossState.js';
+import { PauseState } from './states/PauseState.js';
+import { GameOverState } from './states/GameOverState.js';
+import { BuffState } from './states/BuffState.js';
 import { DevPanel } from './ui/DevPanel.js';
 
 /**
@@ -42,5 +46,9 @@ game.stateMachine.register('menu', new MenuState(game));
 game.stateMachine.register('cutscene', new CutsceneState(game));
 game.stateMachine.register('worldmap', new WorldmapState(game));
 game.stateMachine.register('game', new GameState(game));
+game.stateMachine.register('boss', new BossState(game));
+game.stateMachine.register('pause', new PauseState(game));
+game.stateMachine.register('gameover', new GameOverState(game));
+game.stateMachine.register('buff', new BuffState(game));
 game.stateMachine.change('loading');
 game.start();
