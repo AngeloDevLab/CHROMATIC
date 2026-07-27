@@ -1,215 +1,185 @@
 import { Entity } from './Entity.js';
+import { PlayerHealth } from './PlayerHealth.js';
+import { PlayerRenderer } from './PlayerRenderer.js';
 
-// Sprite frames carry transparent padding around the character (room for
-// animation), so the collision hitbox is intentionally narrower than the full
-// render size - matches the previous 32x64 footprint per
-// 10_technical-architecture.md 11.7.2, independent of how big the sprite
-// canvas itself is.
+// Sprite frames carry transparent padding around the character, so the
+// collision hitbox is intentionally narrower than the full render size -
+// matches the previous 32x64 footprint (10_technical-architecture.md 11.7.2).
 const HITBOX_WIDTH = 32;
 const HITBOX_HEIGHT = 64;
-const TARGET_VISIBLE_HEIGHT = 64;
 
-// 04_health-save-system.md 5.1/5.2: both base value 100.
-const MAX_HEALTH = 100;
-const MAX_SHIELD = 100;
-// 03_mechanics.md 4.5: "50 points (1 Secret Room) take about 50 seconds from empty".
-const SHIELD_REGEN_PER_SECOND = 1;
-
-// Secret Room buff amounts (docs/GDD/02_game-structure.md 2.5) - GDD names
-// the three buff types but not their magnitude, first-guess round numbers
-// same reasoning as every other tuning constant in this codebase.
-const BUFF_MAX_HEALTH_BONUS = 20;
-const BUFF_SHIELD_REGEN_BONUS = 0.5;
-const BUFF_MAX_SHIELD_BONUS = 20;
-
-// attack.png frame where the blade reaches full extension - the swing resolves
-// its hit exactly once, here, via consumeAttackImpact() (see Combat.js).
+// attack.png frame where the blade reaches full extension - the swing
+// resolves its hit exactly once, here, via consumeAttackImpact() (Combat.js).
 const ATTACK_IMPACT_FRAME = 4;
 
-// Brief invincibility after taking any hit, so multiple overlapping enemies
-// (or one lingering enemy) can't stack damage every single frame - independent
-// of any individual enemy's own contactCooldown in Combat.js.
-const INVINCIBILITY_SECONDS = 0.5;
-
-// Brief white tint on taking damage (see SpriteAnimation.draw's flashAmount) -
-// deliberately much shorter than INVINCIBILITY_SECONDS, a quick hit reaction
-// rather than a "still invincible" indicator.
-const HIT_FLASH_SECONDS = 0.15;
-
-// Jump feel (game-feel pass): how long after walking off a ledge a jump still
-// counts as "grounded" (coyote time), and how long a jump press pressed
-// slightly before landing is still honored once grounded (jump buffering).
-// Both mask the exact single-frame window a rigid grounded-check would
-// otherwise require, which reads as unresponsive on a keyboard.
+// Coyote time: how long after walking off a ledge a jump still counts as
+// grounded. Jump buffering: how long an early jump press still fires once
+// grounded. Both mask the single-frame window a rigid grounded-check would
+// otherwise need, which reads as unresponsive on a keyboard.
 const COYOTE_TIME_SECONDS = 0.1;
 const JUMP_BUFFER_SECONDS = 0.12;
-// Variable jump height: releasing jump early while still rising clamps vy
-// down to this fraction of a full jump's takeoff speed, for a short hop
-// instead of always launching to full height regardless of tap-vs-hold.
+// Variable jump height: releasing jump early while still rising clamps vy to
+// this fraction of full takeoff speed, for a short hop instead of always
+// launching to full height regardless of tap vs. hold.
 const SHORT_HOP_VY_FRACTION = 0.45;
 
 // Movement feel: ramps vx toward the target speed instead of snapping
-// instantly, so starting/stopping has a touch of weight - deceleration is
-// faster than acceleration so stopping still reads as responsive.
+// instantly. Deceleration is faster than acceleration so stopping still reads as responsive.
 const ACCELERATION = 1800;
 const DECELERATION = 2600;
 
-// How long a knockback push overrides normal horizontal control for - without
-// this, the accel/decel movement code would immediately pull vx back toward
-// whatever direction is held (or 0), making the hit invisible.
+// How long a knockback push overrides normal horizontal control - without
+// this the accel/decel movement code would immediately pull vx back toward
+// whatever's held, making the hit invisible.
 const KNOCKBACK_LOCK_SECONDS = 0.15;
 
 // Drop-Through-Platform (03_mechanics.md 4.2, replaces the originally-planned
-// Duck - see Collision.js's hasFloorBelow()): just enough to push the player
-// past the one-way collision's "already below this surface" threshold before
-// Collision.resolve() runs this same frame, so it stops catching them against
-// the platform they were just standing on - gravity does the rest, no special
-// multi-frame "falling through" state needed.
+// Duck): just enough to push the player past the one-way collision's
+// "already below this surface" threshold before Collision.resolve() runs
+// this same frame - gravity does the rest, no multi-frame "falling through" state needed.
 const DROP_NUDGE_PX = 4;
 
+/**
+ * @param {number} current
+ * @param {number} target
+ * @param {number} maxDelta
+ * @returns {number}
+ */
 function moveToward(current, target, maxDelta) {
     if (current < target) return Math.min(current + maxDelta, target);
     if (current > target) return Math.max(current - maxDelta, target);
     return current;
 }
 
+// Three mutually-exclusive movement modes, set once by whichever enableX()
+// the caller uses: autopilot (menu bounce-between-bounds demo), freeRun
+// (menu living-background scripted pass, no physics), controlled (real
+// keyboard play, see enableControl()/_updateControlled()). Health/Shield/buff
+// bookkeeping and the sprite-drawing pipeline live on composed sub-objects
+// (PlayerHealth.js/PlayerRenderer.js) instead of here - most of the getters
+// below are thin delegates so external callers can keep reading
+// player.health/shield/dead/godmode/visualTopY directly.
 export class Player extends Entity {
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {object} animations - Keyed by animation name, see SpriteAnimation.js.
+     */
     constructor(x, y, animations) {
         super(x, y, HITBOX_WIDTH, HITBOX_HEIGHT);
         this.animations = animations;
         this.currentAnimation = 'idle';
         this.facing = 1;
+        this.healthState = new PlayerHealth();
+        this.renderer = new PlayerRenderer(this);
 
-        // Scale the render size up so the *visible* character (excluding the
-        // sprite's own padding) measures roughly TARGET_VISIBLE_HEIGHT, instead
-        // of naively drawing the whole padded frame at that size - which would
-        // make the actual character look noticeably smaller than intended.
-        const idle = animations.idle;
-        const visibleFraction = idle ? idle.groundLineRatio - idle.topRatio : 1;
-        this.renderSize = TARGET_VISIBLE_HEIGHT / visibleFraction;
+        this._initMovementState();
+        this._initAttackState();
+    }
 
+    /** @see enableAutopilot, enableFreeRun, enableControl */
+    _initMovementState() {
         this.autopilot = false;
         this._autopilotSpeed = 0;
         this._autopilotBounds = null;
-
         this.freeRun = false;
-
         this.controlled = false;
         this.grounded = false;
         this.coyoteTimer = 0;
         this.jumpBufferTimer = 0;
         this.knockbackTimer = 0;
+    }
 
+    /** @see consumeAttackImpact, _startAttack */
+    _initAttackState() {
         this.attacking = false;
         this._attackImpactResolved = false;
-
-        this.invincibleTimer = 0;
-        this.hitFlashTimer = 0;
-
-        this.dead = false;
-
-        // Dev Panel toggle (js/ui/DevPanel.js), synced from GameState.update()
-        // every frame - not set here from anything on this class itself.
-        this.godmode = false;
-
-        this.maxHealth = MAX_HEALTH;
-        this.health = MAX_HEALTH;
-        this.maxShield = MAX_SHIELD;
-        this.shield = MAX_SHIELD;
-        // Instance field (not the module constant directly) so a Secret
-        // Room's Shield Regen buff (see applyBuff() below) can raise it per
-        // Player instance instead of needing a second global constant.
-        this.shieldRegenPerSecond = SHIELD_REGEN_PER_SECOND;
     }
 
-    // Secret Room permanent buffs (docs/GDD/02_game-structure.md 2.5) -
-    // GameState.js calls this once per buff ID already in Game.buffs right
-    // after constructing a fresh Player, since buffs live on Game (see its
-    // own comment) but need re-applying to every new Player instance. Also
-    // tops off current health/shield to match the new max, same reasoning as
-    // the constructor starting full.
+    /** @returns {number} */
+    get health() { return this.healthState.health; }
+
+    /** @returns {number} */
+    get maxHealth() { return this.healthState.maxHealth; }
+
+    /** @returns {number} */
+    get shield() { return this.healthState.shield; }
+
+    /** @returns {number} */
+    get maxShield() { return this.healthState.maxShield; }
+
+    /** @returns {boolean} */
+    get dead() { return this.healthState.dead; }
+
+    /** Synced from GameState.update() every frame via the Dev Panel toggle. @returns {boolean} */
+    get godmode() { return this.healthState.godmode; }
+
+    /** @param {boolean} value */
+    set godmode(value) { this.healthState.godmode = value; }
+
+    /**
+     * @param {'maxHealth'|'shieldRegen'|'maxShield'} buffId
+     */
     applyBuff(buffId) {
-        if (buffId === 'maxHealth') {
-            this.maxHealth += BUFF_MAX_HEALTH_BONUS;
-            this.health = this.maxHealth;
-        } else if (buffId === 'shieldRegen') {
-            this.shieldRegenPerSecond += BUFF_SHIELD_REGEN_BONUS;
-        } else if (buffId === 'maxShield') {
-            this.maxShield += BUFF_MAX_SHIELD_BONUS;
-            this.shield = this.maxShield;
-        }
+        this.healthState.applyBuff(buffId);
     }
 
-    // Instant kill bypassing Shield/invincibility entirely - falling out of the
-    // level (GameState's kill plane) shouldn't be survivable just because the
-    // player happens to be mid-i-frames or still has Prisma up.
+    /** Falling out of the level (GameState's kill plane) is always fatal. */
     die() {
-        if (this.dead || this.godmode) return;
-        this.shield = 0;
-        this.health = 0;
-        this._enterDeathAnimation();
+        if (this.healthState.kill()) this._enterDeathAnimation();
     }
 
-    // Switches to the one-shot fall animation rather than instantly cutting to
-    // GameState's ghost-rise - deathAnimationFinished (below) gates when
-    // that's allowed to start, so the player visibly collapses first.
+    /**
+     * Plays the one-shot fall animation instead of instantly cutting to
+     * GameState's ghost-rise - deathAnimationFinished gates when that's allowed to start.
+     */
     _enterDeathAnimation() {
-        this.dead = true;
         if (this.animations.dead) {
             this.currentAnimation = 'dead';
             this.animations.dead.reset();
         }
     }
 
-    // True once the fall animation has played out (or immediately if this
-    // Player instance has no 'dead' animation wired, e.g. MenuState's
-    // decorative characters) - GameState waits for this before starting the
-    // ghost-rise sequence.
+    /**
+     * True once the fall animation has played out (or immediately if this
+     * Player has no 'dead' animation wired, e.g. MenuState's decorative characters).
+     * @returns {boolean}
+     */
     get deathAnimationFinished() {
         return !this.animations.dead || this.animations.dead.finished;
     }
 
-    // 03_mechanics.md 4.5: Prisma absorbs hits first, only once fully depleted
-    // does the remainder carry over to Health.
+    /**
+     * @param {number} amount
+     */
     takeDamage(amount) {
-        if (this.dead || this.invincibleTimer > 0 || this.godmode) return;
-
-        if (this.shield > 0) {
-            const overflow = amount - this.shield;
-            this.shield = Math.max(0, this.shield - amount);
-            if (overflow > 0) this.health = Math.max(0, this.health - overflow);
-        } else {
-            this.health = Math.max(0, this.health - amount);
-        }
-
-        if (this.health === 0) this._enterDeathAnimation();
-
-        this.invincibleTimer = INVINCIBILITY_SECONDS;
-        this.hitFlashTimer = HIT_FLASH_SECONDS;
+        if (this.healthState.takeDamage(amount)) this._enterDeathAnimation();
     }
 
-    // Combat feel: getting hit shoves the player back briefly instead of
-    // damage just being a number - see Combat.js callers.
+    /**
+     * Getting hit shoves the player back briefly instead of damage just
+     * being a number - see Combat.js callers.
+     * @param {number} vx
+     */
     applyKnockback(vx) {
         this.vx = vx;
         this.knockbackTimer = KNOCKBACK_LOCK_SECONDS;
     }
 
-    // Spends Prisma as a resource cost (the ranged Sword Throw, see
-    // GameState.js) rather than as incoming damage - deliberately not
-    // routed through takeDamage(), so there's no overflow-to-health carry,
-    // no invincibility window, and no hit-flash. Returns whether there was
-    // enough to spend; doesn't partially consume on failure, so a caller can
-    // gate the whole action on the return value.
+    /**
+     * @param {number} amount
+     * @returns {boolean}
+     */
     consumeShield(amount) {
-        if (this.shield < amount) return false;
-        this.shield -= amount;
-        return true;
+        return this.healthState.consumeShield(amount);
     }
 
-    // True exactly once per swing, the instant the blade reaches full extension
-    // - callers (GameState, via Combat.js's resolveMeleeAttack) resolve the
-    // actual hit-detection against enemies from here.
+    /**
+     * True exactly once per swing, the instant the blade reaches full
+     * extension - callers (Combat.js's resolveMeleeAttack) resolve the
+     * actual hit-detection against enemies from here.
+     * @returns {boolean}
+     */
     consumeAttackImpact() {
         if (!this.attacking || this._attackImpactResolved) return false;
         if (this.animations.attack.currentFrame < ATTACK_IMPACT_FRAME) return false;
@@ -217,6 +187,10 @@ export class Player extends Entity {
         return true;
     }
 
+    /**
+     * @param {number} speed
+     * @param {{minX:number, maxX:number}} bounds
+     */
     enableAutopilot(speed, bounds) {
         this.autopilot = true;
         this._autopilotSpeed = speed;
@@ -225,11 +199,12 @@ export class Player extends Entity {
         this.currentAnimation = 'running';
     }
 
-    // Scripted, physics-free constant-velocity run (menu living background,
-    // 08_menu-flow.md) - unlike enableAutopilot there's no bounds/bounce, and
-    // unlike enableControl there's no gravity/collision; the caller drives
-    // entrances/exits itself (e.g. starting off-screen, ending the pass once
-    // it's fully exited the other side).
+    /**
+     * Scripted constant-velocity run (menu living background, 08_menu-flow.md) -
+     * unlike autopilot there's no bounds/bounce, and unlike controlled
+     * there's no gravity/collision; the caller drives entrances/exits itself.
+     * @param {number} vx
+     */
     enableFreeRun(vx) {
         this.freeRun = true;
         this.vx = vx;
@@ -237,13 +212,14 @@ export class Player extends Entity {
         this.currentAnimation = 'running';
     }
 
-    // Real keyboard-driven movement (03_mechanics.md 4.2 base abilities: Run,
-    // Jump, Drop Through Platform) - used by GameState, as opposed to the
-    // menu's autopilot.
-    // jumpSpeed 379 (up from 360) gives a max apex of ~102.5px instead of
-    // ~92.5px (maxHeight = jumpSpeed^2 / (2*gravity)) - ~10px of extra safety
-    // margin on top of the fixed-timestep fix (Game.js), for level geometry
-    // that's close to the old ceiling.
+    /**
+     * Real keyboard-driven movement (Run/Jump/Drop Through Platform), used by
+     * GameState. jumpSpeed 379 (up from 360) gives ~10px of extra apex
+     * margin over the fixed-timestep fix (Game.js), for level geometry close to the old ceiling.
+     * @param {InputHandler} input
+     * @param {Collision} collision
+     * @param {{moveSpeed?:number, jumpSpeed?:number, gravity?:number}} [options]
+     */
     enableControl(input, collision, { moveSpeed = 150, jumpSpeed = 379, gravity = 700 } = {}) {
         this.controlled = true;
         this.input = input;
@@ -253,18 +229,18 @@ export class Player extends Entity {
         this.gravity = gravity;
     }
 
+    /**
+     * @param {number} dt
+     */
     update(dt) {
-        // Ticks down even once dead - otherwise the killing blow's white flash
-        // (still active from the same frame takeDamage() set it) would never
-        // fade and the whole death animation renders permanently white-tinted.
-        if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
+        this.healthState.tickHitFlash(dt);
 
         if (this.dead) {
             this.animations.dead?.update(dt);
             return;
         }
 
-        if (this.invincibleTimer > 0) this.invincibleTimer = Math.max(0, this.invincibleTimer - dt);
+        this.healthState.tickInvincibility(dt);
 
         if (this.autopilot) {
             this._updateAutopilot();
@@ -278,6 +254,9 @@ export class Player extends Entity {
         this.animations[this.currentAnimation]?.update(dt);
     }
 
+    /**
+     * Bounces between the fixed bounds instead of walking past them.
+     */
     _updateAutopilot() {
         const { minX, maxX } = this._autopilotBounds;
         if (this.x <= minX && this.vx < 0) {
@@ -291,38 +270,64 @@ export class Player extends Entity {
         }
     }
 
+    /**
+     * @param {number} dt
+     */
     _updateControlled(dt) {
-        this.shield = Math.min(this.maxShield, this.shield + this.shieldRegenPerSecond * dt);
+        this.healthState.regen(dt);
+        this._handleAttackInput();
 
-        // Always drain the click flag, even mid-swing or mid-air - otherwise a
-        // click that arrives while unable to act right now would queue up and
-        // fire late once the state allows it, instead of being simply missed.
+        const groundedAttack = this.attacking && this.grounded;
+        this._updateJumpTimers(dt);
+        this._updateHorizontalVelocity(dt, groundedAttack);
+        this._applyGravityAndJump(dt);
+        this._updateDropThrough();
+
+        this.grounded = this.collision.resolve(this, dt);
+        if (this.attacking && this.animations.attack.finished) this.attacking = false;
+        this._updateAnimationState();
+    }
+
+    /**
+     * Always drains the click flag, even mid-swing or mid-air - otherwise a
+     * click arriving while unable to act would queue up and fire late once
+     * allowed, instead of simply being missed.
+     */
+    _handleAttackInput() {
         const attackPressed = this.input.consumeAttackPress();
         if (attackPressed && !this.attacking && this.animations.attack) {
             this._startAttack();
         }
+    }
 
-        // Attack only roots the player while grounded - airborne, physics keep
-        // running normally (momentum, direction changes) instead of freezing
-        // horizontal movement mid-air.
-        const groundedAttack = this.attacking && this.grounded;
-        const left = !groundedAttack && this.input.isDown('left');
-        const right = !groundedAttack && this.input.isDown('right');
-
-        // Coyote time: this.grounded still reflects last frame's collision
-        // result at this point (this frame's own resolve() happens below), so
-        // walking off a ledge doesn't instantly close the jump window.
+    /**
+     * Coyote time: this.grounded still reflects last frame's collision
+     * result here (this frame's own resolve() happens later), so walking off
+     * a ledge doesn't instantly close the jump window. Jump buffering: a
+     * press is queued for JUMP_BUFFER_SECONDS so a tap slightly before
+     * landing still fires once grounded.
+     * @param {number} dt
+     */
+    _updateJumpTimers(dt) {
         this.coyoteTimer = this.grounded ? COYOTE_TIME_SECONDS : Math.max(0, this.coyoteTimer - dt);
 
-        // Jump buffering: queue a press for JUMP_BUFFER_SECONDS so a tap
-        // slightly before landing still fires once grounded, instead of being
-        // silently dropped for arriving a frame or two too early.
         if (this.input.consumeJumpPress()) this.jumpBufferTimer = JUMP_BUFFER_SECONDS;
         else this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - dt);
+    }
 
+    /**
+     * Attack only roots the player while grounded - airborne, physics keep
+     * running normally instead of freezing horizontal movement mid-air. A
+     * knockback push overrides this entirely until it expires.
+     * @param {number} dt
+     * @param {boolean} groundedAttack
+     */
+    _updateHorizontalVelocity(dt, groundedAttack) {
         if (this.knockbackTimer > 0) this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
         const inKnockback = this.knockbackTimer > 0;
 
+        const left = !groundedAttack && this.input.isDown('left');
+        const right = !groundedAttack && this.input.isDown('right');
         let targetVx = 0;
         if (!inKnockback && !groundedAttack) {
             if (left && !right) {
@@ -335,7 +340,12 @@ export class Player extends Entity {
         }
         const accelRate = targetVx === 0 ? DECELERATION : ACCELERATION;
         this.vx = inKnockback ? this.vx : (groundedAttack ? 0 : moveToward(this.vx, targetVx, accelRate * dt));
+    }
 
+    /**
+     * @param {number} dt
+     */
+    _applyGravityAndJump(dt) {
         this.vy += this.gravity * dt;
 
         if (!this.attacking && this.jumpBufferTimer > 0 && this.coyoteTimer > 0) {
@@ -343,38 +353,29 @@ export class Player extends Entity {
             this.jumpBufferTimer = 0;
             this.coyoteTimer = 0;
         } else if (this.vy < 0 && !this.input.isDown('jump')) {
-            // Variable jump height: released early while still rising, so cut
-            // the ascent short instead of always launching to full height
-            // regardless of a quick tap vs. a held press.
             this.vy = Math.max(this.vy, -this.jumpSpeed * SHORT_HOP_VY_FRACTION);
         }
+    }
 
-        // Drop-Through-Platform (03_mechanics.md 4.2, replaces Duck) - only if
-        // there's an actual floor to land on below (Collision.hasFloorBelow),
-        // otherwise this would just walk the player into the kill-plane/pit,
-        // and only if the current platform isn't tagged no-drop
-        // (Collision.isNoDropBelow - a level can mark specific one-way floors
-        // as the actual intended path, exempt from being dropped through).
-        // The resolve() call right below immediately overwrites `grounded`
-        // with this frame's real result anyway, so the nudge is the only
-        // thing that actually matters here.
+    /**
+     * Only if there's a real floor below to land on (Collision.hasFloorBelow,
+     * not a pit) and the current platform isn't tagged no-drop
+     * (Collision.isNoDropBelow - an intended solid path). The resolve() call
+     * right after immediately overwrites `grounded` with this frame's real
+     * result, so the nudge is the only thing that actually matters here.
+     */
+    _updateDropThrough() {
         if (this.input.consumeDropPress() && !this.attacking && this.grounded
             && this.collision.hasFloorBelow(this) && !this.collision.isNoDropBelow(this)) {
             this.y += DROP_NUDGE_PX;
         }
-
-        this.grounded = this.collision.resolve(this, dt);
-
-        if (this.attacking && this.animations.attack.finished) {
-            this.attacking = false;
-        }
-
-        this._updateAnimationState();
     }
 
-    // Locks movement for the swing's duration (base Attack, as opposed to the
-    // later Air Attack/Slide+Attack unlockables - 03_mechanics.md 4.2) - gravity
-    // and collision keep resolving as normal, only horizontal input is ignored.
+    /**
+     * Locks movement for the swing's duration (base Attack, as opposed to the
+     * later Air Attack/Slide+Attack unlockables) - gravity and collision keep
+     * resolving normally, only horizontal input is ignored.
+     */
     _startAttack() {
         this.attacking = true;
         this._attackImpactResolved = false;
@@ -382,10 +383,11 @@ export class Player extends Entity {
         this.animations.attack.reset();
     }
 
-    // Airborne takes priority over running/idle regardless of horizontal
-    // input, so jumping while moving still shows the jump pose. Switching
-    // animations resets it, so a jump never starts mid-way through whatever
-    // frame idle/running happened to be on last.
+    /**
+     * Airborne takes priority over running/idle regardless of horizontal
+     * input. Switching animations resets it, so a jump never starts mid-way
+     * through whatever frame idle/running happened to be on.
+     */
     _updateAnimationState() {
         let nextAnimation;
         if (this.attacking) {
@@ -404,83 +406,16 @@ export class Player extends Entity {
         }
     }
 
-    // Always anchored to idle's feet position, not the current animation's own
-    // - jump's tucked-legs pose has a much higher "lowest opaque pixel" than
-    // standing idle, so anchoring per-animation would shift the character up
-    // and down on screen every time it switches animation (looking like it
-    // floats above the ground, or sinks through a ceiling it's not actually
-    // touching, relative to the real hitbox). One fixed reference keeps the
-    // visible sprite stable regardless of pose.
-    _drawY(referenceAnim = this.animations.idle, renderSize = this.renderSize) {
-        const groundSurfaceY = this.y + this.height;
-        return groundSurfaceY - referenceAnim.groundLineRatio * renderSize;
-    }
+    /** @returns {number} */
+    get visualTopY() { return this.renderer.visualTopY; }
 
-    // The sprite is drawn wider/taller than the hitbox (renderSize vs
-    // width/height) - center it horizontally over the narrower hitbox instead
-    // of aligning their left edges, or the character would visibly lean to one
-    // side of its own collision box.
-    _drawX(renderWidth = this.renderSize) {
-        return this.x - (renderWidth - this.width) / 2;
-    }
+    /** @returns {number} */
+    get visualCenterY() { return this.renderer.visualCenterY; }
 
-    // Topmost visible pixel row (accounting for sprite padding), mirrors
-    // Enemy.js's visualTopY - used to sit UI (e.g. GameState's "No Prisma"
-    // popup) just above the player's head instead of above the raw hitbox.
-    get visualTopY() {
-        const referenceAnim = this.animations.idle;
-        if (!referenceAnim) return this.y;
-        return this._drawY() + referenceAnim.topRatio * this.renderSize;
-    }
-
-    // The true visual middle of the character (accounting for sprite padding),
-    // as opposed to Entity's generic centerY which is just the hitbox midpoint.
-    get visualCenterY() {
-        const referenceAnim = this.animations.idle;
-        if (!referenceAnim) return this.centerY;
-
-        const drawY = this._drawY();
-        const topY = drawY + referenceAnim.topRatio * this.renderSize;
-        const bottomY = drawY + referenceAnim.groundLineRatio * this.renderSize;
-        return (topY + bottomY) / 2;
-    }
-
+    /**
+     * @param {CanvasRenderingContext2D} ctx
+     */
     render(ctx) {
-        const anim = this.animations[this.currentAnimation];
-        if (!anim) return;
-
-        // Idle/running/jump/dead share idle's own render size and ground line
-        // (see _drawY's default params) so switching between those poses never
-        // jitters vertically - all drawn from the same 96x96 sheet convention.
-        // Attack is a distinct one-shot pose that can use a differently-sized/
-        // padded sheet - including non-square, e.g. extra side padding for the
-        // sword to swing past the body without needing extra vertical padding
-        // too - without throwing that off, so it's anchored to and scaled from
-        // its own bounds instead. Scaled by height only, then width follows the
-        // frame's own aspect ratio, or a non-square frame would stretch/squash
-        // instead of just having more padding.
-        const isAttacking = this.currentAnimation === 'attack';
-        let renderWidth;
-        let renderHeight;
-        if (isAttacking) {
-            renderHeight = TARGET_VISIBLE_HEIGHT / (anim.groundLineRatio - anim.topRatio);
-            renderWidth = renderHeight * (anim.frameWidth / anim.frameHeight);
-        } else {
-            renderWidth = this.renderSize;
-            renderHeight = this.renderSize;
-        }
-        const drawX = this._drawX(renderWidth);
-        const drawY = isAttacking ? this._drawY(anim, renderHeight) : this._drawY();
-        const flashAmount = this.hitFlashTimer / HIT_FLASH_SECONDS;
-
-        ctx.save();
-        if (this.facing === -1) {
-            ctx.translate(drawX + renderWidth, drawY);
-            ctx.scale(-1, 1);
-            anim.draw(ctx, 0, 0, renderWidth, renderHeight, flashAmount);
-        } else {
-            anim.draw(ctx, drawX, drawY, renderWidth, renderHeight, flashAmount);
-        }
-        ctx.restore();
+        this.renderer.render(ctx);
     }
 }

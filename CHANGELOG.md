@@ -6,6 +6,12 @@ Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to le
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-27
+
+### Changed
+- Convention cleanup finished on `Player.js`/`ColorZone.js` (JSDoc, ~14-line functions, top-of-file-only comments) - the last two files left over from the Group 1-7 pass (CHANGELOG 0.7.0).
+- New CLAUDE.md convention: file length ~400 lines, with a cohesive chunk pulled into its own composed sub-module instead of growing one file further. Applied immediately: `Player.js` (588 lines post-cleanup) split into `Player.js` (movement/physics/animation, 421 lines), `PlayerHealth.js` (Health/Shield/buff/damage bookkeeping, 127 lines), and `PlayerRenderer.js` (sprite-drawing pipeline, 132 lines) - `Player.js` keeps thin delegating methods/getters (`health`, `shield`, `takeDamage()`, `visualTopY`, `render()`, etc.) so no external caller (Combat.js, HUD.js, LevelSession.js, Interactables.js, CombatCoordinator.js, BuffState.js, the Enemy classes) needed to change.
+
 ## [0.8.0] - 2026-07-26
 
 ### Added

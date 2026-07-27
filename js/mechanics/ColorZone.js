@@ -1,13 +1,15 @@
 // 03_mechanics.md 4.1: "Boss defeated -> the entire level turns colorful -
-// color explosion". Duration of the expanding-circle sweep triggered by
-// triggerFullReveal().
+// color explosion". Duration of the sweep triggered by triggerFullReveal().
 const FULL_REVEAL_DURATION_SECONDS = 1.5;
 
-// Shared with paintGreyFrom() below and exposed as a plain CSS string (see
-// ColorZone's own greyFilterCSS field) so other always-full-color elements
-// that want the *same* grey treatment as the terrain plane (e.g. Portal.js,
-// while unrevealed) can match it exactly instead of re-deriving the same
-// filter formula from a second copy of the tint constants.
+/**
+ * CSS `filter` string for the grey/desaturated look, standalone so
+ * always-full-color elements (e.g. Portal.js while unrevealed) can match the
+ * same grey exactly instead of re-deriving it from a second copy of the tint constants.
+ * @param {number} greyBrightness
+ * @param {{sepia:number, hueRotate:number, saturate:number}|null} greyTint
+ * @returns {string}
+ */
 export function buildGreyFilter(greyBrightness, greyTint) {
     const filters = ['grayscale(1)'];
     if (greyTint) {
@@ -18,16 +20,24 @@ export function buildGreyFilter(greyBrightness, greyTint) {
     return filters.join(' ');
 }
 
+// Permanent mode (default, fadeDurationSeconds = Infinity) punches directly
+// into the persistent overlay and stays revealed forever - the real trail
+// mechanic (03_mechanics.md 4.1). Fade mode (a finite fadeDurationSeconds) is
+// for decorative uses only (e.g. the menu background): ages stamps and
+// rebuilds the overlay from the grey template each frame, dissolving back to
+// grey instead of staying revealed.
 export class ColorZone {
-    // fadeDurationSeconds: how long a reveal stays visible before fading back to
-    // grey. Infinity (default) matches the real game mechanic (03_mechanics.md 4.1 -
-    // color stays permanently). A finite value (e.g. 5) is for decorative uses (the
-    // menu living background) where the trail should linger and then dissolve back
-    // to grey instead of staying forever.
-    // greyTint: optional { sepia, hueRotate, saturate } cast applied on top of the
-    // neutral grayscale (e.g. a cold blue tone for a more ominous look) - grayscale
-    // alone removes all color, so hue-rotate needs the sepia pass to reintroduce
-    // some chroma to rotate in the first place.
+    /**
+     * @param {number} width
+     * @param {number} height
+     * @param {number} [revealRadius=24]
+     * @param {object} [options]
+     * @param {number} [options.fadeDurationSeconds=Infinity]
+     * @param {number} [options.stampIntervalSeconds=0.1] - Fade mode only.
+     * @param {number} [options.greyBrightness=1]
+     * @param {{sepia:number, hueRotate:number, saturate:number}|null} [options.greyTint=null] -
+     *   Grayscale alone removes all color, so sepia has to run before hue-rotate can rotate anything.
+     */
     constructor(width, height, revealRadius = 24, {
         fadeDurationSeconds = Infinity,
         stampIntervalSeconds = 0.1,
@@ -43,6 +53,20 @@ export class ColorZone {
         this.greyTint = greyTint;
         this.greyFilterCSS = buildGreyFilter(greyBrightness, greyTint);
 
+        this._initCanvases(width, height);
+        this._initState();
+    }
+
+    /**
+     * greyTemplateCanvas is the untouched desaturated render; overlayCanvas is
+     * the persistent punched result drawn every frame; _scratchCanvas is a
+     * reusable patch-sized buffer for darken()/render()'s liveGlow - sized to
+     * just the local patch (see _patchBounds()) since darken() runs once per
+     * living enemy per frame, and the full canvas was a measurable cost there.
+     * @param {number} width
+     * @param {number} height
+     */
+    _initCanvases(width, height) {
         this.greyTemplateCanvas = document.createElement('canvas');
         this.greyTemplateCanvas.width = width;
         this.greyTemplateCanvas.height = height;
@@ -52,35 +76,24 @@ export class ColorZone {
         this.overlayCanvas.height = height;
         this.overlayCtx = this.overlayCanvas.getContext('2d');
 
-        // Fade mode only: recent reveal positions with their own age, redrawn fresh
-        // from the untouched grey template every frame instead of repeatedly blending
-        // the overlay with itself (which drifts/rounds away from the original grey
-        // over many frames).
-        this._stamps = [];
-        this._timeSinceLastStamp = Infinity;
-
-        // Permanent mode only: last punched position, see update() below.
-        this._lastPermanentPunch = null;
-
-        // Scratch canvas for darken()'s soft-edged grey patch and render()'s
-        // liveGlow, resized per call to just the local patch each one
-        // actually needs (see _patchBounds()) rather than the full width x
-        // height above - overlayCanvas/greyTemplateCanvas are sized to the
-        // whole level, not the viewport, and darken() in particular runs once
-        // per living enemy per frame, so operating on the full canvas there
-        // was many times more pixels than the visible radius ever needed
-        // (a real, measurable performance cost, worse in Firefox than Chrome
-        // for this kind of repeated full-surface clear+copy).
         this._scratchCanvas = document.createElement('canvas');
         this._scratchCtx = this._scratchCanvas.getContext('2d');
+    }
 
-        // triggerFullReveal() state - see update() and that method below.
+    /** Fade-mode stamp aging, permanent-mode's last punch, and transition state. */
+    _initState() {
+        this._stamps = [];
+        this._timeSinceLastStamp = Infinity;
+        this._lastPermanentPunch = null;
         this._fullReveal = null;
-
-        // triggerFullDarken() state - see update() and that method below.
         this._fullDarken = null;
     }
 
+    /**
+     * Rebuilds the grey template from a fresh render of the color source, then
+     * resets the overlay to match it (fully grey, nothing revealed yet).
+     * @param {HTMLCanvasElement} colorSourceCanvas
+     */
     paintGreyFrom(colorSourceCanvas) {
         const templateCtx = this.greyTemplateCanvas.getContext('2d');
         templateCtx.clearRect(0, 0, this.width, this.height);
@@ -95,9 +108,12 @@ export class ColorZone {
         this.overlayCtx.drawImage(this.greyTemplateCanvas, 0, 0);
     }
 
-    // Call once per frame with the current reveal point. Permanent mode punches
-    // directly into the persistent overlay (unchanged real-game behavior); fade mode
-    // tracks aging stamps and rebuilds the overlay from scratch each frame.
+    /**
+     * Advances the overlay for the current frame at the live reveal point.
+     * @param {number} dt
+     * @param {number} x
+     * @param {number} y
+     */
     update(dt, x, y) {
         if (this._fullReveal) {
             this._updateFullReveal(dt);
@@ -110,24 +126,42 @@ export class ColorZone {
         }
 
         if (this.fadeDurationSeconds === Infinity) {
-            // Skip re-stamping an unchanged position (e.g. player standing still):
-            // this punches directly into the persistent overlay rather than
-            // rebuilding from the grey template like fade mode does, so punching
-            // the same soft-edged gradient there every single frame compounds
-            // destination-out alpha in the outer fade ring toward fully erased -
-            // the intended soft falloff collapses into a hard cutoff after enough
-            // repeated frames at the same spot. Staying colorful right around the
-            // player regardless of what else touches the overlay (e.g. an enemy's
-            // darken()) is render()'s liveGlow instead - see below - so this can
-            // stay a simple skip with no exceptions.
-            const last = this._lastPermanentPunch;
-            if (!last || last.x !== x || last.y !== y) {
-                this._punch(this.overlayCtx, x, y, 1);
-                this._lastPermanentPunch = { x, y };
-            }
+            this._updatePermanent(x, y);
             return;
         }
 
+        this._updateFade(dt, x, y);
+    }
+
+    /**
+     * Skips re-stamping an unchanged position: punching the same gradient into
+     * the persistent overlay every frame compounds destination-out alpha in
+     * the fade ring toward fully erased, collapsing the soft falloff into a
+     * hard cutoff. (Keeping color around the player regardless of an enemy's
+     * darken() is render()'s liveGlow instead, not this.)
+     * @param {number} x
+     * @param {number} y
+     */
+    _updatePermanent(x, y) {
+        const last = this._lastPermanentPunch;
+        if (!last || last.x !== x || last.y !== y) {
+            this._punch(this.overlayCtx, x, y, 1);
+            this._lastPermanentPunch = { x, y };
+        }
+    }
+
+    /**
+     * Ages/expires stamps, adds a new one every stampIntervalSeconds, then
+     * repaints the overlay from the grey template plus every live stamp -
+     * rebuilding from scratch avoids drifting from the original grey the way
+     * repeatedly blending the overlay with itself would. The final punch at
+     * the live (x, y) keeps the leading edge tracking every frame instead of
+     * only every stampIntervalSeconds.
+     * @param {number} dt
+     * @param {number} x
+     * @param {number} y
+     */
+    _updateFade(dt, x, y) {
         this._timeSinceLastStamp += dt;
         if (this._timeSinceLastStamp >= this.stampIntervalSeconds) {
             this._stamps.push({ x, y, age: 0 });
@@ -144,18 +178,18 @@ export class ColorZone {
             this._punch(this.overlayCtx, stamp.x, stamp.y, strength);
         }
 
-        // The throttled stamps above are what fades out behind the character - but
-        // the leading edge has to track the exact current position every single
-        // frame, not just once per stampIntervalSeconds, or it visibly steps between
-        // stamps. One extra full-strength punch at the live position on top of them.
         this._punch(this.overlayCtx, x, y, 1);
     }
 
-    // Bounding box of a radius around (x, y), clamped to the canvas - shared by
-    // darken()/render() so both only ever clear/copy/composite that small
-    // patch instead of the whole (level-sized) canvas. Naturally falls back to
-    // the full canvas once radius grows past it (triggerFullReveal/Darken's
-    // sweep), no special-casing needed for that.
+    /**
+     * Bounding box of a radius around (x, y), clamped to the canvas - shared
+     * by darken()/render() so both only clear/copy/composite that small patch
+     * instead of the whole level-sized canvas.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} radius
+     * @returns {{x:number, y:number, width:number, height:number}}
+     */
     _patchBounds(x, y, radius) {
         const left = Math.max(0, Math.floor(x - radius));
         const top = Math.max(0, Math.floor(y - radius));
@@ -164,11 +198,14 @@ export class ColorZone {
         return { x: left, y: top, width: Math.max(1, right - left), height: Math.max(1, bottom - top) };
     }
 
-    // 03_mechanics.md 4.1: "Enemy crosses a colored area -> the area turns back
-    // to dark". The inverse of _punch: instead of erasing the overlay
-    // (revealing color), this repaints the grey template back onto the overlay
-    // in a soft-edged patch, restoring grey there regardless of how it got
-    // revealed in the first place.
+    /**
+     * 03_mechanics.md 4.1: "Enemy crosses a colored area -> the area turns
+     * back to dark". Inverse of _punch(): repaints the grey template back
+     * onto the overlay in a soft-edged patch instead of erasing it.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} [radius]
+     */
     darken(x, y, radius = this.revealRadius) {
         const patch = this._patchBounds(x, y, radius);
         this._scratchCanvas.width = patch.width;
@@ -192,30 +229,35 @@ export class ColorZone {
         this.overlayCtx.drawImage(this._scratchCanvas, patch.x, patch.y);
     }
 
-    // One-time reveal punch at a location (e.g. an enemy's death spot) - unlike
-    // update()'s continuous per-frame reveal at the live player position, this
-    // fires once and leaves the erased hole exactly as it is afterward.
+    /**
+     * One-time reveal punch (e.g. an enemy's death spot) that leaves the hole
+     * exactly as it is afterward, unlike update()'s continuous per-frame reveal.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} [radius]
+     */
     reveal(x, y, radius = this.revealRadius) {
         this._punch(this.overlayCtx, x, y, 1, radius);
     }
 
-    // Whether a triggerFullReveal()/triggerFullDarken() sweep is still playing
-    // out. Callers that stop caring about per-frame position tracking once
-    // their own one-off transition finishes (e.g. GameState after a player
-    // death) can gate their update() calls on this, instead of update() falling
-    // through to its normal per-frame reveal-at-(x,y) behavior the instant the
-    // transition ends.
+    /**
+     * Whether a triggerFullReveal()/triggerFullDarken() sweep is still
+     * playing out - callers can gate their own update() calls on this once
+     * they stop caring about per-frame position tracking (e.g. GameState after a player death).
+     * @returns {boolean}
+     */
     get isTransitioning() {
         return !!this._fullReveal || !!this._fullDarken;
     }
 
-    // 03_mechanics.md 4.1: "Boss defeated -> the entire level turns colorful -
-    // color explosion". Standing in for that here since Lv_1 has no boss yet -
-    // GameState triggers this once all of the level's enemies are dead. Expands
-    // a full-strength reveal circle from (originX, originY) out past the whole
-    // canvas over FULL_REVEAL_DURATION_SECONDS, then clears the overlay outright
-    // to guarantee full coverage (a growing circle never quite reaches the
-    // canvas's corners).
+    /**
+     * 03_mechanics.md 4.1: "Boss defeated -> the entire level turns colorful".
+     * Expands a full-strength reveal circle from (originX, originY) past the
+     * whole canvas over FULL_REVEAL_DURATION_SECONDS, then clears the overlay
+     * outright (a growing circle never quite reaches the corners).
+     * @param {number} originX
+     * @param {number} originY
+     */
     triggerFullReveal(originX, originY) {
         this._fullReveal = {
             originX,
@@ -225,6 +267,9 @@ export class ColorZone {
         };
     }
 
+    /**
+     * @param {number} dt
+     */
     _updateFullReveal(dt) {
         this._fullReveal.elapsed += dt;
         const progress = Math.min(1, this._fullReveal.elapsed / FULL_REVEAL_DURATION_SECONDS);
@@ -238,9 +283,12 @@ export class ColorZone {
         this._punch(this.overlayCtx, this._fullReveal.originX, this._fullReveal.originY, 1, this._fullReveal.maxRadius * progress);
     }
 
-    // Player death - the inverse of triggerFullReveal(): instead of erasing the
-    // overlay to show color, repaints it with the grey template, expanding out
-    // from (originX, originY) until the whole level is grey again.
+    /**
+     * Player death - inverse of triggerFullReveal(): repaints the grey
+     * template outward from (originX, originY) until the level is grey again.
+     * @param {number} originX
+     * @param {number} originY
+     */
     triggerFullDarken(originX, originY) {
         this._fullDarken = {
             originX,
@@ -250,6 +298,9 @@ export class ColorZone {
         };
     }
 
+    /**
+     * @param {number} dt
+     */
     _updateFullDarken(dt) {
         this._fullDarken.elapsed += dt;
         const progress = Math.min(1, this._fullDarken.elapsed / FULL_REVEAL_DURATION_SECONDS);
@@ -263,11 +314,17 @@ export class ColorZone {
         this.darken(this._fullDarken.originX, this._fullDarken.originY, this._fullDarken.maxRadius * progress);
     }
 
+    /**
+     * Radial gradient instead of a flat fill: fully erases up to 55% of the
+     * radius, then fades to no effect at the edge, for a soft transition
+     * instead of a hard circle. `strength` scales this down as a fade stamp ages.
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {number} x
+     * @param {number} y
+     * @param {number} strength
+     * @param {number} [radius]
+     */
     _punch(ctx, x, y, strength, radius = this.revealRadius) {
-        // Radial gradient instead of a flat fill: fully erases (reveals color) up to
-        // 55% of the radius, then fades back to no effect at the edge - a soft
-        // color/grey transition instead of a hard circle outline. `strength` additionally
-        // scales the whole effect down as a fade-mode stamp ages.
         const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
         gradient.addColorStop(0, `rgba(0, 0, 0, ${strength})`);
         gradient.addColorStop(0.55, `rgba(0, 0, 0, ${strength})`);
@@ -282,42 +339,50 @@ export class ColorZone {
         ctx.restore();
     }
 
-    // Wraith.js (Lvl 3 Miniboss) beam-fire beat, session decision: the boss
-    // beam "desaturates" the whole room in one instant snap, except a safe
-    // pocket around the player - unlike triggerFullDarken() above (a slow
-    // 1.5s sweep for the one-time player-death beat), this needs to read
-    // fast since it can repeat many times over a single fight. Ordinary
-    // per-frame reveal (update(), still called every frame in GameState)
-    // takes over immediately after, so the player re-colors their own path
-    // out of the safe pocket exactly like normal movement always does.
+    /**
+     * Wraith.js beam-fire beat: desaturates the whole room in one instant
+     * snap except a safe pocket around the player - unlike triggerFullDarken()'s
+     * slow one-time sweep, this needs to read fast since it repeats all fight.
+     * @param {number} safeX
+     * @param {number} safeY
+     * @param {number} safeRadius
+     */
     darkenAllExcept(safeX, safeY, safeRadius) {
         this.overlayCtx.drawImage(this.greyTemplateCanvas, 0, 0);
         this._punch(this.overlayCtx, safeX, safeY, 1, safeRadius);
     }
 
-    // liveGlow: optional { x, y, radius } - punches an extra hole for this
-    // frame's render only, on a scratch copy, never written back into
-    // overlayCanvas. This is how the player's immediate area always reads as
-    // revealed (03_mechanics.md 4.1 flavor: their own presence pushes back the
-    // Darkness) regardless of what an enemy's darken() did to the persistent
-    // overlay right there - recomputed identically from scratch every frame,
-    // so unlike punching the real overlay repeatedly, it can never erode.
+    /**
+     * Draws the overlay. With `liveGlow` ({x, y, radius}), also punches an
+     * extra hole for this frame only, on a scratch copy never written back
+     * into overlayCanvas - so the player's immediate area always reads as
+     * revealed regardless of what an enemy's darken() did to the persisted overlay there.
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {{x:number, y:number, radius?:number}|null} [liveGlow]
+     */
     render(ctx, liveGlow = null) {
         if (!liveGlow) {
             ctx.drawImage(this.overlayCanvas, 0, 0);
             return;
         }
 
-        // The patch (overlay sub-rect with a hole actually punched into it)
-        // has to be the ONLY thing drawn over the patch region - drawing the
-        // full overlay there too (even first, even "underneath") would leave
-        // opaque overlay pixels behind the hole, since compositing a
-        // transparent pixel over an opaque one is a no-op. So the base
-        // overlay draw below excludes exactly that rect (evenodd clip), and
-        // only the small patch fills it in.
         const radius = liveGlow.radius ?? this.revealRadius;
         const patch = this._patchBounds(liveGlow.x, liveGlow.y, radius);
+        this._renderWithLiveGlow(ctx, patch, liveGlow, radius);
+    }
 
+    /**
+     * Clips the base overlay draw to exclude the patch rect (an evenodd
+     * clip - drawing the full overlay underneath first would leave opaque
+     * pixels behind the hole, since transparent-over-opaque is a no-op), then
+     * blits in a scratch copy of that patch with the live-glow hole punched
+     * into it, leaving the real overlayCanvas untouched.
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {{x:number, y:number, width:number, height:number}} patch
+     * @param {{x:number, y:number, radius?:number}} liveGlow
+     * @param {number} radius
+     */
+    _renderWithLiveGlow(ctx, patch, liveGlow, radius) {
         ctx.save();
         ctx.beginPath();
         ctx.rect(0, 0, this.width, this.height);
