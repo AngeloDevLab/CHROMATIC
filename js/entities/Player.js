@@ -1,6 +1,8 @@
 import { Entity } from './Entity.js';
 import { PlayerHealth } from './PlayerHealth.js';
 import { PlayerRenderer } from './PlayerRenderer.js';
+import { DoubleJumpAbility } from './DoubleJumpAbility.js';
+import { DashAbility } from './DashAbility.js';
 
 // Sprite frames carry transparent padding around the character, so the
 // collision hitbox is intentionally narrower than the full render size -
@@ -75,6 +77,13 @@ export class Player extends Entity {
 
         this._initMovementState();
         this._initAttackState();
+        this._initAbilityState();
+    }
+
+    /** @see unlockAbility */
+    _initAbilityState() {
+        this.doubleJump = new DoubleJumpAbility();
+        this.dash = new DashAbility();
     }
 
     /** @see enableAutopilot, enableFreeRun, enableControl */
@@ -122,6 +131,19 @@ export class Player extends Entity {
      */
     applyBuff(buffId) {
         this.healthState.applyBuff(buffId);
+    }
+
+    /**
+     * Dev/test-only unlock path today (js/ui/DevPanel.js's Double Jump/Dash
+     * buttons) - the real Merchant/Token spend UI doesn't exist yet
+     * (TODO.md). One-way, like a real purchase (no re-lock) - idempotent, so
+     * LevelSession can call this every frame off Game.abilities without
+     * tracking what's already applied.
+     * @param {'doubleJump'|'dash'} id
+     */
+    unlockAbility(id) {
+        if (id === 'doubleJump') this.doubleJump.unlocked = true;
+        else if (id === 'dash') this.dash.unlocked = true;
     }
 
     /** Falling out of the level (GameState's kill plane) is always fatal. */
@@ -279,6 +301,7 @@ export class Player extends Entity {
 
         const groundedAttack = this.attacking && this.grounded;
         this._updateJumpTimers(dt);
+        this.dash.update(dt, this);
         this._updateHorizontalVelocity(dt, groundedAttack);
         this._applyGravityAndJump(dt);
         this._updateDropThrough();
@@ -310,6 +333,7 @@ export class Player extends Entity {
      */
     _updateJumpTimers(dt) {
         this.coyoteTimer = this.grounded ? COYOTE_TIME_SECONDS : Math.max(0, this.coyoteTimer - dt);
+        if (this.grounded) this.doubleJump.reset();
 
         if (this.input.consumeJumpPress()) this.jumpBufferTimer = JUMP_BUFFER_SECONDS;
         else this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - dt);
@@ -318,18 +342,21 @@ export class Player extends Entity {
     /**
      * Attack only roots the player while grounded - airborne, physics keep
      * running normally instead of freezing horizontal movement mid-air. A
-     * knockback push overrides this entirely until it expires.
+     * knockback push, or an active Dash burst (DashAbility.js's _trigger()
+     * sets vx/facing once, this just holds them for its duration), overrides
+     * this entirely until it expires.
      * @param {number} dt
      * @param {boolean} groundedAttack
      */
     _updateHorizontalVelocity(dt, groundedAttack) {
         if (this.knockbackTimer > 0) this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
         const inKnockback = this.knockbackTimer > 0;
+        const inDash = this.dash.timer > 0;
 
         const left = !groundedAttack && this.input.isDown('left');
         const right = !groundedAttack && this.input.isDown('right');
         let targetVx = 0;
-        if (!inKnockback && !groundedAttack) {
+        if (!inKnockback && !inDash && !groundedAttack) {
             if (left && !right) {
                 targetVx = -this.moveSpeed;
                 this.facing = -1;
@@ -339,7 +366,7 @@ export class Player extends Entity {
             }
         }
         const accelRate = targetVx === 0 ? DECELERATION : ACCELERATION;
-        this.vx = inKnockback ? this.vx : (groundedAttack ? 0 : moveToward(this.vx, targetVx, accelRate * dt));
+        this.vx = (inKnockback || inDash) ? this.vx : (groundedAttack ? 0 : moveToward(this.vx, targetVx, accelRate * dt));
     }
 
     /**
@@ -348,13 +375,44 @@ export class Player extends Entity {
     _applyGravityAndJump(dt) {
         this.vy += this.gravity * dt;
 
-        if (!this.attacking && this.jumpBufferTimer > 0 && this.coyoteTimer > 0) {
-            this.vy = -this.jumpSpeed;
-            this.jumpBufferTimer = 0;
-            this.coyoteTimer = 0;
-        } else if (this.vy < 0 && !this.input.isDown('jump')) {
+        if (!this._tryGroundJump() && !this._tryDoubleJump()
+            && this.vy < 0 && !this.input.isDown('jump')) {
             this.vy = Math.max(this.vy, -this.jumpSpeed * SHORT_HOP_VY_FRACTION);
         }
+    }
+
+    /**
+     * Coyote-time/jump-buffer-gated normal jump.
+     * @returns {boolean} Whether it fired.
+     */
+    _tryGroundJump() {
+        if (this.attacking || this.jumpBufferTimer <= 0 || this.coyoteTimer <= 0) return false;
+        this.vy = -this.jumpSpeed;
+        this.jumpBufferTimer = 0;
+        this.coyoteTimer = 0;
+        return true;
+    }
+
+    /**
+     * Only reached once _tryGroundJump() has already failed this frame, so
+     * this never fires within the same frame as a normal/coyote-time jump.
+     * Reuses jumpBufferTimer as the "a jump press is pending" signal
+     * (already fed by consumeJumpPress() in _updateJumpTimers()) rather than
+     * a separate raw press check - consuming it here also stops the same
+     * buffered press from replaying as a bogus extra jump the instant the
+     * player lands. Note: walking off a ledge without jumping (coyote
+     * expires with doubleJump.used still false) means the next mid-air jump
+     * press fires as the "double" jump even without a first one - intentional,
+     * the usual "one bonus airborne jump per grounded cycle" genre convention.
+     * @returns {boolean} Whether it fired.
+     */
+    _tryDoubleJump() {
+        if (this.attacking || !this.doubleJump.unlocked || this.doubleJump.used) return false;
+        if (this.jumpBufferTimer <= 0) return false;
+        this.vy = -this.jumpSpeed;
+        this.jumpBufferTimer = 0;
+        this.doubleJump.used = true;
+        return true;
     }
 
     /**

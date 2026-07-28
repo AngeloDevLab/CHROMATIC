@@ -12,11 +12,6 @@ const TOGGLE_KEY_CODE = 'Backquote';
 const CHAPTER_ID = 'prologue';
 const LEVEL_COUNT = 6;
 
-// Not implemented yet: Token economy + Merchant, and purchasable abilities,
-// don't exist as systems (see TODO.md) - these two stay disabled stubs so the
-// panel's shape is already in place once there's something to actually grant.
-const UNAVAILABLE_TITLE = 'Not implemented yet - system not built';
-
 export class DevPanel {
     /**
      * @param {Game} game - Owning Game instance.
@@ -60,6 +55,8 @@ export class DevPanel {
         this._wireLevelButtons();
         this._wireToggle('#dev-panel-hitboxes', 'showHitboxes');
         this._wireToggle('#dev-panel-godmode', 'godmode');
+        this._wireGiveTokenButton();
+        this._wireAbilityButtons();
 
         document.body.appendChild(this.element);
     }
@@ -91,8 +88,9 @@ export class DevPanel {
                 <label class="dev-panel-toggle"><input type="checkbox" id="dev-panel-godmode"> Godmode</label>
             </div>
             <div class="dev-panel-section">
-                <button class="dev-panel-stub" disabled title="${UNAVAILABLE_TITLE}">Give Token</button>
-                <button class="dev-panel-stub" disabled title="${UNAVAILABLE_TITLE}">Give Ability</button>
+                <button class="dev-panel-action" id="dev-panel-give-token">Give Token</button>
+                <button class="dev-panel-ability locked" data-ability="doubleJump">Unlock Double Jump</button>
+                <button class="dev-panel-ability locked" data-ability="dash">Unlock Dash</button>
             </div>
         `;
     }
@@ -126,5 +124,49 @@ export class DevPanel {
         input.checked = this[field];
         input.addEventListener('change', () => { this[field] = input.checked; });
         input.addEventListener('click', () => input.blur());
+    }
+
+    /**
+     * Dev/test-only Token grant (Game.tokens, same counter the boss-drop
+     * Token pickup increments - Interactables.js's _updateToken()) - the
+     * real Merchant/Token spend UI doesn't exist yet, this is just a
+     * shortcut around playing through a boss kill for testing. Repeatable
+     * (a plain counter), unlike the ability buttons below.
+     * Blurs on click for the same Space-key reason as _wireLevelButtons().
+     */
+    _wireGiveTokenButton() {
+        const button = this.element.querySelector('#dev-panel-give-token');
+        button.addEventListener('click', () => {
+            button.blur();
+            this.game.tokens++;
+        });
+    }
+
+    /**
+     * Dev/test-only ability unlock (entities/DoubleJumpAbility.js/
+     * DashAbility.js, Player.unlockAbility()) - the real Merchant/Token
+     * spend UI doesn't exist yet. One-way like a real purchase (no re-lock),
+     * so this is a plain button rather than a checkbox - .locked/.unlocked
+     * (red/green, see style.css) is the only state, synced on open and once
+     * more right after a click, then disabled so it reads as "already
+     * bought" instead of a repeatable action.
+     */
+    _wireAbilityButtons() {
+        for (const button of this.element.querySelectorAll('.dev-panel-ability')) {
+            this._syncAbilityButton(button);
+            button.addEventListener('click', () => {
+                button.blur();
+                this.game.abilities.add(button.dataset.ability);
+                this._syncAbilityButton(button);
+            });
+        }
+    }
+
+    /** @param {HTMLButtonElement} button */
+    _syncAbilityButton(button) {
+        const unlocked = this.game.abilities.has(button.dataset.ability);
+        button.classList.toggle('locked', !unlocked);
+        button.classList.toggle('unlocked', unlocked);
+        button.disabled = unlocked;
     }
 }
