@@ -69,9 +69,36 @@ function buildDisplaySection() {
     `;
 }
 
+// Mirrors InputHandler.js's KEY_MAP plus its two hardcoded keys (Escape/
+// KeyE) and the mouse-click attack (03_mechanics.md 4.3) - read-only display
+// only, no rebinding logic here. Key rebinding UI is Phase 2 (same
+// deferred-feature convention as e.g. Swimming in 03_mechanics.md 4.2), not
+// built yet - this section exists so Controls isn't just a placeholder until then.
+const CONTROLS = [
+    { label: 'Run', keys: 'A / D or Left/Right Arrow' },
+    { label: 'Jump', keys: 'W / Space / Up Arrow' },
+    { label: 'Drop Through Platform', keys: 'S or Down Arrow' },
+    { label: 'Attack', keys: 'Mouse Click' },
+    { label: 'Interact', keys: 'E' },
+    { label: 'Pause', keys: 'Escape' },
+];
+
 /**
- * Builds the Settings panel's body HTML. Controls/Language stay
- * placeholders (no rebinding UI or i18n system exists yet).
+ * Builds the read-only Controls section markup.
+ * @returns {string} Controls section HTML.
+ */
+function buildControlsSection() {
+    return CONTROLS.map((control) => `
+        <div class="settings-row">
+            <span>${control.label}</span>
+            <span>${control.keys}</span>
+        </div>
+    `).join('');
+}
+
+/**
+ * Builds the Settings panel's body HTML. Language stays a placeholder (no
+ * i18n system exists yet); Controls is read-only (see CONTROLS above).
  * @param {Game} game - Owning Game instance, used to read current values.
  * @returns {string} Panel body HTML.
  */
@@ -82,7 +109,7 @@ export function buildSettingsBody(game) {
         <h3>Display</h3>
         ${buildDisplaySection()}
         <h3>Controls</h3>
-        <p>Key rebinding - coming soon.</p>
+        ${buildControlsSection()}
         <h3>Language</h3>
         <p>Language selection - coming soon.</p>
     `;
