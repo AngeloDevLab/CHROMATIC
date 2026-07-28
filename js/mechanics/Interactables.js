@@ -1,5 +1,6 @@
 import { Portal } from '../entities/Portal.js';
 import { Merchant } from '../entities/Merchant.js';
+import { Token } from '../entities/Token.js';
 import { Trapdoor } from '../entities/Trapdoor.js';
 import { SecretDoor, SECRET_DOOR_PRISMA_COST } from '../entities/SecretDoor.js';
 import { BuffTerminal } from '../entities/BuffTerminal.js';
@@ -17,12 +18,10 @@ const PORTAL_INTERACT_RANGE_PX = 40;
 // ground gives way right as you step on it", not visibly ahead of time.
 const TRAPDOOR_TRIGGER_MARGIN_PX = 16;
 
-// Pre-Lvl-6 teaser line only (05_enemies-bosses.md 6.2's real Merchant -
-// shop, Token spend - only appears after the Templateboss) - placed early to
-// tease the Lvl 6 fight by name. No gating on the Miniboss being defeated
-// (unlike the real post-boss Merchant appearance) since this is just flavor,
-// not a reward.
-const MERCHANT_TEASER_TEXT = "Heh, another wanderer with color to spare. Slay the Wraith that haunts the Grey City, and we'll talk business.";
+// Shown once the Merchant spawns post-boss (see onBossDefeated() below) -
+// still flavor only (05_enemies-bosses.md 6.2's real shop/Token spend only
+// unlocks after the Templateboss), just teases the Lvl 6 fight by name.
+const MERCHANT_DIALOGUE_TEXT = "Heh, another wanderer with color to spare. Slay the Wraith that haunts the Grey City, and we'll talk business.";
 
 // Portal/Merchant/Trapdoor/SecretDoor/BuffTerminal - every level object the
 // player interacts with via proximity/[E], extracted out of LevelSession.js
@@ -43,13 +42,15 @@ export class Interactables {
      * @param {string} options.greyFilterCSS - ColorZone.greyFilterCSS, shared visual treatment for unrevealed entities.
      * @param {number} options.revealRadius - LevelSession's PLAYER_REVEAL_RADIUS, reused so "revealed" tracks the same distance as the color trail.
      * @param {DamageNumbers} options.damageNumbers - For "not enough Prisma" status text.
+     * @param {Collision} options.collision - For the boss-drop Token's fall onto the floor (_updateToken()).
      * @param {() => void} options.onComplete - Called when the player exits through the completed level's portal.
      */
-    constructor(game, level, player, { greyFilterCSS, revealRadius, damageNumbers, onComplete }) {
+    constructor(game, level, player, { greyFilterCSS, revealRadius, damageNumbers, collision, onComplete }) {
         this.game = game;
         this.player = player;
         this._revealRadius = revealRadius;
         this.damageNumbers = damageNumbers;
+        this._collision = collision;
         this._onComplete = onComplete;
 
         this._spawnPortal(level, greyFilterCSS);
@@ -85,16 +86,20 @@ export class Interactables {
     }
 
     /**
-     * Pre-Lvl-6 Merchant teaser (MERCHANT_TEASER_TEXT above) - not every
-     * level has one placed in Tiled, same null-tolerant pattern as the
-     * Portal above. No sprite yet (Merchant.js's render() is a no-op stub),
-     * so nothing is visible until real art exists - only the trigger
-     * zone/dialogue work already.
+     * Real post-boss Merchant (05_enemies-bosses.md 6.2: "After a
+     * Templateboss/Chapterboss, the Merchant appears in the same room" -
+     * applied to the Miniboss here too, session decision). Doesn't spawn at
+     * all until the boss is dead and its dropped Token (see
+     * onBossDefeated()/_updateToken()) is collected - this.merchant stays
+     * null until then, same null-tolerant pattern as Portal, so every prompt/
+     * render call below is already safe. Not every level has a Merchant
+     * object placed in Tiled, same null-tolerant pattern otherwise.
      * @param {Level} level
      */
     _spawnMerchant(level) {
-        const spawn = level.getObjectsByType('Merchant')[0];
-        this.merchant = spawn ? new Merchant(spawn.x, spawn.y) : null;
+        this._merchantSpawn = level.getObjectsByType('Merchant')[0] ?? null;
+        this.merchant = null;
+        this.token = null;
         this.merchantDialogue = new MerchantDialogue(this.game.overlay);
         this.merchantPromptEl = document.createElement('div');
         this.merchantPromptEl.className = 'interact-prompt';
@@ -224,6 +229,47 @@ export class Interactables {
         this.trapdoor?.update(dt);
         this._updateTrapdoorTrigger();
         this.secretDoor?.update(dt);
+        this._updateToken(dt);
+    }
+
+    /**
+     * Called once by LevelSession when this level's boss dies (its death
+     * animation has finished) - drops a Token at the boss's position for the
+     * player to walk over. No-op if this level has no Merchant object placed
+     * in Tiled, or this has already fired once.
+     * @param {number} centerX - Boss's centerX at time of death.
+     * @param {number} centerY - Boss's centerY at time of death.
+     */
+    onBossDefeated(centerX, centerY) {
+        if (!this._merchantSpawn || this.token || this.merchant) return;
+        this.token = new Token(centerX, centerY, this.game.assets.getImage('token'));
+    }
+
+    /**
+     * Falls/bobs (Token.js) until the player's hitbox overlaps it (no [E]
+     * prompt, plain proximity pickup) - collecting it increments
+     * Game.tokens (read by LevelSession/WorldmapState's HUD counter) and
+     * spawns the real Merchant at its Tiled-placed position.
+     * @param {number} dt
+     */
+    _updateToken(dt) {
+        if (!this.token) return;
+        this.token.update(dt, this._collision);
+        if (!this._overlapsPlayer(this.token)) return;
+
+        this.merchant = new Merchant(this._merchantSpawn.x, this._merchantSpawn.y, this.game.assets.getImage('merchant'));
+        this.token = null;
+        this.game.tokens++;
+    }
+
+    /**
+     * @param {Entity} entity
+     * @returns {boolean}
+     */
+    _overlapsPlayer(entity) {
+        const player = this.player;
+        return player.x < entity.x + entity.width && player.x + player.width > entity.x
+            && player.y < entity.y + entity.height && player.y + player.height > entity.y;
     }
 
     /**
@@ -307,9 +353,9 @@ export class Interactables {
     }
 
     /**
-     * Pre-Lvl-6 Merchant teaser (MERCHANT_TEASER_TEXT above) - not gated on
-     * anything (no boss to defeat yet at Lvl 3), just an [E]-in-range NPC
-     * dialogue, same range/prompt pattern as _updatePortalPrompt() above.
+     * Post-boss Merchant (see onBossDefeated()) - null until the boss's
+     * dropped Token is collected, same null-tolerant/in-range/[E] pattern as
+     * _updatePortalPrompt() above.
      * @param {Camera} camera
      * @param {boolean} interactPressed
      */
@@ -326,7 +372,7 @@ export class Interactables {
             this.merchantPromptEl.style.top = `${(this.merchant.y - camera.y) * camera.zoom}px`;
         }
 
-        if (inRange && interactPressed) this.merchantDialogue.open(MERCHANT_TEASER_TEXT);
+        if (inRange && interactPressed) this.merchantDialogue.open(MERCHANT_DIALOGUE_TEXT);
     }
 
     /**
@@ -396,6 +442,7 @@ export class Interactables {
     render(ctx) {
         this.portal?.render(ctx);
         this.merchant?.render(ctx);
+        this.token?.render(ctx);
         this.trapdoor?.render(ctx);
         this.secretDoor?.render(ctx);
         this.buffTerminal?.render(ctx);

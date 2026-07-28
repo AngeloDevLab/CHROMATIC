@@ -107,6 +107,12 @@ export class LoadingState extends State {
                 // Lvl 5 Secret Room (entities/BuffTerminal.js) - single static
                 // 32x64 frame, no animation.
                 'buffterminal': 'assets/images/objects/buffterminal.png',
+                // Post-boss Merchant (entities/Merchant.js) - single static
+                // 64x64 frame, no animation.
+                'merchant': 'assets/images/objects/merchant.png',
+                // Boss-drop Token pickup (entities/Token.js) - single static
+                // 64x64 frame, no animation.
+                'token': 'assets/images/objects/token.png',
                 // Wraith of the Shifting Sands (Lvl 3 Miniboss, entities/bosses/
                 // Wraith.js) - each a fixed 128x256 frame (see the earlier PixelLab
                 // sizing discussion). idle loops; the rest are one-shot transitions

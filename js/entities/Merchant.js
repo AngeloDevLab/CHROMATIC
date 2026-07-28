@@ -1,24 +1,26 @@
 import { Entity } from './Entity.js';
 
-// Placeholder footprint only - no Merchant art exists yet (session decision:
-// build the trigger/dialogue now, wire in real art later without touching
-// this class beyond adding a sprite param, same as Portal.js's constructor
-// shape). render() intentionally does nothing until then.
-const WIDTH = 32;
-const HEIGHT = 64;
+const SIZE = 64;
 
+// Only ever constructed once the level's boss is dead and its dropped Token
+// collected (see Interactables.js's onBossDefeated()/_updateToken()) - this
+// class itself just draws the static sprite, all appearance-timing lives in
+// Interactables.
 export class Merchant extends Entity {
     /**
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
+     * @param {HTMLImageElement} sprite - Static merchant sprite.
      */
-    constructor(x, y) {
-        super(x, y, WIDTH, HEIGHT);
+    constructor(x, y, sprite) {
+        super(x, y, SIZE, SIZE);
+        this.sprite = sprite;
     }
 
     /**
-     * No-op until real art exists (see the top-of-file note).
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
-    render(ctx) {}
+    render(ctx) {
+        ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
+    }
 }
