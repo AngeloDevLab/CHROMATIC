@@ -6,6 +6,26 @@ Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to le
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-28
+
+### Added
+- Post-boss Merchant flow (`entities/Token.js`, `entities/Merchant.js`, `mechanics/Interactables.js`): the Lvl 3 Miniboss (Wraith) now drops a Token at its death position on defeat - falls under gravity onto the floor below it (`Collision.resolve()`), then bobs in place until the player walks over it (plain proximity pickup, no `[E]` prompt). Collecting it increments `Game.tokens` (new HUD counter, in-level and Worldmap) and spawns the real Merchant (now a real 64x64 sprite, `assets/images/objects/merchant.png`, instead of the previous no-op teaser stub) at its Tiled-placed position - the Merchant no longer exists in the level at all until this fires.
+- Merchant dialogue portrait (`ui/MerchantDialogue.js`): portrait (`merchant-dialog-portrait.png`) beside the name ("Unknown Merchant") and typewriter-revealed text, replacing Panel's generic title bar for this one dialogue. The dialogue box no longer grows line-by-line as the text types out - the full line is measured once (hidden) to lock a `min-height` before the reveal starts.
+- Ability composition scaffold (`entities/DoubleJumpAbility.js`, `entities/DashAbility.js`): Double Jump (press Jump again mid-air) and Dash (double-tap A/D, self-contained edge-detection, no InputHandler changes) composed onto `Player` per CLAUDE.md's stated architecture - deliberately no shared `Ability` base class, the two have different per-frame contracts. `Player._applyGravityAndJump()` split into `_tryGroundJump()`/`_tryDoubleJump()` (behavior-preserving for the existing coyote-time/jump-buffer ground jump); Dash locks `vx`/facing for its burst the same way the existing knockback lockout already does. No real Merchant/Token spend UI yet (`docs/GDD/03_mechanics.md` 4.4: 2 Tokens per ability) - both are dev/test-only unlockable via new Dev Panel buttons (red/`.locked` until clicked, green/`.unlocked` and disabled after - one-way like a real purchase, no toggle-back) and persist across Retry/level-skip the same way Secret Room buffs do (`Game.abilities`, reapplied in `LevelSession._spawnPlayer()`).
+- Dev Panel "Give Token" button, now live (increments `Game.tokens`, same counter the boss-drop pickup uses) - was a disabled stub.
+- `Game.hudScale` + the `--hud-scale` CSS custom property (`Game.resizeBuffer()`): BossState's arena-sized buffer (e.g. Lv_3's 960x512) shrinks `_handleResize()`'s on-screen scale for the same physical window, so anything sized in fixed buffer-pixels used to render smaller during a boss fight than in a normal level - previously only patched around for the boss name/HP labels (hardcoded 16px). Now applied generally: `HUD.renderPlayerBars()`/`renderBossBar()`, the HP/Shield/Token HUD labels and their positions (`LevelSession.js`), the boss name/HP labels (`BossState.js`), interact prompts, and every Panel-based UI (`.panel`, `.difficulty-option` - covers Pause/Game Over/Merchant dialogue too) all scale together, so the whole in-level UI stays a constant on-screen size regardless of the current buffer.
+- Worldmap "‹ Menu" button (top-left, `.chapter-button` styling) - previously no way back to the main menu from the Worldmap at all.
+- Settings' Controls section (`ui/SettingsPanel.js`) now lists the actual key bindings (read-only, mirrors `InputHandler.js`'s `KEY_MAP`) instead of a "coming soon" placeholder - key rebinding itself is deferred to Phase 2.
+- Settings is now reachable from the Pause menu (`PauseState.js`), reusing the exact same content/wiring as the Main Menu's - resolves the fullscreen-toggle-only-reachable-from-menu gap noted in 0.7.0. Dismissible back to the Paused choices via ×/backdrop, but not Escape (would otherwise race `PauseState`'s own Escape-driven unpause).
+
+### Changed
+- Token pickup art (`assets/images/objects/token.png`) is its own dedicated asset now, cropped to its actual content - the source it started as (the Worldmap's `wm_btn_completed.png` badge) had a lot of transparent padding around a small icon, nearly invisible at any reasonable in-world size until cropped.
+- `HUD.renderEnemyBar()` now skips `Boss` instances - the floating per-enemy HP bar next to the new top-center boss bar (0.8.0) was redundant.
+- `Game.resetBuffer()` no longer animates the viewport shrink back to the base 640x360 - only `resizeBuffer()`'s growth into a boss arena does now, since a shrink always happens mid state-change into an unrelated screen (Worldmap/Menu) rather than a continuous scene worth animating; previously produced a visible stray "snap back" right after leaving a boss level.
+
+### Fixed
+- Merchant dialogue freeze: dismissing it via backdrop-click/×/Escape (as opposed to advancing to the end and pressing `[E]` again) left `MerchantDialogue.isOpen` stuck `true` forever, since `Panel.close()`'s dismissal paths never told it the dialogue had closed - `LevelSession.update()` stayed in its dialogue-frozen branch permanently. Fixed via `Panel`'s own `onClose` callback (already built for exactly this, just unused here).
+
 ## [0.8.1] - 2026-07-27
 
 ### Changed
