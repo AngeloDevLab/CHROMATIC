@@ -19,6 +19,11 @@
 :root {
   --game-width: 640;
   --game-height: 360;
+  /* Game.resizeBuffer() overrides this per current buffer size (see
+     Game.hudScale's own comment) - screen-fixed HUD text/icons read it via
+     calc() below so they stay a constant on-screen size regardless of
+     BossState's arena-sized buffer. Untouched (stays 1) outside a boss fight. */
+  --hud-scale: 1;
 }
 
 * {
@@ -147,35 +152,67 @@ body {
   justify-content: center;
 }
 
+/* width/padding/border-radius read --hud-scale (see :root above) so Pause/
+   Game Over/MerchantDialogue all render at the same on-screen size during a
+   boss fight's bigger buffer as everywhere else - stays 1 (no-op) outside
+   BossState, so this only ever actually scales up mid-boss-fight. */
 .panel {
   position: relative;
-  width: 420px;
+  width: calc(420px * var(--hud-scale));
   max-width: calc(100% - 40px);
   max-height: calc(100% - 40px);
   overflow-y: auto;
   background: #1a1c20;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 8px;
-  padding: 20px 24px;
+  border-radius: calc(8px * var(--hud-scale));
+  padding: calc(20px * var(--hud-scale)) calc(24px * var(--hud-scale));
   color: #f2f2f2;
   font-family: 'Jersey 10', sans-serif;
 }
 
 .panel-title {
-  font-size: 26px;
+  font-size: calc(26px * var(--hud-scale));
   letter-spacing: 2px;
-  margin-bottom: 12px;
+  margin-bottom: calc(12px * var(--hud-scale));
+}
+
+/* MerchantDialogue.js passes an empty title (its own layout puts the name
+   next to the portrait instead, see .merchant-name below) - without this,
+   the empty <h2> would still keep panel-title's margin-bottom as blank space. */
+.panel-title:empty {
+  display: none;
+}
+
+/* MerchantDialogue.js's portrait/name/text layout, in place of Panel's
+   generic title bar. */
+.merchant-dialogue {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.merchant-portrait {
+  width: calc(48px * var(--hud-scale));
+  height: calc(48px * var(--hud-scale));
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
+.merchant-name {
+  font-size: calc(18px * var(--hud-scale));
+  letter-spacing: 1px;
+  margin-bottom: calc(4px * var(--hud-scale));
 }
 
 .panel-body {
-  font-size: 16px;
+  font-size: calc(16px * var(--hud-scale));
   line-height: 1.5;
 }
 
 .panel-body h3 {
-  font-size: 18px;
+  font-size: calc(18px * var(--hud-scale));
   letter-spacing: 1px;
-  margin-top: 16px;
+  margin-top: calc(16px * var(--hud-scale));
 }
 
 .panel-body h3:first-child {
@@ -188,19 +225,30 @@ body {
   gap: 10px;
 }
 
+/* Panel.openChoices()'s per-button markup - shared by the actual difficulty
+   picker AND Pause/Game Over's Resume/Retry/Main Menu buttons (see that
+   method's own JSDoc), so scaling this via --hud-scale also covers Pause/
+   Game Over appearing mid-boss-fight, not just the difficulty panel itself. */
 .difficulty-option {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: calc(4px * var(--hud-scale));
   width: 100%;
   text-align: left;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  padding: 10px 14px;
+  border-radius: calc(6px * var(--hud-scale));
+  padding: calc(10px * var(--hud-scale)) calc(14px * var(--hud-scale));
   color: #f2f2f2;
   font-family: 'Jersey 10', sans-serif;
+  /* Buttons don't inherit font-size from their parent by default (UA
+     stylesheet), so without this Pause/Game Over's Resume/Retry/Main Menu
+     text (plain-text choices, see openChoices()) fell back to the browser's
+     own default button size instead of anything the game actually chose -
+     .difficulty-label overrides this for the richer label+description
+     choices (the real difficulty picker) that use it. */
+  font-size: calc(16px * var(--hud-scale));
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
@@ -212,12 +260,12 @@ body {
 }
 
 .difficulty-label {
-  font-size: 20px;
+  font-size: calc(20px * var(--hud-scale));
   letter-spacing: 1px;
 }
 
 .difficulty-description {
-  font-size: 13px;
+  font-size: calc(13px * var(--hud-scale));
   opacity: 0.75;
   line-height: 1.4;
 }
@@ -321,6 +369,15 @@ body {
   color: rgba(242, 242, 242, 0.35);
   border-color: rgba(255, 255, 255, 0.1);
   cursor: not-allowed;
+}
+
+/* WorldmapState's own back-to-menu button - reuses .chapter-button's look,
+   this class only repositions it to the top-left corner instead of the bar. */
+.worldmap-back-button {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 11;
 }
 
 .worldmap-nodes {
@@ -428,13 +485,68 @@ body {
   background: rgba(255, 255, 255, 0.2);
 }
 
+/* font-size reads --hud-scale (see :root above) so this stays the same
+   on-screen size during BossState's bigger render buffer as it is in a
+   normal level, instead of shrinking along with everything else sized in
+   fixed buffer-pixels. */
 .hud-value {
   position: absolute;
   font-family: 'Jersey 10', monospace;
-  font-size: 10px;
+  font-size: calc(10px * var(--hud-scale));
   color: rgba(242, 242, 242, 0.85);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   pointer-events: none;
+}
+
+/* LevelSession's Token counter, positioned just below the HP/Shield bars
+   (.hud-value's sibling) - the icon is a ::before rather than an <img> so
+   this stays a single positioned element, same shape as .hud-value.
+   Same --hud-scale reasoning as .hud-value above. */
+.hud-token {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Jersey 10', monospace;
+  font-size: calc(10px * var(--hud-scale));
+  color: rgba(242, 242, 242, 0.85);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.hud-token::before {
+  content: '';
+  width: calc(16px * var(--hud-scale));
+  height: calc(16px * var(--hud-scale));
+  background-image: url('assets/images/objects/token.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+/* WorldmapState's own Token counter - same icon+count shape as .hud-token
+   above, just repositioned/rescaled for this screen's top-right corner. */
+.worldmap-token-counter {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 16px;
+  color: #f2f2f2;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.worldmap-token-counter::before {
+  content: '';
+  width: 28px;
+  height: 28px;
+  background-image: url('assets/images/objects/token.png');
+  background-size: contain;
+  background-repeat: no-repeat;
 }
 
 .damage-number {
@@ -459,11 +571,15 @@ body {
   white-space: nowrap;
 }
 
+/* [E] Talk/Exit Level prompts (Interactables.js) - position already tracks
+   the portal/merchant's world position via camera math (unaffected by this),
+   only font-size reads --hud-scale (see :root above) so the text itself
+   stays readable at the same on-screen size during a boss fight. */
 .interact-prompt {
   position: absolute;
   transform: translate(-50%, -100%);
   font-family: 'Jersey 10', monospace;
-  font-size: 12px;
+  font-size: calc(16px * var(--hud-scale));
   color: #f2f2f2;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
   pointer-events: none;
@@ -472,12 +588,13 @@ body {
 
 /* BossState.js's top-center HP bar label - screen-fixed like .hud-value,
    left/top set inline per-frame since the bar centers on the current
-   buffer width (varies per boss arena), not a fixed position. */
+   buffer width (varies per boss arena), not a fixed position. font-size
+   reads --hud-scale (see :root above), same reasoning as .hud-value. */
 .boss-name-label {
   position: absolute;
   transform: translate(-50%, 0);
   font-family: 'Jersey 10', monospace;
-  font-size: 16px;
+  font-size: calc(16px * var(--hud-scale));
   color: #f2f2f2;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
   pointer-events: none;
@@ -492,15 +609,14 @@ body {
 }
 
 /* BossState.js's HP value readout ("150/150"), right below the canvas bar -
-   session decision: never below 16px for this boss-arena text, unlike
-   .hud-value's 10px player numbers - the boss buffer renders at a lower
-   effective on-screen scale than a normal level's (see BossState.js's own
-   comment on why), so anything this small already reads as too small there. */
+   16px base (bigger than .hud-value's 10px player numbers) since this reads
+   as the sole focus of a boss encounter; --hud-scale (see :root above) keeps
+   it that same size on screen regardless of the arena's buffer size. */
 .boss-hp-label {
   position: absolute;
   transform: translate(-50%, 0);
   font-family: 'Jersey 10', monospace;
-  font-size: 16px;
+  font-size: calc(16px * var(--hud-scale));
   color: rgba(242, 242, 242, 0.85);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   pointer-events: none;
@@ -509,12 +625,12 @@ body {
 
 .panel-close {
   position: absolute;
-  top: 10px;
-  right: 12px;
+  top: calc(10px * var(--hud-scale));
+  right: calc(12px * var(--hud-scale));
   background: none;
   border: none;
   color: #f2f2f2;
-  font-size: 20px;
+  font-size: calc(20px * var(--hud-scale));
   cursor: pointer;
   line-height: 1;
 }
@@ -591,13 +707,48 @@ body {
   cursor: pointer;
 }
 
-.dev-panel-stub {
+/* DevPanel's dev/test-only Give Token button (_wireGiveTokenButton()). */
+.dev-panel-action {
   font-family: 'Jersey 10', sans-serif;
   font-size: 13px;
-  color: rgba(242, 242, 242, 0.35);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f2f2f2;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 4px;
   padding: 3px 8px;
-  cursor: not-allowed;
+  cursor: pointer;
+}
+
+.dev-panel-action:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+/* DevPanel's dev/test-only ability unlock buttons (_wireAbilityButtons()) -
+   red/.locked until clicked, green/.unlocked (and disabled) after, no
+   toggle-back - reads as a one-way purchase rather than a settings switch. */
+.dev-panel-ability {
+  font-family: 'Jersey 10', sans-serif;
+  font-size: 13px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.dev-panel-ability.locked {
+  color: #ff8a8a;
+  border-color: rgba(255, 92, 92, 0.4);
+}
+
+.dev-panel-ability.locked:hover {
+  background: rgba(255, 92, 92, 0.15);
+  border-color: rgba(255, 92, 92, 0.7);
+}
+
+.dev-panel-ability.unlocked {
+  color: #6cff8a;
+  border-color: rgba(108, 255, 138, 0.4);
+  cursor: default;
 }

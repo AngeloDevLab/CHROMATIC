@@ -20,14 +20,13 @@ const BOSS_HP_VALUE_TOP_PX = BOSS_BAR_TOP_PX + BOSS_BAR_HEIGHT + 2;
 // the base 640x360 (Lv_3's is 960x512), so Game._handleResize()'s
 // window-fit integer scale (Math.floor(innerWidth/game.width), see that
 // method) ends up smaller too, for the same physical window - anything
-// sized in fixed buffer-pixels (HUD bars, text) therefore renders smaller on
-// screen during a boss fight than it does in a normal level, independent of
-// any font-size choice made here. Bumping this file's own labels to 16px
-// (never smaller, see the .boss-name-label/.boss-hp-label CSS) compensates
-// for that partially; the player's own HEALTH_BAR/SHIELD_BAR (HUD.js) still
-// look smaller during a boss fight than elsewhere for the same reason,
-// unaddressed so far since fixing that generally would mean revisiting the
-// integer-scale rule itself, not just this state's own labels.
+// sized in fixed buffer-pixels (HUD bars, text) would otherwise render
+// smaller on screen during a boss fight than in a normal level. Game.hudScale
+// (see that getter's comment) is the general fix: this file's own
+// name/HP-bar/label positions below and HUD.js's renderBossBar() all scale
+// by it, and the .boss-name-label/.boss-hp-label CSS reads the same ratio
+// via the --hud-scale custom property, so the whole top-center HUD stays a
+// constant on-screen size regardless of the arena's actual buffer size.
 export class BossState extends State {
     /**
      * @param {{chapterId: string, level: number}} params - Forwarded to LevelSession.
@@ -80,16 +79,29 @@ export class BossState extends State {
         this.bossHpValueEl.hidden = !boss;
         if (!boss) return;
 
-        this.session.hud.renderBossBar(ctx, boss, this.game.width);
+        const scale = this.game.hudScale;
+        this.session.hud.renderBossBar(ctx, boss, this.game.width, scale);
+        this._renderLabels(boss, scale);
+    }
 
+    /**
+     * Positions/fills the name + HP-value labels around HUD.js's
+     * renderBossBar() - BOSS_NAME_TOP_PX/BOSS_HP_VALUE_TOP_PX are both
+     * scaled as a whole by `scale` (Game.hudScale) rather than recomputed,
+     * since that preserves their relative spacing around the (also scaled)
+     * canvas bar regardless of the arena's actual buffer size.
+     * @param {Enemy} boss
+     * @param {number} scale
+     */
+    _renderLabels(boss, scale) {
         const centerX = this.game.width / 2;
         this.bossNameEl.textContent = boss.name ?? '';
         this.bossNameEl.classList.toggle('enraged', boss.enraged);
         this.bossNameEl.style.left = `${centerX}px`;
-        this.bossNameEl.style.top = `${BOSS_NAME_TOP_PX}px`;
+        this.bossNameEl.style.top = `${BOSS_NAME_TOP_PX * scale}px`;
 
         this.bossHpValueEl.textContent = `${Math.round(boss.hp)}/${boss.maxHp}`;
         this.bossHpValueEl.style.left = `${centerX}px`;
-        this.bossHpValueEl.style.top = `${BOSS_HP_VALUE_TOP_PX}px`;
+        this.bossHpValueEl.style.top = `${BOSS_HP_VALUE_TOP_PX * scale}px`;
     }
 }

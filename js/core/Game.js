@@ -74,6 +74,13 @@ export class Game {
         this.difficulty = null;
         this.completedLevels = new Set();
         this.buffs = new Set();
+        // Boss-drop Token count (entities/Token.js) - same session-only
+        // caveat as completedLevels/buffs above, no SaveSystem migration yet.
+        this.tokens = 0;
+        // Unlocked ability ids ('doubleJump'|'dash', Player.unlockAbility()) -
+        // same session-only caveat, currently only granted via DevPanel's
+        // Unlock Double Jump/Dash buttons (no real Merchant/Token spend UI yet).
+        this.abilities = new Set();
     }
 
     /**
@@ -111,6 +118,22 @@ export class Game {
     }
 
     /**
+     * How much bigger the current render buffer is than the base 640x360 -
+     * BossState's arena-sized buffer (e.g. Lv_3's is 960x512) makes
+     * _handleResize()'s window-fit scale shrink for the same physical
+     * window, so anything sized in fixed buffer-pixels would otherwise
+     * render smaller on screen during a boss fight than in a normal level.
+     * HUD.js/LevelSession.js/BossState.js multiply their own screen-fixed
+     * (not world-anchored) HUD metrics by this so the on-screen size stays
+     * constant regardless of buffer size - the CSS side reads the same ratio
+     * via the --hud-scale custom property (see resizeBuffer()).
+     * @returns {number}
+     */
+    get hudScale() {
+        return this.width / this._baseWidth;
+    }
+
+    /**
      * Switches the internal render resolution away from the base 640x360 -
      * used by BossState for its own arena-sized buffer. Changing the canvas
      * element's own width/height clears its pixel buffer and resets 2D
@@ -118,32 +141,49 @@ export class Game {
      * nothing here relies on that surviving a resize (every frame redraws
      * from scratch, see _loop()'s clearRect + this.imageSmoothingEnabled is
      * never set, only the CSS `image-rendering: pixelated` on the element,
-     * which isn't affected). The viewport's CSS transition makes the
-     * on-screen box grow/shrink smoothly instead of snapping, then clears
-     * itself so a later window-drag resize (via the resize listener calling
-     * _handleResize() directly, never this method) tracks the cursor
-     * instantly again rather than lagging behind an active transition.
+     * which isn't affected). `animate` (on by default) plays the viewport's
+     * CSS transition so the on-screen box grows/shrinks smoothly instead of
+     * snapping - the right call while BossState.enter() is growing into the
+     * same continuous scene. resetBuffer() below passes false: by the time
+     * that runs, the state that resized us is already exit()ing into an
+     * unrelated screen (Worldmap/Menu), so an animated shrink would just
+     * read as a stray jump instead of a meaningful zoom, and the next
+     * screen should already be at its final size before it's ever shown.
      * @param {number} width
      * @param {number} height
+     * @param {object} [options]
+     * @param {boolean} [options.animate=true]
      */
-    resizeBuffer(width, height) {
-        this.viewport.style.transition = `width ${BUFFER_RESIZE_TRANSITION_SECONDS}s ease, height ${BUFFER_RESIZE_TRANSITION_SECONDS}s ease`;
+    resizeBuffer(width, height, { animate = true } = {}) {
+        if (animate) {
+            this.viewport.style.transition = `width ${BUFFER_RESIZE_TRANSITION_SECONDS}s ease, height ${BUFFER_RESIZE_TRANSITION_SECONDS}s ease`;
+        }
 
         this.canvas.width = width;
         this.canvas.height = height;
         this.width = width;
         this.height = height;
         this._handleResize();
+        this.overlay.style.setProperty('--hud-scale', this.hudScale);
 
-        setTimeout(() => { this.viewport.style.transition = ''; }, BUFFER_RESIZE_TRANSITION_SECONDS * 1000);
+        // Clears the transition once it's played out so a later window-drag
+        // resize (via the resize listener calling _handleResize() directly,
+        // never this method) tracks the cursor instantly again instead of
+        // lagging behind a still-active transition.
+        if (animate) {
+            setTimeout(() => { this.viewport.style.transition = ''; }, BUFFER_RESIZE_TRANSITION_SECONDS * 1000);
+        }
     }
 
     /**
      * Restores the base 640x360 buffer - the inverse of resizeBuffer(),
-     * called once a dedicated-resolution state (BossState) exits.
+     * called once a dedicated-resolution state (BossState) exits. Instant
+     * (animate: false, see resizeBuffer()'s own comment) - always happens
+     * mid state-change into an unrelated screen, never a continuous scene
+     * worth animating.
      */
     resetBuffer() {
-        this.resizeBuffer(this._baseWidth, this._baseHeight);
+        this.resizeBuffer(this._baseWidth, this._baseHeight, { animate: false });
     }
 
     /**

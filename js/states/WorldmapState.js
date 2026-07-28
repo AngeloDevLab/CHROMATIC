@@ -46,9 +46,37 @@ export class WorldmapState extends State {
 
         this._buildChapterBar();
         this._buildNodes();
+        this._buildTokenCounter();
+        this._buildBackButton();
 
         this._onCanvasClick = this._onCanvasClick.bind(this);
         this.game.canvas.addEventListener('click', this._onCanvasClick);
+    }
+
+    /**
+     * Same icon+count readout as LevelSession's in-level HUD (.hud-token's
+     * ::before), just repositioned (.worldmap-token-counter) for this
+     * screen's top-right corner instead of under the HP/Shield bars.
+     */
+    _buildTokenCounter() {
+        this.tokenCounterEl = document.createElement('div');
+        this.tokenCounterEl.className = 'worldmap-token-counter';
+        this.tokenCounterEl.textContent = `x ${this.game.tokens}`;
+        this.game.overlay.appendChild(this.tokenCounterEl);
+    }
+
+    /**
+     * Top-left, only way back to MenuState from here (PauseState/
+     * GameOverState's own "Main Menu" choice only exists inside a level) -
+     * same change('menu') target, same .chapter-button look, just
+     * repositioned (.worldmap-back-button) instead of sitting in the bar.
+     */
+    _buildBackButton() {
+        this.backButtonEl = document.createElement('button');
+        this.backButtonEl.className = 'chapter-button worldmap-back-button';
+        this.backButtonEl.textContent = '‹ Menu';
+        this.backButtonEl.addEventListener('click', () => this.game.stateMachine.change('menu'));
+        this.game.overlay.appendChild(this.backButtonEl);
     }
 
     /**
@@ -248,6 +276,8 @@ export class WorldmapState extends State {
 
         this.chapterBar?.remove();
         this.nodeContainer?.remove();
+        this.tokenCounterEl?.remove();
+        this.backButtonEl?.remove();
         this._closeInfoCard();
     }
 

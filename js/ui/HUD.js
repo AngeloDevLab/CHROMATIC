@@ -1,3 +1,5 @@
+import { Boss } from '../entities/Boss.js';
+
 // Bar position/size as exported constants read by both this canvas draw call
 // and GameState's HTML value labels (10_technical-architecture.md 11.8), so
 // the two never drift out of sync with each other.
@@ -20,6 +22,19 @@ const BOSS_BAR_WIDTH = 200;
 export const BOSS_BAR_HEIGHT = 10;
 export const BOSS_BAR_TOP_PX = 26;
 
+/**
+ * Scales a screen-fixed rect's position/size by Game.hudScale - shared by
+ * renderPlayerBars()/renderBossBar() below and by LevelSession.js/
+ * BossState.js, which need the exact same scaled numbers to position their
+ * own HTML labels right against these canvas-drawn bars.
+ * @param {{x:number,y:number,width:number,height:number}} rect
+ * @param {number} scale
+ * @returns {{x:number,y:number,width:number,height:number}}
+ */
+export function scaleRect(rect, scale) {
+    return { x: rect.x * scale, y: rect.y * scale, width: rect.width * scale, height: rect.height * scale };
+}
+
 // HUD bar fills are colored rectangles drawn on the canvas, not text
 // (11.8.1) - this only ever draws bars; numbers/labels are the caller's job
 // via the HTML overlay. Dormant enemies (Sentinel.js) stay hidden until
@@ -29,23 +44,29 @@ export const BOSS_BAR_TOP_PX = 26;
 // placeholder rendering, no animations wired in yet - see Wraith.js).
 export class HUD {
     /**
-     * Screen-fixed - call outside the camera-translated block.
+     * Screen-fixed - call outside the camera-translated block. `scale`
+     * (Game.hudScale) keeps this the same on-screen size during a boss
+     * fight's bigger render buffer as in a normal level - see that
+     * getter's own comment.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {Player} player
+     * @param {number} [scale=1] - Game.hudScale.
      */
-    renderPlayerBars(ctx, player) {
-        this._drawBar(ctx, HEALTH_BAR, player.health / player.maxHealth, '#3a1414', '#d4453f');
-        this._drawBar(ctx, SHIELD_BAR, player.shield / player.maxShield, '#123244', '#3fc6e0');
+    renderPlayerBars(ctx, player, scale = 1) {
+        this._drawBar(ctx, scaleRect(HEALTH_BAR, scale), player.health / player.maxHealth, '#3a1414', '#d4453f');
+        this._drawBar(ctx, scaleRect(SHIELD_BAR, scale), player.shield / player.maxShield, '#123244', '#3fc6e0');
     }
 
     /**
      * World-space (follows the enemy) - call inside the camera-translated
-     * block, alongside enemy rendering.
+     * block, alongside enemy rendering. Skipped for Boss/Templateboss
+     * instances - BossState.js's top-center renderBossBar() already covers
+     * that HP, a second floating bar right over its head was redundant.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {Enemy} enemy
      */
     renderEnemyBar(ctx, enemy) {
-        if (enemy.dead || enemy.dormant) return;
+        if (enemy.dead || enemy.dormant || enemy instanceof Boss) return;
 
         const rect = {
             x: enemy.centerX - ENEMY_BAR_WIDTH / 2,
@@ -66,13 +87,15 @@ export class HUD {
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {Enemy} boss
      * @param {number} gameWidth - Current buffer width (varies per boss arena).
+     * @param {number} [scale=1] - Game.hudScale, same reasoning as renderPlayerBars() above.
      */
-    renderBossBar(ctx, boss, gameWidth) {
+    renderBossBar(ctx, boss, gameWidth, scale = 1) {
+        const width = BOSS_BAR_WIDTH * scale;
         const rect = {
-            x: gameWidth / 2 - BOSS_BAR_WIDTH / 2,
-            y: BOSS_BAR_TOP_PX,
-            width: BOSS_BAR_WIDTH,
-            height: BOSS_BAR_HEIGHT,
+            x: gameWidth / 2 - width / 2,
+            y: BOSS_BAR_TOP_PX * scale,
+            width,
+            height: BOSS_BAR_HEIGHT * scale,
         };
         const fillColor = boss.enraged ? '#ff8a3f' : '#d4453f';
         this._drawBar(ctx, rect, boss.hp / boss.maxHp, '#241010', fillColor);

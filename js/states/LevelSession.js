@@ -10,7 +10,7 @@ import { ColorZone } from '../mechanics/ColorZone.js';
 import { DeathSequence, GHOST_FRAME_SIZE } from '../mechanics/DeathSequence.js';
 import { Interactables } from '../mechanics/Interactables.js';
 import { CombatCoordinator } from '../mechanics/CombatCoordinator.js';
-import { HUD, HEALTH_BAR, SHIELD_BAR } from '../ui/HUD.js';
+import { HUD, HEALTH_BAR, SHIELD_BAR, scaleRect } from '../ui/HUD.js';
 import { DamageNumbers } from '../ui/DamageNumbers.js';
 
 const CHARACTER_FRAME_SIZE = 96;
@@ -219,6 +219,7 @@ export class LevelSession {
         this.player = new Player(playerStart.x, playerStart.y, this._buildPlayerAnimations());
         this.player.enableControl(this.game.input, this.collision);
         for (const buffId of this.game.buffs) this.player.applyBuff(buffId);
+        for (const id of this.game.abilities) this.player.unlockAbility(id);
     }
 
     /**
@@ -228,6 +229,7 @@ export class LevelSession {
      * regular roster to begin with.
      */
     _spawnEnemies() {
+        this.boss = null;
         this.enemies = this.level.getObjectsByType('EnemySpawn')
             .map((spawn) => spawn.name?.toLowerCase() === 'miniboss'
                 ? this._spawnWraith(spawn)
@@ -246,6 +248,9 @@ export class LevelSession {
         // this.sprite directly - keep it a real image rather than the null
         // Wraith's constructor passes to super().
         wraith.sprite = wraith.animations.idle.image;
+        // _checkBossDefeated() reads this to know when to drop the
+        // Merchant's Token (Interactables.js's onBossDefeated()).
+        this.boss = wraith;
         return wraith;
     }
 
@@ -292,12 +297,34 @@ export class LevelSession {
             greyFilterCSS: this.colorZone.greyFilterCSS,
             revealRadius: PLAYER_REVEAL_RADIUS,
             damageNumbers: this.damageNumbers,
+            collision: this.collision,
             onComplete: () => this._completeLevel(),
         });
 
         this.healthValueEl = this._createHudValueLabel(HEALTH_BAR);
         this.shieldValueEl = this._createHudValueLabel(SHIELD_BAR);
+        this.tokenCounterEl = this._createTokenCounter();
         this._levelFullyRevealed = false;
+        this._bossDefeated = false;
+    }
+
+    /**
+     * Icon+count readout just below the HP/Shield bars (HEALTH_BAR/
+     * SHIELD_BAR, HUD.js) - styled via CSS (.hud-token's ::before renders
+     * the token icon, both sized off the same --hud-scale custom property
+     * Game.resizeBuffer() sets), this only positions it and owns the text.
+     * scaleRect() keeps the gap below the (also scaled) Shield bar
+     * proportional instead of a fixed 4px that'd look too tight once scaled up.
+     * @returns {HTMLElement}
+     */
+    _createTokenCounter() {
+        const el = document.createElement('div');
+        el.className = 'hud-token';
+        const shield = scaleRect(SHIELD_BAR, this.game.hudScale);
+        el.style.left = `${shield.x}px`;
+        el.style.top = `${shield.y + shield.height + 4 * this.game.hudScale}px`;
+        this.game.overlay.appendChild(el);
+        return el;
     }
 
     /**
@@ -313,14 +340,18 @@ export class LevelSession {
     }
 
     /**
+     * scaleRect() keeps this against the (also scaled, via Game.hudScale)
+     * canvas-drawn bar regardless of buffer size - see that getter's comment.
      * @param {{x:number,y:number,width:number,height:number}} bar - HEALTH_BAR or SHIELD_BAR (HUD.js).
      * @returns {HTMLElement} The attached, positioned label element.
      */
     _createHudValueLabel(bar) {
         const el = document.createElement('div');
         el.className = 'hud-value';
-        el.style.left = `${bar.x + bar.width + 4}px`;
-        el.style.top = `${bar.y - 2}px`;
+        const scale = this.game.hudScale;
+        const scaled = scaleRect(bar, scale);
+        el.style.left = `${scaled.x + scaled.width + 4 * scale}px`;
+        el.style.top = `${scaled.y - 2 * scale}px`;
         this.game.overlay.appendChild(el);
         return el;
     }
@@ -332,6 +363,7 @@ export class LevelSession {
     destroy() {
         this.healthValueEl?.remove();
         this.shieldValueEl?.remove();
+        this.tokenCounterEl?.remove();
         this.interactables.destroy();
         this.damageNumbers?.clear();
     }
@@ -391,6 +423,10 @@ export class LevelSession {
      */
     _updateWorld(dt) {
         this.player.godmode = this.game.devPanel.godmode;
+        // Idempotent (Player.unlockAbility()), at most 2 Set entries - cheap
+        // enough to poll every frame so a DevPanel unlock takes effect
+        // immediately instead of only on the next respawn.
+        for (const id of this.game.abilities) this.player.unlockAbility(id);
         this.player.update(dt);
         this.interactables.blockSecretDoor();
 
@@ -401,6 +437,7 @@ export class LevelSession {
         this.combat.update(dt, this.game.difficulty);
         this._updateEnemyColorReveal();
         this._checkLevelFullyRevealed();
+        this._checkBossDefeated();
         this._updateDeathSequence(dt);
 
         this.camera.follow(this.player, this.level.pixelWidth, this.level.pixelHeight);
@@ -477,6 +514,20 @@ export class LevelSession {
     }
 
     /**
+     * Drops the boss's Token the frame its death animation finishes (see
+     * Interactables.js's onBossDefeated()) - separate from
+     * _checkLevelFullyRevealed() above since that fires on every enemy dead
+     * (including non-boss levels), this only ever cares about the one boss
+     * entity (this.boss, set by _spawnWraith()).
+     */
+    _checkBossDefeated() {
+        if (this._bossDefeated || !this.boss || !this.boss.dead || !this.boss.deathAnimationFinished) return;
+
+        this._bossDefeated = true;
+        this.interactables.onBossDefeated(this.boss.centerX, this.boss.centerY);
+    }
+
+    /**
      * Starts the ghost-rise the frame the fall animation finishes, then
      * pushes GameOverState (StateMachine.js's push()) the frame its
      * fade-out completes - this session stops getting update() calls from
@@ -522,6 +573,7 @@ export class LevelSession {
     _updateHudText() {
         this.healthValueEl.textContent = `${Math.round(this.player.health)}/${this.player.maxHealth}`;
         this.shieldValueEl.textContent = `${Math.round(this.player.shield)}/${this.player.maxShield}`;
+        this.tokenCounterEl.textContent = `x ${this.game.tokens}`;
     }
 
     /**
@@ -569,7 +621,7 @@ export class LevelSession {
         if (this.game.devPanel.showHitboxes) this._renderHitboxes(ctx);
 
         ctx.restore();
-        this.hud.renderPlayerBars(ctx, this.player);
+        this.hud.renderPlayerBars(ctx, this.player, this.game.hudScale);
     }
 
     /**
