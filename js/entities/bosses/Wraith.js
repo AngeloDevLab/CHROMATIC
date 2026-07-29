@@ -52,10 +52,12 @@ const TOP_MARGIN_PX = 32;
 // transition clips' own playback speed) scale with Boss.timeScale on enrage,
 // so a faster cycle reads as "less waiting around", not a blurred animation
 // - the walk speed below also speeds up on enrage, but via its own dedicated
-// value rather than timeScale (see that constant's own comment).
+// value rather than timeScale (see that constant's own comment). Revised
+// 3->4 this session (applies to both Wraith and WraithTemplateboss, neither
+// overrides this) - 4s normal / 2s enraged via the existing timeScale halving.
 const ATTACK_INTERVAL_SECONDS = 2.5;
 const FIRING_HOLD_SECONDS = 0.2;
-const VULNERABLE_HOLD_SECONDS = 3;
+const VULNERABLE_HOLD_SECONDS = 4;
 
 // Horizontal walk to the arena's other side (session decision, corrected
 // from an earlier "facing-flip only" misunderstanding of "Seitenwechsel") -
@@ -67,9 +69,12 @@ const VULNERABLE_HOLD_SECONDS = 3;
 // overall. Doesn't reuse ENRAGE_TIME_SCALE/timeScale for this, though -
 // inverting that ratio (1/0.5 = 2x, 200px/s) read as too fast in playtesting;
 // this is its own dedicated enraged-speed value instead, checked directly
-// against Boss.js's `enraged` getter in _updateWalk() below.
+// against Boss.js's `enraged` getter in _updateWalk() below. Softened
+// 150->130 this session - still noticeably faster than the base 100, but
+// 150 read as too aggressive once WraithTemplateboss's firingSweep started
+// reusing this same value (see that class).
 const WALK_SPEED_PX_PER_SEC = 100;
-const ENRAGE_WALK_SPEED_PX_PER_SEC = 150;
+const ENRAGE_WALK_SPEED_PX_PER_SEC = 130;
 
 // Wraith of the Shifting Sands (Lvl 3 Miniboss) - also the shared base
 // moveset the Lvl 6 Templateboss (Wraith of the Grey City) extends per
@@ -82,7 +87,7 @@ const ENRAGE_WALK_SPEED_PX_PER_SEC = 150;
 //   to the top edge, one-shot) -> firing (static pose at the top, beam
 //   starts here) -> toVulnerable (glides back down to ground level while
 //   STILL firing - the beam tracks the wraith's position the whole way down,
-//   see _activeBeam/WraithBeam.trackY(), only expiring once it lands) ->
+//   see _activeBeam/WraithBeam.track(), only expiring once it lands) ->
 //   vulnerable (static pose at ground level, double damage window) ->
 //   toIdle (no vertical movement - same ground level as vulnerable, just a
 //   pose morph, one-shot) -> walking (horizontal glide to the arena's other
@@ -107,6 +112,11 @@ export class Wraith extends Boss {
         this.hp = WRAITH_HP;
         this.maxHp = WRAITH_HP;
         this.contactDamage = WRAITH_CONTACT_DAMAGE;
+        // Instance property (not just the module const below) so
+        // WraithTemplateboss.js can overwrite it post-super() the same way
+        // it overwrites hp/maxHp/contactDamage/name - 05_enemies-bosses.md
+        // 6.5's Templateboss row uses a different "Signature Hit Damage" than the Miniboss.
+        this.signatureHitDamage = SIGNATURE_HIT_DAMAGE;
         this.name = WRAITH_NAME;
         this.collision = collision;
         this.player = player;
@@ -164,7 +174,7 @@ export class Wraith extends Boss {
      * pool right after enemy.update() every frame. `_activeBeam` is a
      * separate, own reference to that same beam (LevelSession clears the
      * mailbox the instant it drains it) - needed so update() can keep
-     * calling trackY() on it for as long as the wraith is still firing/
+     * calling track() on it for as long as the wraith is still firing/
      * descending, cleared once it lands (_enterVulnerable()) or the instant
      * Combat.js kills it on a hit. `pendingRoomDarken` is LevelSession's
      * mailbox for "desaturate the whole boss room except around the
@@ -205,12 +215,15 @@ export class Wraith extends Boss {
     /**
      * "Während er feuert geht er wieder runter" - the beam keeps following
      * the wraith's own position for as long as it's still alive, regardless
-     * of which of firing/toVulnerable is currently active (harmless no-op
-     * during firing itself, centerY isn't changing yet there).
+     * of which state is currently active. Passes both coordinates
+     * unconditionally (WraithBeam.track()'s own job to decide which one its
+     * axis actually cares about) - harmless no-op for a horizontal beam
+     * whose source X is fixed at fire time, but what makes
+     * WraithTemplateboss's vertical sweep track its own moving column.
      */
     _trackActiveBeam() {
         if (this._activeBeam && !this._activeBeam.dead) {
-            this._activeBeam.trackY(this.centerY);
+            this._activeBeam.track(this.centerX, this.centerY);
         }
     }
 
@@ -228,7 +241,11 @@ export class Wraith extends Boss {
      */
     _updateFacing() {
         const committed = this.state === 'toFiring' || this.state === 'firing' || this.state === 'toVulnerable';
-        if (!committed && this.state !== 'walking' && this.player) {
+        // 'firingSweep' (WraithTemplateboss only, never entered by this base
+        // class) travels like 'walking' - facing is the crossing direction,
+        // not the player.
+        const traveling = this.state === 'walking' || this.state === 'firingSweep';
+        if (!committed && !traveling && this.player) {
             this.facing = this.player.centerX >= this.centerX ? 1 : -1;
         }
     }
@@ -249,7 +266,7 @@ export class Wraith extends Boss {
                 break;
             case 'toFiring':
                 this._updateTransitionMove(dt);
-                if (anim?.finished) this._enterFiring();
+                if (anim?.finished) this._onRiseComplete();
                 break;
             case 'firing':
                 this._stateTimer -= dt;
@@ -270,7 +287,27 @@ export class Wraith extends Boss {
             case 'walking':
                 this._updateWalk(dt);
                 break;
+            default:
+                // Extension point only - this base class never enters any
+                // other state; WraithTemplateboss.js's 'firingSweep' lands here.
+                this._updateCustomState(dt, anim);
+                break;
         }
+    }
+
+    /**
+     * @param {number} dt
+     * @param {SpriteAnimation} [anim]
+     */
+    _updateCustomState(dt, anim) {}
+
+    /**
+     * Reached the top of toFiring's rise - the Miniboss always fires
+     * horizontally; WraithTemplateboss.js overrides this to roll an axis
+     * first (05_enemies-bosses.md 6.3.1's "either/or... never both at once").
+     */
+    _onRiseComplete() {
+        this._enterFiring('horizontal');
     }
 
     /**
@@ -358,8 +395,9 @@ export class Wraith extends Boss {
      * until it lands. Also kicks off the room-darken (see
      * _initBeamMailbox()'s pendingRoomDarken) at the same instant firing
      * starts.
+     * @param {'horizontal'|'vertical'} [axis='horizontal'] - Only 'horizontal' is reachable from this base class; WraithTemplateboss.js's _onRiseComplete() is the only caller that ever passes 'vertical'.
      */
-    _enterFiring() {
+    _enterFiring(axis = 'horizontal') {
         this.telegraphing = false;
         this.y = this._topY;
         this.state = 'firing';
@@ -367,7 +405,7 @@ export class Wraith extends Boss {
         this._setAnimation('firing');
 
         const spawnCenterX = this.facing === 1 ? this.x + this.width : this.x;
-        const beam = new WraithBeam(spawnCenterX, this.centerY, this.facing, this.collision, SIGNATURE_HIT_DAMAGE);
+        const beam = new WraithBeam(spawnCenterX, this.centerY, this.facing, this.collision, this.signatureHitDamage, axis);
         this.pendingProjectile = beam;
         this._activeBeam = beam;
         this.pendingRoomDarken = true;
@@ -407,6 +445,9 @@ export class Wraith extends Boss {
     }
 
     /**
+     * X-interpolation toward _walkTargetX, shared by 'walking' and (via
+     * WraithTemplateboss.js's _updateCustomState()) 'firingSweep' - only
+     * what happens on arrival differs between the two, see _onArrived().
      * @param {number} dt
      */
     _updateWalk(dt) {
@@ -416,10 +457,19 @@ export class Wraith extends Boss {
         if (Math.abs(dx) <= step) {
             this.x = this._walkTargetX;
             this._onSideA = !this._onSideA;
-            this._enterIdle();
+            this._onArrived();
         } else {
             this.x += Math.sign(dx) * step;
         }
+    }
+
+    /**
+     * Reached _walkTargetX - the Miniboss always resumes idle;
+     * WraithTemplateboss.js overrides this to fire the vertical sweep's
+     * beam-off/descend transition instead, when arriving from 'firingSweep'.
+     */
+    _onArrived() {
+        this._enterIdle();
     }
 
     /**

@@ -78,6 +78,20 @@ export class Player extends Entity {
         this._initMovementState();
         this._initAttackState();
         this._initAbilityState();
+        this._initVfxState();
+    }
+
+    /**
+     * pendingVfx mailbox (same pattern as Wraith.js's pendingProjectile) -
+     * drained every frame by LevelSession's _drainPlayerVfx(). _wasGrounded
+     * tracks the previous frame's grounded state so _updateControlled() can
+     * detect the airborne->grounded edge for the landing effect - starts
+     * `null` (unknown) rather than `false`, so the level's very first
+     * resolve() (spawning already on the ground) doesn't read as a landing.
+     */
+    _initVfxState() {
+        this.pendingVfx = [];
+        this._wasGrounded = null;
     }
 
     /** @see unlockAbility */
@@ -307,6 +321,8 @@ export class Player extends Entity {
         this._updateDropThrough();
 
         this.grounded = this.collision.resolve(this, dt);
+        if (this._wasGrounded === false && this.grounded) this.pendingVfx.push('landing');
+        this._wasGrounded = this.grounded;
         if (this.attacking && this.animations.attack.finished) this.attacking = false;
         this._updateAnimationState();
     }
@@ -390,6 +406,7 @@ export class Player extends Entity {
         this.vy = -this.jumpSpeed;
         this.jumpBufferTimer = 0;
         this.coyoteTimer = 0;
+        this.pendingVfx.push('jump');
         return true;
     }
 

@@ -82,5 +82,6 @@ export class DashAbility {
         this.cooldownTimer = DASH_COOLDOWN_SECONDS;
         player.vx = direction * DASH_SPEED;
         player.facing = direction;
+        player.pendingVfx.push('dash');
     }
 }

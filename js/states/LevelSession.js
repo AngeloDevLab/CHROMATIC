@@ -3,6 +3,8 @@ import { buildTilesetRegistry } from '../world/TilesetRegistry.js';
 import { Player } from '../entities/Player.js';
 import { createEnemy } from '../entities/EnemyFactory.js';
 import { Wraith } from '../entities/bosses/Wraith.js';
+import { WraithTemplateboss } from '../entities/bosses/WraithTemplateboss.js';
+import { VfxEffect } from '../entities/VfxEffect.js';
 import { Collision } from '../utils/Collision.js';
 import { Camera } from '../utils/Camera.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
@@ -40,6 +42,17 @@ const ENEMY_DARKEN_RADIUS = 65;
 // enemy had darkened while patrolling, plus a bit more as a small death beat.
 const ENEMY_DEATH_REVEAL_RADIUS = 90;
 
+// Player action smoke (entities/VfxEffect.js, Player.js's pendingVfx mailbox)
+// - all three sheets are 64x64 frames (assets/images/vfx/*.png); frame counts
+// read off each sheet's width, fps first-guess (same reasoning as every other
+// tuning constant in this codebase) to land around a quick ~0.4-0.5s playtime.
+const VFX_FRAME_SIZE = 64;
+const VFX_CLIPS = {
+    jump: { imageKey: 'vfx-jump', frameCount: 11, fps: 24 },
+    landing: { imageKey: 'vfx-landing', frameCount: 9, fps: 20 },
+    dash: { imageKey: 'vfx-dash', frameCount: 14, fps: 28 },
+};
+
 // Real Prologue levels (assets/levels/Lv_N.json), built in Tiled - which one
 // loads is picked by number via LEVEL_JSON_KEYS below (only levels actually
 // exported to JSON so far are registered there). Player/enemy spawn positions
@@ -58,6 +71,7 @@ export const LEVEL_JSON_KEYS = {
     3: 'lv3-level',
     4: 'lv4-level',
     5: 'lv5-level',
+    6: 'lv6-level',
 };
 
 /**
@@ -81,16 +95,25 @@ export function loadLevelPreview(assets, levelNumber) {
  * current/planned boss level IS the arena (no mid-session "entering the
  * boss room" trigger), so whichever code starts a level (WorldmapState/
  * DevPanel's level-select, GameOverState's Retry) checks this first instead
- * of always going to 'game'. Reads the same "miniboss" name LevelSession's
- * own constructor uses to actually spawn the Wraith, so the two can never
- * drift apart.
+ * of always going to 'game'. Reads the same miniboss/templateboss spawn
+ * names LevelSession's own _spawnEnemies() uses to actually spawn a boss, so
+ * the two can never drift apart.
  * @param {AssetLoader} assets
  * @param {number} levelNumber
  * @returns {boolean}
  */
 export function isBossLevel(assets, levelNumber) {
     const level = loadLevelPreview(assets, levelNumber);
-    return !!level && level.getObjectsByType('EnemySpawn').some((spawn) => spawn.name?.toLowerCase() === 'miniboss');
+    return !!level && level.getObjectsByType('EnemySpawn').some((spawn) => _isBossSpawnName(spawn.name));
+}
+
+/**
+ * @param {string} [name] - EnemySpawn's Tiled Name field.
+ * @returns {boolean}
+ */
+function _isBossSpawnName(name) {
+    const lower = name?.toLowerCase();
+    return lower === 'miniboss' || lower === 'templateboss';
 }
 
 // Everything a running level needs - Level/Collision/Camera/ColorZone/Player/
@@ -220,21 +243,32 @@ export class LevelSession {
         this.player.enableControl(this.game.input, this.collision);
         for (const buffId of this.game.buffs) this.player.applyBuff(buffId);
         for (const id of this.game.abilities) this.player.unlockAbility(id);
+        this.playerVfx = [];
     }
 
     /**
-     * "miniboss" bypasses the regular EnemyFactory - Wraith.js doesn't fit
-     * its generic sprite-sheet wiring (different frame size/animation set/
-     * clip-per-state shape, see _spawnWraith()) and isn't part of the
+     * "miniboss"/"templateboss" bypass the regular EnemyFactory - Wraith.js/
+     * WraithTemplateboss.js don't fit its generic sprite-sheet wiring
+     * (different frame size/animation set/clip-per-state shape, see
+     * _spawnWraith()/_spawnWraithTemplateboss()) and aren't part of the
      * regular roster to begin with.
      */
     _spawnEnemies() {
         this.boss = null;
         this.enemies = this.level.getObjectsByType('EnemySpawn')
-            .map((spawn) => spawn.name?.toLowerCase() === 'miniboss'
-                ? this._spawnWraith(spawn)
-                : createEnemy(this.game.assets, this.collision, this.player, spawn))
+            .map((spawn) => this._spawnFromMarker(spawn))
             .filter(Boolean);
+    }
+
+    /**
+     * @param {object} spawn - EnemySpawn Tiled object.
+     * @returns {Enemy|Wraith|WraithTemplateboss}
+     */
+    _spawnFromMarker(spawn) {
+        const name = spawn.name?.toLowerCase();
+        if (name === 'miniboss') return this._spawnWraith(spawn);
+        if (name === 'templateboss') return this._spawnWraithTemplateboss(spawn);
+        return createEnemy(this.game.assets, this.collision, this.player, spawn);
     }
 
     /**
@@ -255,6 +289,18 @@ export class LevelSession {
     }
 
     /**
+     * @param {object} spawn - EnemySpawn Tiled object.
+     * @returns {WraithTemplateboss}
+     */
+    _spawnWraithTemplateboss(spawn) {
+        const boss = new WraithTemplateboss(spawn.x, spawn.y, this.collision, this.player);
+        boss.setAnimations(this._buildTemplatebossAnimations(), 'idle');
+        boss.sprite = boss.animations.idle.image;
+        this.boss = boss;
+        return boss;
+    }
+
+    /**
      * Wraith.js's 6-clip-as-6-states shape (see that file's own comment) -
      * each animation is a distinct drawn pose, most one-shot, rather than a
      * generic looping cycle, so this is built inline here instead of going
@@ -270,7 +316,7 @@ export class LevelSession {
             toFiring: new SpriteAnimation(assets.getImage('boss-wraith-to-firing'), 128, 256, 12, 14, { loop: false }),
             firing: new SpriteAnimation(assets.getImage('boss-wraith-firing'), 128, 256, 1, 1),
             // Slow on purpose ("langsam wieder runter gleiten" - Wraith.js's
-            // _activeBeam/trackY keeps firing the whole way down): 9 frames
+            // _activeBeam/track() keeps firing the whole way down): 9 frames
             // at 3fps stretches this to ~3s instead of the ~0.56s a normal
             // enemy-animation pace would give.
             toVulnerable: new SpriteAnimation(assets.getImage('boss-wraith-to-vulnerable'), 128, 256, 9, 3, { loop: false }),
@@ -280,6 +326,27 @@ export class LevelSession {
             // this up automatically once hp hits 0 - same 'dead' key every
             // other enemy type uses.
             dead: new SpriteAnimation(assets.getImage('boss-wraith-dead'), 128, 256, 11, 14, { loop: false }),
+        };
+    }
+
+    /**
+     * Same 7-clip-as-7-states shape as _buildWraithAnimations() above -
+     * WraithTemplateboss extends Wraith and reuses its whole state machine,
+     * just against the lv_6_boss sheets' own 96x150 frame size/counts. fps
+     * values mirrored proportionally from the Miniboss's own pacing,
+     * first-guess like every other tuning constant in this codebase.
+     * @returns {object} Named SpriteAnimation set for the Templateboss's state machine.
+     */
+    _buildTemplatebossAnimations() {
+        const assets = this.game.assets;
+        return {
+            idle: new SpriteAnimation(assets.getImage('boss-templateboss-idle'), 96, 150, 9, 8),
+            toFiring: new SpriteAnimation(assets.getImage('boss-templateboss-to-firing'), 96, 150, 6, 14, { loop: false }),
+            firing: new SpriteAnimation(assets.getImage('boss-templateboss-firing'), 96, 150, 1, 1),
+            toVulnerable: new SpriteAnimation(assets.getImage('boss-templateboss-to-vulnerable'), 96, 150, 11, 3, { loop: false }),
+            vulnerable: new SpriteAnimation(assets.getImage('boss-templateboss-vulnerable'), 96, 150, 1, 1),
+            toIdle: new SpriteAnimation(assets.getImage('boss-templateboss-to-idle'), 96, 150, 7, 12, { loop: false }),
+            dead: new SpriteAnimation(assets.getImage('boss-templateboss-dead'), 96, 150, 9, 14, { loop: false }),
         };
     }
 
@@ -428,6 +495,7 @@ export class LevelSession {
         // immediately instead of only on the next respawn.
         for (const id of this.game.abilities) this.player.unlockAbility(id);
         this.player.update(dt);
+        this._updatePlayerVfx(dt);
         this.interactables.blockSecretDoor();
 
         this._updateEnemies(dt);
@@ -468,6 +536,40 @@ export class LevelSession {
                 enemy.pendingRoomDarken = false;
             }
         }
+    }
+
+    /**
+     * Drains Player.js's pendingVfx mailbox into live VfxEffect instances,
+     * then advances/prunes the ones already playing.
+     * @param {number} dt
+     */
+    _updatePlayerVfx(dt) {
+        this._drainPendingPlayerVfx();
+        for (const vfx of this.playerVfx) vfx.update(dt);
+        this.playerVfx = this.playerVfx.filter((vfx) => !vfx.dead);
+    }
+
+    /**
+     * All three (jump/landing/dash) are ground-contact effects - each
+     * anchors to its own detected ground line (VfxEffect.js) on the
+     * player's feet, not floating at torso height.
+     */
+    _drainPendingPlayerVfx() {
+        const feetY = this.player.y + this.player.height;
+        for (const key of this.player.pendingVfx) {
+            this.playerVfx.push(new VfxEffect(this.player.centerX, feetY, this._buildVfxAnimation(key)));
+        }
+        this.player.pendingVfx.length = 0;
+    }
+
+    /**
+     * @param {'jump'|'landing'|'dash'} key
+     * @returns {SpriteAnimation}
+     */
+    _buildVfxAnimation(key) {
+        const { imageKey, frameCount, fps } = VFX_CLIPS[key];
+        const image = this.game.assets.getImage(imageKey);
+        return new SpriteAnimation(image, VFX_FRAME_SIZE, VFX_FRAME_SIZE, frameCount, fps, { loop: false });
     }
 
     /**
@@ -651,6 +753,7 @@ export class LevelSession {
             this.hud.renderEnemyBar(ctx, enemy);
         }
         this.combat.render(ctx);
+        for (const vfx of this.playerVfx) vfx.render(ctx);
 
         if (this.deathSequence.active) {
             this.deathSequence.render(ctx);

@@ -69,7 +69,7 @@ function buildDisplaySection() {
     `;
 }
 
-// Mirrors InputHandler.js's KEY_MAP plus its two hardcoded keys (Escape/
+// Mirrors InputHandler.js's KEY_MAP plus its two hardcoded keys (KeyP/
 // KeyE) and the mouse-click attack (03_mechanics.md 4.3) - read-only display
 // only, no rebinding logic here. Key rebinding UI is Phase 2 (same
 // deferred-feature convention as e.g. Swimming in 03_mechanics.md 4.2), not
@@ -80,7 +80,7 @@ const CONTROLS = [
     { label: 'Drop Through Platform', keys: 'S or Down Arrow' },
     { label: 'Attack', keys: 'Mouse Click' },
     { label: 'Interact', keys: 'E' },
-    { label: 'Pause', keys: 'Escape' },
+    { label: 'Pause', keys: 'P' },
 ];
 
 /**

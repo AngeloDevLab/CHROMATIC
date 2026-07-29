@@ -54,16 +54,16 @@ Tracks actual status against the 12.1 checklist - update this instead of trying 
 
 | Item | Status |
 |---|---|
-| Prologue levels (6) | Lv 1-5 done, registered, and reachable (`LevelSession.js`'s `LEVEL_JSON_KEYS`, `LoadingState.js`'s manifest). Lv 6 (Templateboss) not built. |
+| Prologue levels (6) | All 6 done, registered, and reachable (`LevelSession.js`'s `LEVEL_JSON_KEYS`, `LoadingState.js`'s manifest) - Lv 6 (Templateboss) done this session (CHANGELOG 0.10.0). |
 | Enemy types (Patroller, Charger, Shooter, Sentinel) | 4/4 implemented - balance values still first-guess, see `TODO.md` |
-| Miniboss + Templateboss | Miniboss (Wraith of the Shifting Sands, Lvl 3) done and rebalanced (HP/contact-damage/enrage, CHANGELOG 0.8.0) - remaining tuning constants still first-guess, see `TODO.md`. Templateboss (Lvl 6, Wraith of the Grey City) not built - its HP/damage tier is already set in 05_enemies-bosses.md 6.5's revised table. |
+| Miniboss + Templateboss | Both done. Miniboss (Wraith of the Shifting Sands, Lvl 3) rebalanced (HP/contact-damage/enrage, CHANGELOG 0.8.0). Templateboss (Lvl 6, Wraith of the Grey City) built this session (CHANGELOG 0.10.0) - extends `Wraith.js` per 05_enemies-bosses.md 6.3.1 rather than duplicating it, rolls horizontal/vertical beam axis each attack, enrage forces alternation. Remaining tuning constants (shared `Wraith.js` timers/speeds plus Templateboss-specific ones) still first-guess, see `TODO.md`. |
 | Combat system (melee + ranged) | Done, regular-enemy balance still first-guess (see `TODO.md`); boss-side damage-number/vulnerable-window bugs fixed this session (CHANGELOG 0.8.0) |
 | Color mechanic (in-level) | Done |
 | Color mechanic (Worldmap reveal) | Not built |
 | Shield/Prisma system | Done |
 | Difficulty selection | Done |
 | Secret Room + buff system | Done (CHANGELOG 0.6.2) - buff magnitudes still first-guess, see `TODO.md` |
-| Token economy + Merchant | Not built - Merchant teaser NPC exists (dialogue only, `entities/Merchant.js`), no real shop/Token spend yet |
+| Token economy + Merchant | Real post-boss flow done (either boss drops a Token, collecting it spawns the Merchant at its Tiled-placed position, CHANGELOG 0.9.0) - what's still missing, and the single remaining piece here, is the actual shop UI/spend flow (talk to Merchant -> spend 2 Tokens -> `Player.unlockAbility()`; Double Jump/Dash currently only unlockable via Dev Panel, see `TODO.md`'s Abilities section) |
 | Worldmap chapter bar | Done (all 6 chapters listed, only Prologue unlocked) |
 | Touch controls | Not built (keyboard/mouse only) |
 | Landscape mode check | Not built |
@@ -71,6 +71,6 @@ Tracks actual status against the 12.1 checklist - update this instead of trying 
 | Main menu core (Start/Continue/Settings/Info) | Done |
 | Legal pages (Credits/Imprint/Privacy) | Placeholder only ("coming soon" text, `MenuState.js`) |
 | Intro cutscene | Done |
-| Prologue closing cutscene | Not built (blocked on Lvl 6 existing; needs the narrative rewrite noted in 12.1) |
+| Prologue closing cutscene | Not built - Lvl 6 now exists (CHANGELOG 0.10.0) so no longer blocked on that, still needs the narrative rewrite noted in 12.1 (standalone v1 ending, not "Chap 1 opens next") |
 | Prologue story | Partial (intro only so far) |
 | English output | Done |

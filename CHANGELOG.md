@@ -4,7 +4,26 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
-## [Unreleased]
+## [0.10.0] - 2026-07-30
+
+### Added
+- Wraith of the Grey City (Lvl 6 Templateboss, `entities/bosses/WraithTemplateboss.js`, `assets/levels/Lv_6.json`): extends `Wraith.js` rather than duplicating it (`05_enemies-bosses.md` 6.3.1's "expands the shared moveset rather than replacing it"). Rolls a random beam axis each attack once it reaches the top of its rise - horizontal fires in place exactly like the Miniboss; vertical is a new `firingSweep` state that glides to the opposite fixed side while still up top, with a vertical beam live and tracking its column for the whole crossing (sweeping the floor beneath it), before the normal come-down/vulnerable/side-switch cycle resumes unchanged. Enrage (50% HP and below) forces axis alternation instead of a fresh coinflip. HP/damage (400/70) match `05_enemies-bosses.md` 6.5's revised table. `Wraith.js` itself only grew a few small overridable hooks for this (`_onRiseComplete()`, `_onArrived()`, `_updateCustomState()`) - the Miniboss's own behavior is unchanged.
+- `WraithBeam.js` gained an `axis` param (`'horizontal'`/`'vertical'`) - vertical scans downward instead of sideways, using the exact same wall-only rule as horizontal (ignores the one-way `terrain` layer, only real `walls` block it) so cover behaves consistently between the two.
+- Player action VFX (`entities/VfxEffect.js`): jump (ground takeoff only, not Double Jump), landing, and dash now spawn a one-shot smoke clip, triggered via a `pendingVfx` mailbox on `Player`/`DashAbility.js` and drained/rendered by `LevelSession.js`. Anchored to each clip's own auto-detected ground line (`SpriteAnimation.groundLineRatio`) instead of assuming the art is centered in its 64x64 frame - same trick `PlayerRenderer.js` already uses for the player's own feet.
+- `P` is a dedicated Pause key (`InputHandler.js`), Settings' Controls list updated to match.
+
+### Changed
+- Boss asset folders reorganized into `assets/images/enemys/bosses/prologue/{Lv_3_Boss,lv_6_boss}/` - `LoadingState.js`'s manifest paths updated to match.
+- `Wraith.js` tuning (shared by both bosses): `VULNERABLE_HOLD_SECONDS` 3->4 (2s enraged, via the existing enrage `timeScale` halving), `ENRAGE_WALK_SPEED_PX_PER_SEC` 150->130.
+- `WraithBeam.js`'s wall-check now scans across its own `THICKNESS_PX` cross-section instead of just the centerline (both axes) - a wall only partially overlapping the beam's width/height now correctly registers as a block instead of lagging a few pixels behind the beam's actual rendered/hit rectangle.
+- `.settings-row` (Settings panel's Audio/Display/Controls rows, `style.css`) now scales with `--hud-scale` like the rest of `.panel` - previously stayed a fixed small size while the panel itself grew during a boss fight, reading as cramped and hard to read.
+- Pause is no longer bound to Escape - the Fullscreen API reserves Escape as an unblockable "exit fullscreen" key, so pausing via Escape while fullscreen also (confusingly, from the player's POV) dropped out of fullscreen. `P` is the only pause key now; `Panel.js`'s own separate Escape-to-dismiss handling for sub-panels (Settings, difficulty picker) is unaffected.
+
+### Fixed
+- Lvl 3 Miniboss sprite paths in `LoadingState.js` were left pointing at the old flat `assets/images/enemys/bosses/` location after the folder reorg above - the boss failed to load.
+- Player's very first grounded frame at level spawn incorrectly played the landing VFX.
+- Templateboss's vertical beam stayed active through its landing descent instead of stopping the instant the crossing itself finished.
+- Dash/jump/landing VFX spawn position was off by a few pixels per clip - now anchored via each animation's own detected ground line instead of assuming the sprite content fills/centers its frame.
 
 ## [0.9.0] - 2026-07-28
 

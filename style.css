@@ -270,18 +270,22 @@ body {
   line-height: 1.4;
 }
 
+/* --hud-scale reasoning (see :root above) - .panel/.panel-body/.panel-title
+   already scale, but this file's own rows didn't, so Settings read as tiny/
+   cramped relative to the rest of the (correctly scaled) panel during a boss
+   fight's bigger buffer. */
 .settings-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin: 10px 0;
-  font-size: 14px;
+  gap: calc(12px * var(--hud-scale));
+  margin: calc(10px * var(--hud-scale)) 0;
+  font-size: calc(14px * var(--hud-scale));
 }
 
 .settings-row input[type="range"] {
   flex: 1;
-  max-width: 180px;
+  max-width: calc(180px * var(--hud-scale));
   accent-color: #f2f2f2;
 }
 

@@ -1,6 +1,6 @@
 // Key -> logical action name. Movement/jump/drop are held states read via
 // isDown(); attack/pause/interact are edge-triggered one-shot presses (see
-// _presses below) since a mouse click or Escape/E tap should fire exactly
+// _presses below) since a mouse click or P/E tap should fire exactly
 // once, not keep re-triggering every frame the input happens to still read
 // as active.
 const KEY_MAP = {
@@ -18,7 +18,7 @@ const KEY_MAP = {
 // arrived a few frames before landing; a click during an ongoing attack
 // doesn't queue up and fire late once the swing ends). clearXPress()
 // discards a pending press without consuming it as a real action - used
-// when switching screens, so a leftover Escape/click/E from the previous
+// when switching screens, so a leftover P/click/E from the previous
 // screen doesn't instantly pause/attack/interact on the very next one.
 // Jump and drop each *also* have a held state in `actions` (jump's for
 // Player.js's variable jump height; drop's kept purely for symmetry with
@@ -99,7 +99,15 @@ export class InputHandler {
      * @param {KeyboardEvent} e - The browser keydown event.
      */
     _onKeyDown(e) {
-        if (e.code === 'Escape') {
+        // KeyP, not Escape (not a KEY_MAP entry - same reasoning as KeyE
+        // below) - the Fullscreen API reserves Escape as a browser-level
+        // "always exits fullscreen" key that pages can't override, so
+        // pausing via Escape while fullscreen also (unavoidably, and
+        // unpredictably from the player's POV) drops out of it. Deliberately
+        // not bound to pause for that reason, even though it's the genre
+        // convention - Panel.js's own separate Escape-to-dismiss handling
+        // (sub-panels like Settings/difficulty picker) is unaffected.
+        if (e.code === 'KeyP') {
             this._presses.pause = true;
             return;
         }

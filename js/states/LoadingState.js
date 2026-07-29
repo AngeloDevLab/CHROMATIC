@@ -118,13 +118,30 @@ export class LoadingState extends State {
                 // sizing discussion). idle loops; the rest are one-shot transitions
                 // between held end-poses, matching how the sprites were actually
                 // animated rather than a generic loop per state.
-                'boss-wraith-idle': 'assets/images/enemys/bosses/floating-idle.png',
-                'boss-wraith-to-firing': 'assets/images/enemys/bosses/from-idle-to-firing.png',
-                'boss-wraith-firing': 'assets/images/enemys/bosses/firing.png',
-                'boss-wraith-to-vulnerable': 'assets/images/enemys/bosses/from-firing-to-vulnerable.png',
-                'boss-wraith-vulnerable': 'assets/images/enemys/bosses/vulnerable.png',
-                'boss-wraith-to-idle': 'assets/images/enemys/bosses/from-vulnerable-to-idle.png',
-                'boss-wraith-dead': 'assets/images/enemys/bosses/dead.png',
+                'boss-wraith-idle': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/floating-idle.png',
+                'boss-wraith-to-firing': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/from-idle-to-firing.png',
+                'boss-wraith-firing': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/firing.png',
+                'boss-wraith-to-vulnerable': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/from-firing-to-vulnerable.png',
+                'boss-wraith-vulnerable': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/vulnerable.png',
+                'boss-wraith-to-idle': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/from-vulnerable-to-idle.png',
+                'boss-wraith-dead': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/dead.png',
+                // Wraith of the Grey City (Lvl 6 Templateboss, entities/bosses/
+                // WraithTemplateboss.js) - same 7-clip shape as the Miniboss
+                // above, but a smaller 96x150 frame (see LevelSession.js's
+                // _buildTemplatebossAnimations()).
+                'boss-templateboss-idle': 'assets/images/enemys/bosses/prologue/lv_6_boss/floating-idle.png',
+                'boss-templateboss-to-firing': 'assets/images/enemys/bosses/prologue/lv_6_boss/from-idle-to-firing.png',
+                'boss-templateboss-firing': 'assets/images/enemys/bosses/prologue/lv_6_boss/firing.png',
+                'boss-templateboss-to-vulnerable': 'assets/images/enemys/bosses/prologue/lv_6_boss/from-firing-to-vulnerable.png',
+                'boss-templateboss-vulnerable': 'assets/images/enemys/bosses/prologue/lv_6_boss/vulnerable.png',
+                'boss-templateboss-to-idle': 'assets/images/enemys/bosses/prologue/lv_6_boss/from-vulnerable-to-idle.png',
+                'boss-templateboss-dead': 'assets/images/enemys/bosses/prologue/lv_6_boss/dead.png',
+                // Player action VFX (entities/VfxEffect.js) - 64x64 frames,
+                // triggered via Player.js's pendingVfx mailbox
+                // (LevelSession.js's _drainPlayerVfx()).
+                'vfx-jump': 'assets/images/vfx/jumping.png',
+                'vfx-landing': 'assets/images/vfx/landing.png',
+                'vfx-dash': 'assets/images/vfx/dash.png',
             },
             json: {
                 'menu-background-level': 'assets/levels/mainMenu.json',
@@ -133,6 +150,7 @@ export class LoadingState extends State {
                 'lv3-level': 'assets/levels/Lv_3.json',
                 'lv4-level': 'assets/levels/Lv_4.json',
                 'lv5-level': 'assets/levels/Lv_5.json',
+                'lv6-level': 'assets/levels/Lv_6.json',
             },
         });
     }
