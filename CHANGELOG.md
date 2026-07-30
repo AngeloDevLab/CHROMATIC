@@ -4,6 +4,14 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.11.0] - 2026-07-30
+
+### Added
+- Merchant ability shop (`ui/MerchantDialogue.js`, `mechanics/Interactables.js`): a Templateboss+/Chapterboss-tier Merchant (`Boss.tokenReward >= 2`) now greets the player by the boss they just killed ("You defeated {bossName}. Let's see what I have for you.") and unhides an ability-purchase grid in the same panel the instant the typewriter finishes - no second `[E]` press needed. Double Jump/Dash, 2 Tokens each (`03_mechanics.md` 4.4); each option shows title/description/cost-with-token-icon/Unlock button (buyable/unaffordable/owned states), and a purchase calls `Player.unlockAbility()` and refreshes the grid in place. Miniboss-tier Merchants (1 Token, Lvl 3) keep the original flavor-only tease, no shop attached - a single Token can never afford anything.
+- Multi-Token boss drops (`Boss.tokenReward`, `Interactables._buildTokenDrop()`): a Templateboss/Chapterboss (2 Tokens) now drops two separate Token entities spread apart instead of one bundled pickup, so the reward visibly reads as two pickups rather than a single point value.
+- SaveSystem-backed progress (`Game.loadProgress()`/`saveProgress()`/`resetProgress()`): `completedLevels`/`buffs`/`tokens`/`abilities`/`difficulty` now persist across page reloads instead of resetting every time (previously only Settings preferences were backed by `SaveSystem`). Main Menu's Continue button is real now - enabled once a difficulty has ever been chosen, jumps straight to the Worldmap; New Game explicitly resets progress before setting a new difficulty, so it actually restarts instead of silently resuming the old save.
+- First real SFX (`assets/sounds/sfx/`, `LevelSession.js`): jump/landing/dash reuse the existing player-VFX `pendingVfx` mailbox (each VFX key doubles as a same-named SFX key, `SoundManager.playSfx()` is already fail-soft for a key with no file loaded); a new attack-start edge-detect plays a sword swoosh once per swing, and a run timer plays a footstep sound periodically while grounded and moving. jump/footsteps/swoosh have real audio files; landing/dash are wired but silent until files exist.
+
 ## [0.10.0] - 2026-07-30
 
 ### Added
