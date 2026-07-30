@@ -53,6 +53,11 @@ const VFX_CLIPS = {
     dash: { imageKey: 'vfx-dash', frameCount: 14, fps: 28 },
 };
 
+// How often a footstep plays while running (see _updateFootstepSfx()) -
+// first-guess, same reasoning as every other timing constant in this
+// codebase, needs a real ear against the running animation's own cadence.
+const FOOTSTEP_INTERVAL_SECONDS = 0.40;
+
 // Real Prologue levels (assets/levels/Lv_N.json), built in Tiled - which one
 // loads is picked by number via LEVEL_JSON_KEYS below (only levels actually
 // exported to JSON so far are registered there). Player/enemy spawn positions
@@ -244,6 +249,8 @@ export class LevelSession {
         for (const buffId of this.game.buffs) this.player.applyBuff(buffId);
         for (const id of this.game.abilities) this.player.unlockAbility(id);
         this.playerVfx = [];
+        this._wasAttacking = false;
+        this._footstepTimer = 0;
     }
 
     /**
@@ -496,6 +503,7 @@ export class LevelSession {
         for (const id of this.game.abilities) this.player.unlockAbility(id);
         this.player.update(dt);
         this._updatePlayerVfx(dt);
+        this._updatePlayerActionSfx(dt);
         this.interactables.blockSecretDoor();
 
         this._updateEnemies(dt);
@@ -552,14 +560,48 @@ export class LevelSession {
     /**
      * All three (jump/landing/dash) are ground-contact effects - each
      * anchors to its own detected ground line (VfxEffect.js) on the
-     * player's feet, not floating at torso height.
+     * player's feet, not floating at torso height. Each key doubles as an
+     * SFX key of the same name (SoundManager.playSfx() is fail-soft, so this
+     * is safe even for a key with no sound file loaded yet).
      */
     _drainPendingPlayerVfx() {
         const feetY = this.player.y + this.player.height;
         for (const key of this.player.pendingVfx) {
             this.playerVfx.push(new VfxEffect(this.player.centerX, feetY, this._buildVfxAnimation(key)));
+            this.game.sound.playSfx(key);
         }
         this.player.pendingVfx.length = 0;
+    }
+
+    /**
+     * Attack's swing sound and the running footstep loop - neither has a
+     * matching VfxEffect (unlike jump/landing/dash above), so they're kept
+     * separate from _drainPendingPlayerVfx() rather than forced through a
+     * mailbox built for spawning sprite-sheet effects.
+     * @param {number} dt
+     */
+    _updatePlayerActionSfx(dt) {
+        if (this.player.attacking && !this._wasAttacking) this.game.sound.playSfx('swoosh');
+        this._wasAttacking = this.player.attacking;
+        this._updateFootstepSfx(dt);
+    }
+
+    /**
+     * Repeats every FOOTSTEP_INTERVAL_SECONDS while actually running under
+     * control (grounded, moving, not mid-swing) - resets to fire on the very
+     * next step rather than waiting out a stale interval once running starts again.
+     * @param {number} dt
+     */
+    _updateFootstepSfx(dt) {
+        const running = this.player.grounded && !this.player.dead && !this.player.attacking && this.player.vx !== 0;
+        if (!running) {
+            this._footstepTimer = 0;
+            return;
+        }
+        this._footstepTimer -= dt;
+        if (this._footstepTimer > 0) return;
+        this.game.sound.playSfx('footsteps');
+        this._footstepTimer = FOOTSTEP_INTERVAL_SECONDS;
     }
 
     /**
@@ -626,7 +668,7 @@ export class LevelSession {
         if (this._bossDefeated || !this.boss || !this.boss.dead || !this.boss.deathAnimationFinished) return;
 
         this._bossDefeated = true;
-        this.interactables.onBossDefeated(this.boss.centerX, this.boss.centerY);
+        this.interactables.onBossDefeated(this.boss.centerX, this.boss.centerY, this.boss.name, this.boss.tokenReward);
     }
 
     /**
@@ -685,6 +727,7 @@ export class LevelSession {
      */
     _completeLevel() {
         this.game.completedLevels.add(this.levelNumber);
+        this.game.saveProgress();
         this.game.stateMachine.change('worldmap');
     }
 

@@ -156,10 +156,13 @@ export class LoadingState extends State {
     }
 
     /**
-     * Loads the ambient OST rotation and the boss track. 'ost-00'..'ost-07'
-     * are the generic playlist (see main.js's MusicPlaylist); 'ost-08'
-     * ("The Iron Sentinel") is reserved for boss encounters and deliberately
-     * left out of that rotation.
+     * Loads the ambient OST rotation, the boss track, and one-shot SFX.
+     * 'ost-00'..'ost-07' are the generic playlist (see main.js's
+     * MusicPlaylist); 'ost-08' ("The Iron Sentinel") is reserved for boss
+     * encounters and deliberately left out of that rotation. SFX keys match
+     * their trigger 1:1 (LevelSession.js's _drainPendingPlayerVfx()/
+     * _updatePlayerActionSfx()) - more get added here as files exist,
+     * SoundManager.load() already tolerates a missing/broken file on its own.
      */
     async _loadSounds() {
         await this.game.sound.loadManifest({
@@ -172,6 +175,9 @@ export class LoadingState extends State {
             'ost-06': 'assets/sounds/ost/06_Whispers_in_the_Hollows.mp3',
             'ost-07': 'assets/sounds/ost/07_The_Hollow_Between.mp3',
             'ost-08': 'assets/sounds/ost/08_The_Iron_Sentinel.mp3',
+            'jump': 'assets/sounds/sfx/jump.wav',
+            'footsteps': 'assets/sounds/sfx/footsteps.wav',
+            'swoosh': 'assets/sounds/sfx/swoosh.wav',
         });
     }
 
