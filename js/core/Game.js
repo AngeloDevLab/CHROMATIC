@@ -19,14 +19,13 @@ import { StateMachine } from './StateMachine.js';
 // letterbox bars whenever the window isn't an exact multiple of 640x360 -
 // previously avoided on purpose, reinstated because the performance cost
 // turned out to matter more. _initSharedState()'s completedLevels (level
-// numbers completed this session, read by WorldmapState to unlock the next
-// node) and buffs (permanent character buffs earned from Secret Rooms, see
+// numbers completed, read by WorldmapState to unlock the next node) and
+// buffs (permanent character buffs earned from Secret Rooms, see
 // docs/GDD/02_game-structure.md 2.5) both live on Game rather than on any
 // State, since States are fully torn down/rebuilt on every enter()/exit()
-// (see StateMachine) - completedLevels has no persistence across reloads
-// yet (SaveSystem is the natural home once it's migrated over), and buffs
-// gets re-applied to every fresh Player instance GameState.enter()
-// constructs (see Player.applyBuff()).
+// (see StateMachine) - persisted across reloads via SaveSystem
+// (loadProgress()/saveProgress() below), and buffs gets re-applied to every
+// fresh Player instance GameState.enter() constructs (see Player.applyBuff()).
 const FIXED_DT = 1 / 60;
 const FRAME_TIME_CAP_SECONDS = 0.05;
 
@@ -71,15 +70,58 @@ export class Game {
     _initSharedState() {
         this.assets = null;
         this.input = null;
+        // Empty/default placeholders - main.js calls loadProgress() right
+        // after constructing SaveSystem (which doesn't exist yet at this
+        // point in the constructor) to fill these in from a real save, if
+        // one exists. See loadProgress()/saveProgress() below.
         this.difficulty = null;
         this.completedLevels = new Set();
         this.buffs = new Set();
-        // Boss-drop Token count (entities/Token.js) - same session-only
-        // caveat as completedLevels/buffs above, no SaveSystem migration yet.
         this.tokens = 0;
-        // Unlocked ability ids ('doubleJump'|'dash', Player.unlockAbility()) -
-        // same session-only caveat, currently only granted via DevPanel's
-        // Unlock Double Jump/Dash buttons (no real Merchant/Token spend UI yet).
+        this.abilities = new Set();
+    }
+
+    /**
+     * Restores completedLevels/buffs/tokens/abilities/difficulty from
+     * SaveSystem - called once from main.js right after game.save is
+     * assigned, since this.save doesn't exist yet during _initSharedState().
+     * Sets round-trip as plain arrays (SaveSystem stores JSON).
+     */
+    loadProgress() {
+        this.completedLevels = new Set(this.save.get('completedLevels', []));
+        this.buffs = new Set(this.save.get('buffs', []));
+        this.tokens = this.save.get('tokens', 0);
+        this.abilities = new Set(this.save.get('abilities', []));
+        this.difficulty = this.save.get('difficulty', null);
+    }
+
+    /**
+     * Snapshots completedLevels/buffs/tokens/abilities/difficulty into
+     * SaveSystem - call after mutating any of them (LevelSession's level
+     * completion, BuffState's buff choice, Interactables'/DevPanel's Token
+     * and ability grants, MenuState's difficulty pick) so progress survives
+     * a reload instead of only lasting the current tab session.
+     */
+    saveProgress() {
+        this.save.set('completedLevels', [...this.completedLevels]);
+        this.save.set('buffs', [...this.buffs]);
+        this.save.set('tokens', this.tokens);
+        this.save.set('abilities', [...this.abilities]);
+        this.save.set('difficulty', this.difficulty);
+    }
+
+    /**
+     * Wipes progress back to a fresh start - MenuState calls this once New
+     * Game's difficulty pick is confirmed (then sets the new difficulty and
+     * calls saveProgress() itself), since a persisted save would otherwise
+     * make New Game silently resume the old one instead of actually
+     * restarting. Doesn't touch difficulty itself; the caller is about to
+     * overwrite it anyway.
+     */
+    resetProgress() {
+        this.completedLevels = new Set();
+        this.buffs = new Set();
+        this.tokens = 0;
         this.abilities = new Set();
     }
 

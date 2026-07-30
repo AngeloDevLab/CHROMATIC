@@ -128,28 +128,29 @@ export class DevPanel {
 
     /**
      * Dev/test-only Token grant (Game.tokens, same counter the boss-drop
-     * Token pickup increments - Interactables.js's _updateToken()) - the
-     * real Merchant/Token spend UI doesn't exist yet, this is just a
-     * shortcut around playing through a boss kill for testing. Repeatable
-     * (a plain counter), unlike the ability buttons below.
-     * Blurs on click for the same Space-key reason as _wireLevelButtons().
+     * Token pickup increments - Interactables.js's _updateTokens()) - a
+     * shortcut around playing through a boss kill for testing the real
+     * Merchant shop. Repeatable (a plain counter), unlike the ability
+     * buttons below. Blurs on click for the same Space-key reason as
+     * _wireLevelButtons().
      */
     _wireGiveTokenButton() {
         const button = this.element.querySelector('#dev-panel-give-token');
         button.addEventListener('click', () => {
             button.blur();
             this.game.tokens++;
+            this.game.saveProgress();
         });
     }
 
     /**
      * Dev/test-only ability unlock (entities/DoubleJumpAbility.js/
-     * DashAbility.js, Player.unlockAbility()) - the real Merchant/Token
-     * spend UI doesn't exist yet. One-way like a real purchase (no re-lock),
-     * so this is a plain button rather than a checkbox - .locked/.unlocked
-     * (red/green, see style.css) is the only state, synced on open and once
-     * more right after a click, then disabled so it reads as "already
-     * bought" instead of a repeatable action.
+     * DashAbility.js, Player.unlockAbility()) - bypasses the real Merchant's
+     * Token cost entirely for testing. One-way like a real purchase (no
+     * re-lock), so this is a plain button rather than a checkbox -
+     * .locked/.unlocked (red/green, see style.css) is the only state, synced
+     * on open and once more right after a click, then disabled so it reads
+     * as "already bought" instead of a repeatable action.
      */
     _wireAbilityButtons() {
         for (const button of this.element.querySelectorAll('.dev-panel-ability')) {
@@ -157,6 +158,7 @@ export class DevPanel {
             button.addEventListener('click', () => {
                 button.blur();
                 this.game.abilities.add(button.dataset.ability);
+                this.game.saveProgress();
                 this._syncAbilityButton(button);
             });
         }

@@ -34,8 +34,8 @@ export class WorldmapState extends State {
      * this.completedLevels reads Game.completedLevels rather than owning its
      * own Set - this state is torn down/rebuilt on every visit
      * (enter()/exit()), so a local Set here would forget completions the
-     * instant the player left for a level and came back. No persistence
-     * across page reloads yet (see TODO.md's LocalStorage save system entry).
+     * instant the player left for a level and came back. Persisted across
+     * page reloads via SaveSystem (Game.js's loadProgress()/saveProgress()).
      */
     enter() {
         this.background = this.game.assets.getImage('worldmap-prologue-bg');

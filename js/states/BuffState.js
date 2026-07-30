@@ -41,6 +41,7 @@ export class BuffState extends State {
      */
     _choose(buffId) {
         this.game.buffs.add(buffId);
+        this.game.saveProgress();
         this._player.applyBuff(buffId);
         this._buffTerminal.used = true;
         this.panel.close();

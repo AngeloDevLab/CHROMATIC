@@ -36,6 +36,7 @@ const game = new Game('game-canvas', 'ui-overlay');
 game.assets = new AssetLoader();
 game.input = new InputHandler(game.canvas);
 game.save = new SaveSystem();
+game.loadProgress();
 game.sound = new SoundManager();
 game.music = new MusicPlaylist(game.sound, AMBIENT_TRACK_KEYS);
 applyAudioPreferences(game);

@@ -29,9 +29,15 @@ const DIFFICULTIES = [
 ];
 
 // Settings/Info are self-contained (no dependency on states that don't exist
-// yet) so they get real panels now. Continue has no action yet - it stays
-// disabled until a SaveManager exists. New Game opens Difficulty selection
-// below, which continues into CutsceneState -> WorldmapState (08_menu-flow.md 9.2).
+// yet) so they get real panels now. Continue jumps straight to WorldmapState
+// (game.difficulty/completedLevels/etc. are already loaded from SaveSystem by
+// then, see Game.js's loadProgress()) - MenuButtons only enables the button
+// once game.difficulty is non-null, i.e. New Game has been confirmed at
+// least once. New Game opens Difficulty selection below, which resets
+// existing progress (Game.resetProgress()) before continuing into
+// CutsceneState -> WorldmapState (08_menu-flow.md 9.2) - without that reset,
+// a persisted save would make New Game silently resume the old one instead
+// of actually restarting.
 const PANEL_CONTENT = {
     info: {
         title: 'Info',
@@ -178,7 +184,7 @@ export class MenuState extends State {
         this.panel = new Panel(this.game.overlay);
 
         this.menuButtons = new MenuButtons(this.game.overlay, {
-            hasSave: false,
+            hasSave: this.game.difficulty !== null,
             onSelect: (id) => this._handleMenuSelect(id),
         });
         this.menuButtons.mount();
@@ -188,6 +194,10 @@ export class MenuState extends State {
      * @param {string} id - Selected menu item id.
      */
     _handleMenuSelect(id) {
+        if (id === 'continue') {
+            this.game.stateMachine.change('worldmap');
+            return;
+        }
         if (id === 'new-game') {
             this._openDifficultySelect();
             return;
@@ -233,14 +243,17 @@ export class MenuState extends State {
     }
 
     /**
-     * Difficulty just lives on Game for now (no SaveManager yet), properly
-     * persisted once 04_health-save-system.md 5.4 exists.
+     * Confirming a difficulty is the actual "start a new game" moment - resets
+     * any existing progress first (see the top-of-file note on why), then
+     * sets and persists the new difficulty.
      * @param {HTMLElement} root - The mounted panel's root element.
      */
     _wireDifficultyOptions(root) {
         for (const button of root.querySelectorAll('.difficulty-option')) {
             button.addEventListener('click', () => {
+                this.game.resetProgress();
                 this.game.difficulty = button.dataset.id;
+                this.game.saveProgress();
                 this.panel.close();
                 this.game.stateMachine.change('cutscene');
             });
