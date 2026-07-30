@@ -337,6 +337,103 @@ body {
   opacity: 0.8;
 }
 
+/* MerchantDialogue.js's shop grid (_buildShopSectionHTML()) - card shape
+   borrowed from .difficulty-option rather than inventing a third button
+   style. No separate Token-count readout - each option shows its own cost
+   instead (see .merchant-shop-cost below). */
+.merchant-shop {
+  margin-top: calc(14px * var(--hud-scale));
+}
+
+.merchant-shop-options {
+  display: flex;
+  flex-direction: column;
+  gap: calc(10px * var(--hud-scale));
+}
+
+.merchant-shop-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(12px * var(--hud-scale));
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: calc(6px * var(--hud-scale));
+  padding: calc(10px * var(--hud-scale)) calc(14px * var(--hud-scale));
+}
+
+.merchant-shop-option-title {
+  font-size: calc(18px * var(--hud-scale));
+  letter-spacing: 1px;
+}
+
+.merchant-shop-option-desc {
+  font-size: calc(13px * var(--hud-scale));
+  opacity: 0.75;
+  line-height: 1.4;
+  margin-top: calc(2px * var(--hud-scale));
+}
+
+/* Cost + Unlock button, stacked and centered to the right of the title/desc
+   column - the ::before token icon replaces a "Tokens" text label. */
+.merchant-shop-option-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(4px * var(--hud-scale));
+  flex-shrink: 0;
+}
+
+.merchant-shop-cost {
+  display: flex;
+  align-items: center;
+  gap: calc(4px * var(--hud-scale));
+  font-size: calc(13px * var(--hud-scale));
+  opacity: 0.75;
+}
+
+.merchant-shop-cost::before {
+  content: '';
+  width: calc(14px * var(--hud-scale));
+  height: calc(14px * var(--hud-scale));
+  background-image: url('assets/images/objects/token.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+/* Buyable/unaffordable/unlocked - same red/green purchase-state language as
+   DevPanel's .dev-panel-ability, plus an amber "can't afford it yet" middle
+   state DevPanel never needed since it grants abilities for free. */
+.merchant-shop-buy {
+  flex-shrink: 0;
+  font-family: 'Jersey 10', sans-serif;
+  font-size: calc(14px * var(--hud-scale));
+  background: rgba(108, 255, 138, 0.12);
+  border: 1px solid rgba(108, 255, 138, 0.5);
+  border-radius: calc(4px * var(--hud-scale));
+  padding: calc(4px * var(--hud-scale)) calc(10px * var(--hud-scale));
+  color: #6cff8a;
+  cursor: pointer;
+}
+
+.merchant-shop-buy:hover:not(:disabled) {
+  background: rgba(108, 255, 138, 0.25);
+}
+
+.merchant-shop-option.unaffordable .merchant-shop-buy {
+  color: #ffb35c;
+  border-color: rgba(255, 179, 92, 0.4);
+  background: rgba(255, 179, 92, 0.08);
+  cursor: not-allowed;
+}
+
+.merchant-shop-option.unlocked .merchant-shop-buy {
+  color: rgba(242, 242, 242, 0.5);
+  border-color: rgba(255, 255, 255, 0.15);
+  background: transparent;
+  cursor: default;
+}
+
 .chapter-bar {
   position: absolute;
   top: 0;

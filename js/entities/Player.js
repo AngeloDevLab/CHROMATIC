@@ -148,11 +148,11 @@ export class Player extends Entity {
     }
 
     /**
-     * Dev/test-only unlock path today (js/ui/DevPanel.js's Double Jump/Dash
-     * buttons) - the real Merchant/Token spend UI doesn't exist yet
-     * (TODO.md). One-way, like a real purchase (no re-lock) - idempotent, so
-     * LevelSession can call this every frame off Game.abilities without
-     * tracking what's already applied.
+     * Called by the real Merchant shop (Interactables.js's _buyAbility()) on
+     * a successful purchase, and by js/ui/DevPanel.js's Double Jump/Dash
+     * buttons for free as a testing shortcut. One-way, like a real purchase
+     * (no re-lock) - idempotent, so LevelSession can call this every frame
+     * off Game.abilities without tracking what's already applied.
      * @param {'doubleJump'|'dash'} id
      */
     unlockAbility(id) {

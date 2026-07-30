@@ -18,10 +18,31 @@ const PORTAL_INTERACT_RANGE_PX = 40;
 // ground gives way right as you step on it", not visibly ahead of time.
 const TRAPDOOR_TRIGGER_MARGIN_PX = 16;
 
-// Shown once the Merchant spawns post-boss (see onBossDefeated() below) -
-// still flavor only (05_enemies-bosses.md 6.2's real shop/Token spend only
-// unlocks after the Templateboss), just teases the Lvl 6 fight by name.
-const MERCHANT_DIALOGUE_TEXT = "Heh, another wanderer with color to spare. Slay the Wraith that haunts the Grey City, and we'll talk business.";
+// How far apart multi-Token boss drops land (see _buildTokenDrop()) - a
+// Templateboss/Chapterboss's 2 Tokens spawn side by side instead of stacked
+// on the exact same point, so they read as two distinct pickups at a glance.
+const TOKEN_DROP_OFFSET_PX = 28;
+
+// Shown for a Miniboss-tier Merchant (1 Token, never enough to afford an
+// ability alone - see ABILITY_TOKEN_COST below) - pure flavor tease, no shop
+// attached, just points at the Lvl 6 fight by name so the player has a reason
+// to keep going (session decision, see project_refactor-roadmap memory).
+const MINIBOSS_DIALOGUE_TEXT = "Heh, another wanderer with color to spare. Slay the Wraith that haunts the Grey City, and we'll talk business.";
+
+// 03_mechanics.md 4.4: "An ability costs 2 Tokens." A Templateboss/
+// Chapterboss Merchant (tokenReward >= this) is the only one that can ever
+// afford one, so that's also the gate on whether the shop opens at all -
+// see onBossDefeated()/_openMerchantDialogue() below.
+const ABILITY_TOKEN_COST = 2;
+const SHOP_MIN_TOKEN_REWARD = ABILITY_TOKEN_COST;
+
+// 03_mechanics.md 4.4: "Double Jump and Dash are guaranteed first options at
+// the Prologue Merchant" - the only two abilities that exist yet, so this is
+// every Prologue shop's full, fixed option list.
+const ABILITY_SHOP_OPTIONS = [
+    { id: 'doubleJump', label: 'Double Jump', description: 'Press Jump twice.', cost: ABILITY_TOKEN_COST },
+    { id: 'dash', label: 'Dash', description: 'Press A or D twice quickly to dash in that direction.', cost: ABILITY_TOKEN_COST },
+];
 
 // Portal/Merchant/Trapdoor/SecretDoor/BuffTerminal - every level object the
 // player interacts with via proximity/[E], extracted out of LevelSession.js
@@ -42,7 +63,7 @@ export class Interactables {
      * @param {string} options.greyFilterCSS - ColorZone.greyFilterCSS, shared visual treatment for unrevealed entities.
      * @param {number} options.revealRadius - LevelSession's PLAYER_REVEAL_RADIUS, reused so "revealed" tracks the same distance as the color trail.
      * @param {DamageNumbers} options.damageNumbers - For "not enough Prisma" status text.
-     * @param {Collision} options.collision - For the boss-drop Token's fall onto the floor (_updateToken()).
+     * @param {Collision} options.collision - For the boss-drop Tokens' fall onto the floor (_updateTokens()).
      * @param {() => void} options.onComplete - Called when the player exits through the completed level's portal.
      */
     constructor(game, level, player, { greyFilterCSS, revealRadius, damageNumbers, collision, onComplete }) {
@@ -89,8 +110,8 @@ export class Interactables {
      * Real post-boss Merchant (05_enemies-bosses.md 6.2: "After a
      * Templateboss/Chapterboss, the Merchant appears in the same room" -
      * applied to the Miniboss here too, session decision). Doesn't spawn at
-     * all until the boss is dead and its dropped Token (see
-     * onBossDefeated()/_updateToken()) is collected - this.merchant stays
+     * all until the boss is dead and every dropped Token (see
+     * onBossDefeated()/_updateTokens()) is collected - this.merchant stays
      * null until then, same null-tolerant pattern as Portal, so every prompt/
      * render call below is already safe. Not every level has a Merchant
      * object placed in Tiled, same null-tolerant pattern otherwise.
@@ -99,7 +120,7 @@ export class Interactables {
     _spawnMerchant(level) {
         this._merchantSpawn = level.getObjectsByType('Merchant')[0] ?? null;
         this.merchant = null;
-        this.token = null;
+        this.tokens = [];
         this.merchantDialogue = new MerchantDialogue(this.game.overlay);
         this.merchantPromptEl = document.createElement('div');
         this.merchantPromptEl.className = 'interact-prompt';
@@ -229,37 +250,68 @@ export class Interactables {
         this.trapdoor?.update(dt);
         this._updateTrapdoorTrigger();
         this.secretDoor?.update(dt);
-        this._updateToken(dt);
+        this._updateTokens(dt);
     }
 
     /**
      * Called once by LevelSession when this level's boss dies (its death
-     * animation has finished) - drops a Token at the boss's position for the
-     * player to walk over. No-op if this level has no Merchant object placed
-     * in Tiled, or this has already fired once.
+     * animation has finished) - drops tokenReward separate Tokens at the
+     * boss's position (see _buildTokenDrop()) for the player to walk over,
+     * and remembers the boss's name (Boss.js) for _openMerchantDialogue()
+     * once they're all collected. No-op if this level has no Merchant object
+     * placed in Tiled, or this has already fired once.
      * @param {number} centerX - Boss's centerX at time of death.
      * @param {number} centerY - Boss's centerY at time of death.
+     * @param {string} bossName - Boss.name, shown in the Templateboss+ greeting.
+     * @param {number} tokenReward - Boss.tokenReward, how many Tokens to drop.
      */
-    onBossDefeated(centerX, centerY) {
-        if (!this._merchantSpawn || this.token || this.merchant) return;
-        this.token = new Token(centerX, centerY, this.game.assets.getImage('token'));
+    onBossDefeated(centerX, centerY, bossName, tokenReward) {
+        if (!this._merchantSpawn || this.tokens.length || this.merchant) return;
+        this._bossName = bossName;
+        this._tokenReward = tokenReward;
+        this.tokens = this._buildTokenDrop(centerX, centerY, tokenReward);
+    }
+
+    /**
+     * Spreads `count` Tokens evenly around centerX, TOKEN_DROP_OFFSET_PX
+     * apart, instead of stacking them on the exact same point.
+     * @param {number} centerX
+     * @param {number} centerY
+     * @param {number} count
+     * @returns {Token[]}
+     */
+    _buildTokenDrop(centerX, centerY, count) {
+        const spread = (count - 1) * TOKEN_DROP_OFFSET_PX;
+        return Array.from({ length: count }, (_, i) =>
+            new Token(centerX - spread / 2 + i * TOKEN_DROP_OFFSET_PX, centerY, this.game.assets.getImage('token')));
     }
 
     /**
      * Falls/bobs (Token.js) until the player's hitbox overlaps it (no [E]
-     * prompt, plain proximity pickup) - collecting it increments
-     * Game.tokens (read by LevelSession/WorldmapState's HUD counter) and
-     * spawns the real Merchant at its Tiled-placed position.
+     * prompt, plain proximity pickup) - each collected Token adds 1 to
+     * Game.tokens (read by LevelSession/WorldmapState's HUD counter); the
+     * real Merchant spawns at its Tiled-placed position once every dropped
+     * Token is gone.
      * @param {number} dt
      */
-    _updateToken(dt) {
-        if (!this.token) return;
-        this.token.update(dt, this._collision);
-        if (!this._overlapsPlayer(this.token)) return;
+    _updateTokens(dt) {
+        if (!this.tokens.length) return;
+        for (const token of this.tokens) token.update(dt, this._collision);
+        this.tokens = this.tokens.filter((token) => !this._collectToken(token));
+        if (!this.tokens.length && !this.merchant) {
+            this.merchant = new Merchant(this._merchantSpawn.x, this._merchantSpawn.y, this.game.assets.getImage('merchant'));
+        }
+    }
 
-        this.merchant = new Merchant(this._merchantSpawn.x, this._merchantSpawn.y, this.game.assets.getImage('merchant'));
-        this.token = null;
+    /**
+     * @param {Token} token
+     * @returns {boolean} Whether this Token was just picked up.
+     */
+    _collectToken(token) {
+        if (!this._overlapsPlayer(token)) return false;
         this.game.tokens++;
+        this.game.saveProgress();
+        return true;
     }
 
     /**
@@ -353,9 +405,9 @@ export class Interactables {
     }
 
     /**
-     * Post-boss Merchant (see onBossDefeated()) - null until the boss's
-     * dropped Token is collected, same null-tolerant/in-range/[E] pattern as
-     * _updatePortalPrompt() above.
+     * Post-boss Merchant (see onBossDefeated()) - null until every one of the
+     * boss's dropped Tokens is collected, same null-tolerant/in-range/[E]
+     * pattern as _updatePortalPrompt() above.
      * @param {Camera} camera
      * @param {boolean} interactPressed
      */
@@ -372,7 +424,42 @@ export class Interactables {
             this.merchantPromptEl.style.top = `${(this.merchant.y - camera.y) * camera.zoom}px`;
         }
 
-        if (inRange && interactPressed) this.merchantDialogue.open(MERCHANT_DIALOGUE_TEXT);
+        if (inRange && interactPressed) this._openMerchantDialogue();
+    }
+
+    /**
+     * Miniboss Tokens (1) can never afford an ability (ABILITY_TOKEN_COST is
+     * 2), so that tier's Merchant stays the plain flavor tease with no shop.
+     * A Templateboss/Chapterboss Merchant (tokenReward >= SHOP_MIN_TOKEN_REWARD)
+     * instead greets the player by the boss they just killed and attaches the
+     * ability shop - MerchantDialogue only opens it once that greeting
+     * finishes typing (its own advance()).
+     */
+    _openMerchantDialogue() {
+        if (this._tokenReward < SHOP_MIN_TOKEN_REWARD) {
+            this.merchantDialogue.open(MINIBOSS_DIALOGUE_TEXT);
+            return;
+        }
+        this.merchantDialogue.open(`You defeated ${this._bossName}. Let's see what I have for you.`, {
+            options: ABILITY_SHOP_OPTIONS,
+            getTokens: () => this.game.tokens,
+            isOwned: (id) => this.game.abilities.has(id),
+            buy: (id, cost) => this._buyAbility(id, cost),
+        });
+    }
+
+    /**
+     * @param {string} id - One of ABILITY_SHOP_OPTIONS's ids.
+     * @param {number} cost - That option's Token cost.
+     * @returns {boolean} Whether the purchase went through.
+     */
+    _buyAbility(id, cost) {
+        if (this.game.abilities.has(id) || this.game.tokens < cost) return false;
+        this.game.tokens -= cost;
+        this.game.abilities.add(id);
+        this.game.saveProgress();
+        this.player.unlockAbility(id);
+        return true;
     }
 
     /**
@@ -442,7 +529,7 @@ export class Interactables {
     render(ctx) {
         this.portal?.render(ctx);
         this.merchant?.render(ctx);
-        this.token?.render(ctx);
+        for (const token of this.tokens) token.render(ctx);
         this.trapdoor?.render(ctx);
         this.secretDoor?.render(ctx);
         this.buffTerminal?.render(ctx);

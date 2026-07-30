@@ -6,6 +6,7 @@ import { WraithBeam } from './WraithBeam.js';
 const TEMPLATEBOSS_HP = 400;
 const TEMPLATEBOSS_SIGNATURE_HIT_DAMAGE = 70;
 const TEMPLATEBOSS_NAME = 'Wraith of the Grey City';
+const TEMPLATEBOSS_TOKEN_REWARD = 2;
 
 // Wraith of the Grey City (Lvl 6 Templateboss) - extends Wraith.js rather
 // than duplicating it, per 6.3.1's "expands [the Miniboss's moveset] rather
@@ -38,6 +39,7 @@ export class WraithTemplateboss extends Wraith {
         this.maxHp = TEMPLATEBOSS_HP;
         this.signatureHitDamage = TEMPLATEBOSS_SIGNATURE_HIT_DAMAGE;
         this.name = TEMPLATEBOSS_NAME;
+        this.tokenReward = TEMPLATEBOSS_TOKEN_REWARD;
         // Last axis actually fired, for _rollAxis()'s enrage bias below - null
         // until the first attack, so that first roll is always a fair coinflip.
         this._lastAxis = null;

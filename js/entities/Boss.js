@@ -46,6 +46,11 @@ export class Boss extends Enemy {
         // set this themselves after calling super(), null here is only a
         // fallback for a Boss subclass that hasn't set one yet.
         this.name = null;
+        // Tokens dropped on death (Interactables.js's onBossDefeated()) -
+        // 05_enemies-bosses.md 6.2's Miniboss row (1), the default here since
+        // Wraith.js never overrides it; Templateboss/Chapterboss subclasses
+        // set this to 2 themselves after calling super().
+        this.tokenReward = 1;
     }
 
     /**
