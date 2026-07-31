@@ -4,6 +4,15 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.12.0] - 2026-08-01
+
+### Added
+- Worldmap color-reveal (`WorldmapState.js`, `ColorZone.js`): the Prologue map is split into one full-height vertical zone per level (boundary at the midpoint between neighboring node positions), matching `02_game-structure.md` 2.1's "Darkness is visibly pushed back". A zone reveals hard-edged the instant its level is completed, flush against any already-completed neighbor so a contiguous run reads as one seamless stretch; the just-finished level's own zone instead sweeps left-to-right (`ColorZone.triggerZoneWipe()`, ~1.5s) - Continue/New Game pop every already-completed zone in at once with no animation. Reuses the same runtime grey-template generation and `greyBrightness`/`greyTint` "Darkness" look as in-level/menu, no new art asset needed. New `ColorZone.revealZone()`/`triggerZoneWipe()` are deliberately hard-edged with pixel-rounded coordinates, not a soft gradient - a feathered edge left a visible seam at this canvas's small native resolution once scaled up to screen size.
+- Next SFX batch (`assets/sounds/sfx/`): hit-player, hit-enemy, enemy-death (also covers the boss until a dedicated boss-death cue exists), player-death, token-pickup, portal, secret-door, power-up (shared by ability purchase and buff choice), and boss-beam (Wraith/Templateboss firing only, not Shooter's shots); landing/dash (wired last session but silent) now have real files too. `CombatCoordinator.js` takes a `sound` reference alongside `damageNumbers` to trigger hit-player/hit-enemy off its existing hit-resolution data.
+
+### Changed
+- `LevelSession.js` split into composed modules (861 -> 503 lines, comment density also trimmed ~41% -> ~33%) - same technique as `Player.js`'s earlier `PlayerHealth`/`PlayerRenderer` split, needed again since new features kept landing directly in the file instead of a composed module. Animation-building -> `entities/CharacterAnimations.js`; player VFX/SFX -> `mechanics/PlayerFx.js`; enemy roster spawn/lifecycle (including the boss) -> `mechanics/EnemyRoster.js`. `BossState.js` updated to read the boss through `EnemyRoster` instead of filtering the enemy list itself.
+
 ## [0.11.0] - 2026-07-30
 
 ### Added
