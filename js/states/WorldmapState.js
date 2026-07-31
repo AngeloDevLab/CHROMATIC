@@ -1,5 +1,6 @@
 import { State } from './State.js';
 import { isBossLevel } from './LevelSession.js';
+import { ColorZone } from '../mechanics/ColorZone.js';
 
 // 02_game-structure.md 2.1 - only Prologue is active at game start, the rest
 // unlock as previous chapters are completed.
@@ -37,13 +38,14 @@ export class WorldmapState extends State {
      * instant the player left for a level and came back. Persisted across
      * page reloads via SaveSystem (Game.js's loadProgress()/saveProgress()).
      */
-    enter() {
+    enter(params) {
         this.background = this.game.assets.getImage('worldmap-prologue-bg');
         this._computeFit();
 
         this.completedLevels = this.game.completedLevels;
         this.selectedIndex = null;
 
+        this._initColorZone(params?.justCompleted ?? null);
         this._buildChapterBar();
         this._buildNodes();
         this._buildTokenCounter();
@@ -51,6 +53,62 @@ export class WorldmapState extends State {
 
         this._onCanvasClick = this._onCanvasClick.bind(this);
         this.game.canvas.addEventListener('click', this._onCanvasClick);
+    }
+
+    /**
+     * 02_game-structure.md 2.1: "defeated levels and their connecting paths
+     * turn colorful" - the map is split into one full-height vertical zone
+     * per node (see _computeZoneBounds()), revealed once its level is
+     * completed. justCompletedLevel (forwarded from LevelSession's
+     * exit-portal transition) animates as a wipe instead of popping in
+     * instantly, so only the level the player just finished gets the
+     * flourish - Continue/New Game show every already-completed zone at once.
+     * @param {number|null} justCompletedLevel
+     */
+    _initColorZone(justCompletedLevel) {
+        this.colorZone = new ColorZone(this.background.width, this.background.height, undefined, {
+            greyBrightness: 0.15,
+            greyTint: { sepia: 0.4, hueRotate: 180, saturate: 2 },
+        });
+        this.colorZone.paintGreyFrom(this.background);
+        this._revealCompletedZones(justCompletedLevel);
+    }
+
+    /**
+     * Reveals every already-completed zone, hard-edged and flush against
+     * any neighboring zone so a contiguous run reads as one seamless
+     * colorful stretch. justCompletedLevel's own zone animates as a
+     * left-to-right wipe instead of popping in instantly.
+     * @param {number|null} justCompletedLevel
+     */
+    _revealCompletedZones(justCompletedLevel) {
+        const bounds = this._computeZoneBounds();
+
+        for (let i = 0; i < PROLOGUE_NODES.length; i++) {
+            const node = PROLOGUE_NODES[i];
+            if (!this.completedLevels.has(node.level)) continue;
+
+            const { xStart, xEnd } = bounds[i];
+            if (node.level === justCompletedLevel) {
+                this.colorZone.triggerZoneWipe(xStart, xEnd);
+            } else {
+                this.colorZone.revealZone(xStart, xEnd);
+            }
+        }
+    }
+
+    /**
+     * Per-node zone boundaries in the background image's native pixel space -
+     * split at the midpoint (x) between neighboring nodes, first/last zone
+     * extend to the image edges.
+     * @returns {{xStart:number, xEnd:number}[]}
+     */
+    _computeZoneBounds() {
+        const xs = PROLOGUE_NODES.map((node) => node.x * this.background.width);
+        return xs.map((x, i) => ({
+            xStart: i === 0 ? 0 : (xs[i - 1] + x) / 2,
+            xEnd: i === xs.length - 1 ? this.background.width : (x + xs[i + 1]) / 2,
+        }));
     }
 
     /**
@@ -284,7 +342,9 @@ export class WorldmapState extends State {
     /**
      * @param {number} dt - Elapsed time in seconds.
      */
-    update(dt) {}
+    update(dt) {
+        if (this.colorZone.isTransitioning) this.colorZone.update(dt, 0, 0);
+    }
 
     /**
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
@@ -293,5 +353,6 @@ export class WorldmapState extends State {
         ctx.fillStyle = '#12141a';
         ctx.fillRect(0, 0, this.game.width, this.game.height);
         ctx.drawImage(this.background, this.bgOffsetX, this.bgOffsetY, this.bgDrawWidth, this.bgDrawHeight);
+        ctx.drawImage(this.colorZone.overlayCanvas, this.bgOffsetX, this.bgOffsetY, this.bgDrawWidth, this.bgDrawHeight);
     }
 }

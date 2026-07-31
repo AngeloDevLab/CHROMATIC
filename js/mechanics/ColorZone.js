@@ -2,6 +2,10 @@
 // color explosion". Duration of the sweep triggered by triggerFullReveal().
 const FULL_REVEAL_DURATION_SECONDS = 1.5;
 
+// 02_game-structure.md 2.1: Worldmap's "connecting paths turn colorful" -
+// duration of the horizontal sweep triggered by triggerZoneWipe().
+const ZONE_WIPE_DURATION_SECONDS = 1.5;
+
 /**
  * CSS `filter` string for the grey/desaturated look, standalone so
  * always-full-color elements (e.g. Portal.js while unrevealed) can match the
@@ -87,6 +91,7 @@ export class ColorZone {
         this._lastPermanentPunch = null;
         this._fullReveal = null;
         this._fullDarken = null;
+        this._zoneWipe = null;
     }
 
     /**
@@ -122,6 +127,11 @@ export class ColorZone {
 
         if (this._fullDarken) {
             this._updateFullDarken(dt);
+            return;
+        }
+
+        if (this._zoneWipe) {
+            this._updateZoneWipe(dt);
             return;
         }
 
@@ -247,7 +257,7 @@ export class ColorZone {
      * @returns {boolean}
      */
     get isTransitioning() {
-        return !!this._fullReveal || !!this._fullDarken;
+        return !!this._fullReveal || !!this._fullDarken || !!this._zoneWipe;
     }
 
     /**
@@ -312,6 +322,52 @@ export class ColorZone {
         }
 
         this.darken(this._fullDarken.originX, this._fullDarken.originY, this._fullDarken.maxRadius * progress);
+    }
+
+    /**
+     * One-time full-height vertical-slice reveal (Worldmap's "this level's
+     * zone turned colorful"), hard-edged rather than the point-based
+     * punches' soft circular falloff - a completed zone should read as a
+     * flat, fully-revealed block, flush against a completed neighbor with
+     * no seam. Coordinates are pixel-rounded before filling since an
+     * anti-aliased fillRect edge on this canvas's small native resolution
+     * turns into a visibly soft/mismatched seam once scaled up to screen size.
+     * @param {number} xStart
+     * @param {number} xEnd
+     */
+    revealZone(xStart, xEnd) {
+        const left = Math.round(xStart);
+        const right = Math.round(xEnd);
+
+        this.overlayCtx.save();
+        this.overlayCtx.globalCompositeOperation = 'destination-out';
+        this.overlayCtx.fillStyle = 'rgba(0, 0, 0, 1)';
+        this.overlayCtx.fillRect(left, 0, right - left, this.height);
+        this.overlayCtx.restore();
+    }
+
+    /**
+     * Animated version of revealZone() - sweeps the revealed strip from
+     * xStart to xEnd (left to right) over ZONE_WIPE_DURATION_SECONDS, for
+     * the Worldmap's "just completed this level" flourish.
+     * @param {number} xStart
+     * @param {number} xEnd
+     */
+    triggerZoneWipe(xStart, xEnd) {
+        this._zoneWipe = { xStart, xEnd, elapsed: 0 };
+    }
+
+    /**
+     * @param {number} dt
+     */
+    _updateZoneWipe(dt) {
+        this._zoneWipe.elapsed += dt;
+        const progress = Math.min(1, this._zoneWipe.elapsed / ZONE_WIPE_DURATION_SECONDS);
+        const { xStart, xEnd } = this._zoneWipe;
+        const right = xStart + (xEnd - xStart) * progress;
+
+        this.revealZone(xStart, right);
+        if (progress >= 1) this._zoneWipe = null;
     }
 
     /**

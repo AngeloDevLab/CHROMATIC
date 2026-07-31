@@ -728,7 +728,7 @@ export class LevelSession {
     _completeLevel() {
         this.game.completedLevels.add(this.levelNumber);
         this.game.saveProgress();
-        this.game.stateMachine.change('worldmap');
+        this.game.stateMachine.change('worldmap', { justCompleted: this.levelNumber });
     }
 
     /**
