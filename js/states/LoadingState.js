@@ -127,8 +127,8 @@ export class LoadingState extends State {
                 'boss-wraith-dead': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/dead.png',
                 // Wraith of the Grey City (Lvl 6 Templateboss, entities/bosses/
                 // WraithTemplateboss.js) - same 7-clip shape as the Miniboss
-                // above, but a smaller 96x150 frame (see LevelSession.js's
-                // _buildTemplatebossAnimations()).
+                // above, but a smaller 96x150 frame (see CharacterAnimations.js's
+                // buildTemplatebossAnimations()).
                 'boss-templateboss-idle': 'assets/images/enemys/bosses/prologue/lv_6_boss/floating-idle.png',
                 'boss-templateboss-to-firing': 'assets/images/enemys/bosses/prologue/lv_6_boss/from-idle-to-firing.png',
                 'boss-templateboss-firing': 'assets/images/enemys/bosses/prologue/lv_6_boss/firing.png',
@@ -137,8 +137,7 @@ export class LoadingState extends State {
                 'boss-templateboss-to-idle': 'assets/images/enemys/bosses/prologue/lv_6_boss/from-vulnerable-to-idle.png',
                 'boss-templateboss-dead': 'assets/images/enemys/bosses/prologue/lv_6_boss/dead.png',
                 // Player action VFX (entities/VfxEffect.js) - 64x64 frames,
-                // triggered via Player.js's pendingVfx mailbox
-                // (LevelSession.js's _drainPlayerVfx()).
+                // triggered via Player.js's pendingVfx mailbox (PlayerFx.js).
                 'vfx-jump': 'assets/images/vfx/jumping.png',
                 'vfx-landing': 'assets/images/vfx/landing.png',
                 'vfx-dash': 'assets/images/vfx/dash.png',
@@ -160,8 +159,7 @@ export class LoadingState extends State {
      * 'ost-00'..'ost-07' are the generic playlist (see main.js's
      * MusicPlaylist); 'ost-08' ("The Iron Sentinel") is reserved for boss
      * encounters and deliberately left out of that rotation. SFX keys match
-     * their trigger 1:1 (LevelSession.js's _drainPendingPlayerVfx()/
-     * _updatePlayerActionSfx()) - more get added here as files exist,
+     * their trigger 1:1 (PlayerFx.js) - more get added here as files exist,
      * SoundManager.load() already tolerates a missing/broken file on its own.
      */
     async _loadSounds() {

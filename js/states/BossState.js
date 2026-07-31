@@ -1,6 +1,5 @@
 import { State } from './State.js';
 import { LevelSession, loadLevelPreview } from './LevelSession.js';
-import { Boss } from '../entities/Boss.js';
 import { BOSS_BAR_HEIGHT, BOSS_BAR_TOP_PX } from '../ui/HUD.js';
 
 // Top-center stack: name label, then HUD.renderBossBar()'s canvas bar
@@ -74,10 +73,11 @@ export class BossState extends State {
     render(ctx) {
         this.session.render(ctx);
 
-        const boss = this.session.enemies.find((enemy) => enemy instanceof Boss && !enemy.dead);
-        this.bossNameEl.hidden = !boss;
-        this.bossHpValueEl.hidden = !boss;
-        if (!boss) return;
+        const boss = this.session.enemyRoster.boss;
+        const showBar = boss && !boss.dead;
+        this.bossNameEl.hidden = !showBar;
+        this.bossHpValueEl.hidden = !showBar;
+        if (!showBar) return;
 
         const scale = this.game.hudScale;
         this.session.hud.renderBossBar(ctx, boss, this.game.width, scale);
