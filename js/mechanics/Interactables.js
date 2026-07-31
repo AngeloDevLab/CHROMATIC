@@ -311,6 +311,7 @@ export class Interactables {
         if (!this._overlapsPlayer(token)) return false;
         this.game.tokens++;
         this.game.saveProgress();
+        this.game.sound.playSfx('token-pickup');
         return true;
     }
 
@@ -401,7 +402,10 @@ export class Interactables {
             this.interactPromptEl.style.top = `${(this.portal.y - camera.y) * camera.zoom}px`;
         }
 
-        if (inRange && interactPressed) this._onComplete();
+        if (inRange && interactPressed) {
+            this.game.sound.playSfx('portal');
+            this._onComplete();
+        }
     }
 
     /**
@@ -459,6 +463,7 @@ export class Interactables {
         this.game.abilities.add(id);
         this.game.saveProgress();
         this.player.unlockAbility(id);
+        this.game.sound.playSfx('power-up');
         return true;
     }
 
@@ -492,6 +497,7 @@ export class Interactables {
     _triggerSecretDoor() {
         if (this.player.consumeShield(SECRET_DOOR_PRISMA_COST)) {
             this.secretDoor.trigger();
+            this.game.sound.playSfx('secret-door');
         } else {
             this.damageNumbers.spawnStatus(this.player.centerX, this.player.visualTopY, 'Not enough Prisma');
         }

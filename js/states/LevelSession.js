@@ -410,6 +410,7 @@ export class LevelSession {
             damageNumbers: this.damageNumbers,
             thrownSwordSprite: this.game.assets.getImage('thrown-sword'),
             thrownSwordTrailSprite: this.game.assets.getImage('thrown-sword-trail'),
+            sound: this.game.sound,
         });
     }
 
@@ -533,6 +534,7 @@ export class LevelSession {
             // access to CombatCoordinator's array itself, see its own pendingProjectile.
             if (enemy.pendingProjectile) {
                 this.combat.enemyProjectiles.push(enemy.pendingProjectile);
+                if (enemy === this.boss) this.game.sound.playSfx('boss-beam');
                 enemy.pendingProjectile = null;
             }
             // Wraith.js's mailbox for its beam-fire room-darken beat
@@ -637,6 +639,8 @@ export class LevelSession {
             } else if (!enemy.colorRevealed) {
                 enemy.colorRevealed = true;
                 this.colorZone.reveal(enemy.centerX, enemy.centerY, ENEMY_DEATH_REVEAL_RADIUS);
+                // Reused for the boss too until a dedicated boss-death cue exists.
+                this.game.sound.playSfx('enemy-death');
             }
         }
     }
@@ -752,6 +756,7 @@ export class LevelSession {
         const y = Math.min(this.player.visualCenterY, visibleBottom);
         this.deathSequence.start(x, y);
         this.colorZone.triggerFullDarken(x, y);
+        this.game.sound.playSfx('player-death');
     }
 
     /**

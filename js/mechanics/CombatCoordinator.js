@@ -33,14 +33,16 @@ export class CombatCoordinator {
      * @param {DamageNumbers} options.damageNumbers
      * @param {HTMLImageElement} options.thrownSwordSprite
      * @param {HTMLImageElement} options.thrownSwordTrailSprite
+     * @param {SoundManager} options.sound
      */
-    constructor(player, enemies, collision, { damageNumbers, thrownSwordSprite, thrownSwordTrailSprite }) {
+    constructor(player, enemies, collision, { damageNumbers, thrownSwordSprite, thrownSwordTrailSprite, sound }) {
         this.player = player;
         this.enemies = enemies;
         this.collision = collision;
         this.damageNumbers = damageNumbers;
         this.thrownSwordSprite = thrownSwordSprite;
         this.thrownSwordTrailSprite = thrownSwordTrailSprite;
+        this.sound = sound;
 
         this.projectiles = [];
         // Separate from the enemies' own projectiles below rather than one
@@ -75,8 +77,14 @@ export class CombatCoordinator {
         const hits = this._resolvePlayerAttack();
         hits.push(...this._updateProjectiles(dt));
         this._updateEnemyProjectiles(dt, difficulty);
-        hits.push(...resolveContactDamage(dt, this.player, this.enemies, difficulty));
+
+        const contactHits = resolveContactDamage(dt, this.player, this.enemies, difficulty);
+        hits.push(...contactHits);
         this._displayEnemyHits(hits);
+        // Contact damage always hits the player (the barrier exchange), even
+        // when charging skips the enemy's own side of it - see Combat.js's
+        // _resolveEnemyContact().
+        if (contactHits.length > 0) this.sound.playSfx('hit-player');
     }
 
     /**
@@ -143,7 +151,10 @@ export class CombatCoordinator {
             // (the player) is the only position that still makes sense.
             this.damageNumbers.spawn(this.player.centerX, this.player.visualTopY, hit.amount);
         }
-        if (playerHits.length > 0) this._hitStopTimer = HIT_STOP_SECONDS;
+        if (playerHits.length > 0) {
+            this._hitStopTimer = HIT_STOP_SECONDS;
+            this.sound.playSfx('hit-player');
+        }
         this.enemyProjectiles = this.enemyProjectiles.filter((projectile) => !projectile.dead);
     }
 
@@ -154,7 +165,10 @@ export class CombatCoordinator {
         for (const hit of hits) {
             this.damageNumbers.spawn(hit.enemy.centerX, hit.enemy.visualTopY, hit.amount);
         }
-        if (hits.length > 0) this._hitStopTimer = HIT_STOP_SECONDS;
+        if (hits.length > 0) {
+            this._hitStopTimer = HIT_STOP_SECONDS;
+            this.sound.playSfx('hit-enemy');
+        }
     }
 
     /**

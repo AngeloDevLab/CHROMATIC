@@ -44,6 +44,7 @@ export class BuffState extends State {
         this.game.saveProgress();
         this._player.applyBuff(buffId);
         this._buffTerminal.used = true;
+        this.game.sound.playSfx('power-up');
         this.panel.close();
     }
 }

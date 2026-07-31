@@ -178,6 +178,17 @@ export class LoadingState extends State {
             'jump': 'assets/sounds/sfx/jump.wav',
             'footsteps': 'assets/sounds/sfx/footsteps.wav',
             'swoosh': 'assets/sounds/sfx/swoosh.wav',
+            'landing': 'assets/sounds/sfx/landing.wav',
+            'dash': 'assets/sounds/sfx/dash.wav',
+            'hit-player': 'assets/sounds/sfx/hit.wav',
+            'hit-enemy': 'assets/sounds/sfx/enemy-hit.wav',
+            'enemy-death': 'assets/sounds/sfx/enemy-death.wav',
+            'player-death': 'assets/sounds/sfx/player-dead.mp3',
+            'token-pickup': 'assets/sounds/sfx/token-pickup.wav',
+            'portal': 'assets/sounds/sfx/portal-open.wav',
+            'secret-door': 'assets/sounds/sfx/laser-door.wav',
+            'power-up': 'assets/sounds/sfx/power-up.mp3',
+            'boss-beam': 'assets/sounds/sfx/boss-beam.wav',
         });
     }
 
