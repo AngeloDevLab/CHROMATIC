@@ -153,6 +153,9 @@ export class LoadingState extends State {
                 'lv4-level': 'assets/levels/Lv_4.json',
                 'lv5-level': 'assets/levels/Lv_5.json',
                 'lv6-level': 'assets/levels/Lv_6.json',
+                // MenuState.js's Info panel - single source of truth for
+                // Credits, no separate file to keep in sync by hand.
+                'credits': 'assets/credits.json',
             },
         });
     }

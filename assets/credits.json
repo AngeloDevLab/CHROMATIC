@@ -1,0 +1,41 @@
+{
+    "aiGenerated": {
+        "artwork": "AI-generated via PixelLab.ai, manually edited in Aseprite.",
+        "music": "generated with Suno (Pro plan).",
+        "code": "developed with assistance from Claude Code."
+    },
+    "tools": ["Aseprite (pixel art editing)", "Tiled (level editor)"],
+    "thirdParty": [
+        {
+            "name": "Sci-Fi Labs Tileset (1.0)",
+            "detail": "Commissioned from aimen23b, distributed by Foozle.",
+            "links": [
+                { "label": "aimen23b", "url": "https://www.fiverr.com/aimen23b" },
+                { "label": "Foozle", "url": "https://www.foozle.io" }
+            ],
+            "license": "CC0",
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+            "licenseNote": "Free to use/modify including commercially, attribution not required."
+        },
+        {
+            "name": "500 Pixel Bullet and Free Smoke FX Pixel 2",
+            "detail": "By BDragon1727.",
+            "links": [{ "label": "BDragon1727", "url": "https://bdragon1727.itch.io/" }],
+            "license": null,
+            "licenseUrl": null,
+            "licenseNote": "Free for non-commercial games - commercial use requires a voluntary contribution. Modification allowed, resale/redistribution not allowed."
+        }
+    ],
+    "freesound": [
+        { "title": "jump2.wav", "url": "https://freesound.org/people/LloydEvans09/sounds/187024/", "author": "LloydEvans09", "authorUrl": "https://freesound.org/people/LloydEvans09/", "license": "CC BY 4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/" },
+        { "title": "Boot footstep on grass and leaves", "url": "https://freesound.org/people/darceyprodanovic/sounds/833456/", "author": "darceyprodanovic", "authorUrl": "https://freesound.org/people/darceyprodanovic/", "license": "CC BY 4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/" },
+        { "title": "swoosh08.wav", "url": "https://freesound.org/people/kwahmah_02/sounds/269311/", "author": "kwahmah_02", "authorUrl": "https://freesound.org/people/kwahmah_02/", "license": "CC BY 3.0", "licenseUrl": "https://creativecommons.org/licenses/by/3.0/" },
+        { "title": "land a jump.wav", "url": "https://freesound.org/people/zepurple/sounds/540272/", "author": "zepurple", "authorUrl": "https://freesound.org/people/zepurple/", "license": "CC0", "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/" },
+        { "title": "Hit1.wav", "url": "https://freesound.org/people/alphatrooper18/sounds/362422/", "author": "alphatrooper18", "authorUrl": "https://freesound.org/people/alphatrooper18/", "license": "CC BY 4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/" },
+        { "title": "Jump/Dash", "url": "https://freesound.org/people/avaol/sounds/864774/", "author": "avaol", "authorUrl": "https://freesound.org/people/avaol/", "license": "CC0", "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/" },
+        { "title": "coin object", "url": "https://freesound.org/people/Leszek_Szary/sounds/146724/", "author": "Leszek_Szary", "authorUrl": "https://freesound.org/people/Leszek_Szary/", "license": "CC0", "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/" },
+        { "title": "door-open.wav", "url": "https://freesound.org/people/Qat/sounds/107640/", "author": "Qat", "authorUrl": "https://freesound.org/people/Qat/", "license": "CC0", "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/" },
+        { "title": "BowzerGunGameReady.wav", "url": "https://freesound.org/people/FrazierWing/sounds/638301/", "author": "FrazierWing", "authorUrl": "https://freesound.org/people/FrazierWing/", "license": "CC0", "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/" },
+        { "title": "Level Up 01", "url": "https://freesound.org/people/mokasza/sounds/810753/", "author": "mokasza", "authorUrl": "https://freesound.org/people/mokasza/", "license": "CC BY 4.0", "licenseUrl": "https://creativecommons.org/licenses/by/4.0/" }
+    ]
+}

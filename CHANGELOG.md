@@ -4,6 +4,11 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.14.0] - 2026-08-02
+
+### Added
+- Legal pages (`MenuState.js`'s Info panel): real Credits/Legal Notice/Privacy Policy content, replacing the "coming soon" placeholders. Credits (AI-generation disclosure for art/music/code, tools, third-party asset licenses, every Freesound.org clip used) is built entirely from a new `assets/credits.json` - loaded via `AssetLoader` at boot the same way a level JSON is, so crediting a newly-added SFX file going forward is a one-line data entry, not a code change. Legal Notice/Privacy Policy follow current German law (`§ 5 DDG`, the Digital Services Act that replaced the TMG) and disclose the confirmed data footprint (localStorage-only save data, no accounts/tracking/cookies, GitHub Pages hosting noted for its own server logs). Still-unfilled placeholder fields (name/address/contact) render in a loud color (`.legal-placeholder`) so they can't accidentally ship blank.
+
 ## [0.13.0] - 2026-08-01
 
 ### Added

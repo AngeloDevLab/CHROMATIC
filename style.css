@@ -219,6 +219,21 @@ body {
   margin-top: 0;
 }
 
+.panel-body h4 {
+  font-size: calc(15px * var(--hud-scale));
+  letter-spacing: 0.5px;
+  margin-top: calc(10px * var(--hud-scale));
+  color: rgba(242, 242, 242, 0.75);
+}
+
+/* MenuState.js's Legal Notice/Privacy Policy - marks a still-unfilled
+   placeholder field ([First name Last name], etc.) in a color that can't be
+   missed by accident before this ever goes live. */
+.legal-placeholder {
+  color: #ff8a3f;
+  font-weight: bold;
+}
+
 .difficulty-options {
   display: flex;
   flex-direction: column;
