@@ -39,14 +39,17 @@ export class LoadingState extends State {
         this.label.textContent = 'Press any key to continue';
         const proceed = () => {
             document.removeEventListener('keydown', proceed);
-            document.removeEventListener('pointerdown', proceed);
+            document.removeEventListener('pointerup', proceed);
             this._applyFullscreenPreference();
             this.game.sound.resume();
             this.game.music.start();
             this.game.stateMachine.change('menu');
         };
         document.addEventListener('keydown', proceed);
-        document.addEventListener('pointerdown', proceed);
+        // pointerup, not pointerdown - Chrome's Web Audio autoplay unlock
+        // isn't reliably granted on a gesture's start, only once it
+        // completes (https://developer.chrome.com/blog/autoplay/#web_audio).
+        document.addEventListener('pointerup', proceed);
     }
 
     /**

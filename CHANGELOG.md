@@ -4,6 +4,17 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.13.0] - 2026-08-01
+
+### Added
+- Touch controls (`ui/TouchControls.js`, `ui/LandscapeGate.js`): a virtual D-Pad (Left/Right/Jump/Drop) + Attack button on any touch-capable device, laid out as a diagonal thumb-arc on the right (Jump/Attack/Drop) rather than a stacked D-Pad - read as awkward on a real device during testing. Both plate (`btn-default`/`btn-pressed.png`, faded so the game reads through it) and icon are separate layered children so the fade never touches the icon. Buttons feed the exact same `InputHandler` state a key press does (`pressAction()`/`releaseAction()`/`triggerPress()`, new public methods) - Player.js/CombatCoordinator.js etc. never know input came from touch. Interact is deliberately not a fixed button - Interactables.js's existing `[E]` prompt elements grow a tappable icon+label on a touch device instead, shown/hidden by the exact same proximity logic as the desktop text. Pause always builds regardless of touch capability (with mouse `:hover` feedback, scoped to `(hover: hover) and (pointer: fine)` so a touchscreen's post-tap stuck-hover can't fight it) - the only way to pause at all on a device with no physical key. `LandscapeGate` blocks the whole screen with an animated "rotate your device" prompt on a touch device held portrait, and actually drops `Game._loop()`'s accumulator (not just visually covers it) so nothing keeps simulating underneath.
+- An "Alternative Controls" desktop toggle (mouse-driven touch buttons) was built, tested, and deliberately dropped again the same session - clicking small buttons one at a time doesn't compete with a keyboard's simultaneous-key holds.
+
+### Fixed
+- `Panel.js`'s `close()` fired whatever `onClose` the *currently displayed* content had registered, even when the whole owning state was tearing down - `PauseState.exit()` while its Settings sub-view happened to be open re-triggered Settings' "go back to Paused choices" callback mid-teardown, leaving a stray, still-interactive Paused panel on screen while gameplay had already resumed underneath. New `close({ silent: true })` skips that callback for a full teardown; `PauseState.exit()` uses it. `BuffState`/`GameOverState`/`MenuState` were checked and don't hit this (none of them swap Panel content mid-life the way Pause does).
+- `LoadingState`'s "press any key/tap to continue" gate listened for `pointerdown` - Chrome's Web Audio autoplay unlock isn't reliably granted on a gesture's start, only once it completes, so `SoundManager.resume()` warned it wasn't allowed to start on some touch input. Switched to `pointerup`.
+- An `.interact-prompt.tappable`'s own `display: flex` (an author rule) silently beat the browser's default `[hidden] { display: none; }` UA rule, so toggling the element's `hidden` property stopped actually hiding it - the Interact button/label stayed on screen after use instead of disappearing with its target out of range.
+
 ## [0.12.0] - 2026-08-01
 
 ### Added

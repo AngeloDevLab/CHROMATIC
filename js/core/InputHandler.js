@@ -194,4 +194,31 @@ export class InputHandler {
     consumeInteractPress() { return this._consumePress('interact'); }
 
     clearInteractPress() { this._clearPress('interact'); }
+
+    /**
+     * TouchControls.js's entry point for a held movement button
+     * (left/right/jump/drop) - same start-of-hold edge-press guard
+     * _onKeyDown() applies, so a touch Jump/Drop tap behaves identically to
+     * the matching key.
+     * @param {'left'|'right'|'jump'|'drop'} action
+     */
+    pressAction(action) {
+        if ((action === 'jump' || action === 'drop') && !this.actions[action]) this._presses[action] = true;
+        this.actions[action] = true;
+    }
+
+    /**
+     * @param {'left'|'right'|'jump'|'drop'} action
+     */
+    releaseAction(action) {
+        this.actions[action] = false;
+    }
+
+    /**
+     * TouchControls.js's entry point for a one-shot button (attack/pause/interact).
+     * @param {'attack'|'pause'|'interact'} name
+     */
+    triggerPress(name) {
+        this._presses[name] = true;
+    }
 }

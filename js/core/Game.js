@@ -243,11 +243,19 @@ export class Game {
     _loop(timestamp) {
         const frameTime = Math.min(this._lastTime ? (timestamp - this._lastTime) / 1000 : 0, FRAME_TIME_CAP_SECONDS);
         this._lastTime = timestamp;
-        this._accumulator += frameTime;
 
-        while (this._accumulator >= FIXED_DT) {
-            this.stateMachine.update(FIXED_DT);
-            this._accumulator -= FIXED_DT;
+        // LandscapeGate's portrait prompt fully blocks gameplay, not just
+        // visually - dropping the accumulator (rather than merely skipping
+        // the while loop below) also prevents a catch-up burst of queued
+        // steps firing all at once the moment the device is rotated back.
+        if (this.landscapeGate?.isBlocking) {
+            this._accumulator = 0;
+        } else {
+            this._accumulator += frameTime;
+            while (this._accumulator >= FIXED_DT) {
+                this.stateMachine.update(FIXED_DT);
+                this._accumulator -= FIXED_DT;
+            }
         }
 
         this.ctx.clearRect(0, 0, this.width, this.height);

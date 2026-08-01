@@ -79,16 +79,24 @@ export class Panel {
     }
 
     /**
-     * Closes the panel, if open, and fires its onClose callback.
+     * Closes the panel, if open, and fires its onClose callback - unless
+     * `silent`, for a caller that's tearing itself down regardless of
+     * which content is currently showing (e.g. PauseState.exit() while its
+     * Settings sub-view happens to be open). Without this, that teardown
+     * would trigger Settings' own onClose (built to go "back" to the Paused
+     * choices on a normal ×/backdrop dismiss) and reopen a stray panel
+     * right as the whole state is being torn down.
+     * @param {object} [options]
+     * @param {boolean} [options.silent=false]
      */
-    close() {
+    close({ silent = false } = {}) {
         if (!this.element) return;
         this.element.remove();
         this.element = null;
         window.removeEventListener('keydown', this._onKeyDown);
         const onClose = this._onClose;
         this._onClose = null;
-        onClose?.();
+        if (!silent) onClose?.();
     }
 
     /**

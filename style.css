@@ -687,6 +687,39 @@ body {
   white-space: nowrap;
 }
 
+/* Interactables.js's _createInteractPrompt() adds this on a touch device -
+   stacks the real Interact icon button (TouchControls.js's
+   buildTouchButtonElement(), .interact-prompt-icon override below) above
+   the same text label desktop gets, centered as a group instead of the
+   plain floating text above. */
+.interact-prompt.tappable {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(4px * var(--hud-scale));
+}
+
+/* .tappable's own display:flex above is an author rule, so it beats the
+   browser default `[hidden] { display: none; }` UA rule outright regardless
+   of specificity - without this, toggling the element's hidden property in
+   JS stopped actually hiding it the instant .tappable applied. Higher
+   specificity (3 selectors) than .interact-prompt.tappable's 2, wins
+   unconditionally instead of depending on source order. */
+.interact-prompt.tappable[hidden] {
+  display: none;
+}
+
+/* Overrides .touch-button's fixed-corner absolute positioning (higher
+   specificity than that single-class rule, wins regardless of source
+   order) - here it just sits in the flex column above, smaller than the
+   main D-Pad/action buttons since it's a secondary contextual prompt. */
+.interact-prompt .touch-button {
+  position: relative;
+  width: calc(40px * var(--hud-scale));
+  height: calc(40px * var(--hud-scale));
+  pointer-events: auto;
+}
+
 /* BossState.js's top-center HP bar label - screen-fixed like .hud-value,
    left/top set inline per-frame since the bar centers on the current
    buffer width (varies per boss arena), not a fixed position. font-size
@@ -852,4 +885,106 @@ body {
   color: #6cff8a;
   border-color: rgba(108, 255, 138, 0.4);
   cursor: default;
+}
+
+/* TouchControls.js's virtual buttons - each is a plate (.touch-button-bg,
+   faded so the game reads through it) with a fully opaque icon layered on
+   top (.touch-button-icon), kept as separate children rather than one flat
+   image so the opacity only ever touches the plate. Positions/layout below
+   are still first-guess, needs a look on a real device. */
+.touch-button {
+  position: absolute;
+  width: calc(48px * var(--hud-scale));
+  height: calc(48px * var(--hud-scale));
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.touch-button-bg,
+.touch-button-icon {
+  position: absolute;
+  inset: 0;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.touch-button-bg {
+  background-image: url('assets/icons/btn-default.png');
+  opacity: 0.55;
+}
+
+.touch-button.pressed .touch-button-bg {
+  background-image: url('assets/icons/btn-pressed.png');
+}
+
+/* Mouse-only hover feedback (the Pause button is the one .touch-button
+   that's always on screen on desktop too, see TouchControls.js) - scoped to
+   devices that actually support a real, non-sticky hover so a touchscreen's
+   post-tap "stuck hover" never fights the .pressed class above. */
+@media (hover: hover) and (pointer: fine) {
+  .touch-button:hover .touch-button-bg {
+    background-image: url('assets/icons/btn-pressed.png');
+  }
+}
+
+.touch-button-icon {
+  background-image: var(--touch-icon);
+}
+
+/* Left thumb: pure horizontal movement, no vertical D-Pad arms. Right
+   thumb: Jump/Attack/Drop step diagonally from top-right to bottom-left
+   (a natural thumb arc) rather than stacked directly above/below - session
+   decision after a first D-Pad-style layout read as awkward on a real device. */
+.touch-left { left: calc(16px * var(--hud-scale)); bottom: calc(36px * var(--hud-scale)); }
+.touch-right { left: calc(100px * var(--hud-scale)); bottom: calc(36px * var(--hud-scale)); }
+.touch-jump { right: calc(16px * var(--hud-scale)); bottom: calc(140px * var(--hud-scale)); }
+.touch-attack { right: calc(56px * var(--hud-scale)); bottom: calc(80px * var(--hud-scale)); }
+.touch-drop { right: calc(96px * var(--hud-scale)); bottom: calc(20px * var(--hud-scale)); }
+.touch-pause { top: calc(12px * var(--hud-scale)); right: calc(12px * var(--hud-scale)); }
+
+/* LandscapeGate.js - fixed outside #ui-overlay like .dev-panel, has to
+   cover the whole physical screen rather than the scaled game viewport.
+   Hidden by default, .visible toggled on portrait orientation. */
+.landscape-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #0a0a0f;
+}
+
+.landscape-gate.visible {
+  display: flex;
+}
+
+.landscape-gate-icon {
+  width: 96px;
+  height: 96px;
+  background-image: url('assets/icons/turn-device.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  animation: landscape-gate-rotate-hint 2.4s ease-in-out infinite;
+}
+
+.landscape-gate-text {
+  font-family: 'Jersey 10', monospace;
+  font-size: 20px;
+  color: #e5e5e5;
+}
+
+@keyframes landscape-gate-rotate-hint {
+  0%, 15% { transform: rotate(0deg); }
+  50%, 65% { transform: rotate(-90deg); }
+  100% { transform: rotate(0deg); }
 }

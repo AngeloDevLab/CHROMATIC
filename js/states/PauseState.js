@@ -49,7 +49,11 @@ export class PauseState extends State {
     }
 
     exit() {
-        this.panel.close();
+        // silent: this exits regardless of whether Settings or the Paused
+        // choices are currently showing - Settings' own onClose (Panel.js)
+        // is only meant for a normal ×/backdrop dismiss back to the choices,
+        // not for the whole state tearing down (see Panel.close()'s comment).
+        this.panel.close({ silent: true });
     }
 
     /**

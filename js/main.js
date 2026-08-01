@@ -15,6 +15,7 @@ import { PauseState } from './states/PauseState.js';
 import { GameOverState } from './states/GameOverState.js';
 import { BuffState } from './states/BuffState.js';
 import { DevPanel } from './ui/DevPanel.js';
+import { LandscapeGate } from './ui/LandscapeGate.js';
 
 /**
  * Persists the fullscreen state on every change, regardless of what
@@ -42,6 +43,7 @@ game.music = new MusicPlaylist(game.sound, AMBIENT_TRACK_KEYS);
 applyAudioPreferences(game);
 trackFullscreenChanges(game.save);
 game.devPanel = new DevPanel(game);
+game.landscapeGate = new LandscapeGate(game);
 game.stateMachine.register('loading', new LoadingState(game));
 game.stateMachine.register('menu', new MenuState(game));
 game.stateMachine.register('cutscene', new CutsceneState(game));

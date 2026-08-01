@@ -10,6 +10,7 @@ import { ColorZone } from '../mechanics/ColorZone.js';
 import { DeathSequence, GHOST_FRAME_SIZE } from '../mechanics/DeathSequence.js';
 import { Interactables } from '../mechanics/Interactables.js';
 import { CombatCoordinator } from '../mechanics/CombatCoordinator.js';
+import { TouchControls } from '../ui/TouchControls.js';
 import { HUD, HEALTH_BAR, SHIELD_BAR, scaleRect } from '../ui/HUD.js';
 import { DamageNumbers } from '../ui/DamageNumbers.js';
 
@@ -185,6 +186,7 @@ export class LevelSession {
         this.healthValueEl = this._createHudValueLabel(HEALTH_BAR);
         this.shieldValueEl = this._createHudValueLabel(SHIELD_BAR);
         this.tokenCounterEl = this._createTokenCounter();
+        this.touchControls = new TouchControls(this.game);
     }
 
     /**
@@ -244,6 +246,7 @@ export class LevelSession {
         this.tokenCounterEl?.remove();
         this.interactables.destroy();
         this.damageNumbers?.clear();
+        this.touchControls.destroy();
     }
 
     /**

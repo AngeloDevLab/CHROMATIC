@@ -5,6 +5,7 @@ import { Trapdoor } from '../entities/Trapdoor.js';
 import { SecretDoor, SECRET_DOOR_PRISMA_COST } from '../entities/SecretDoor.js';
 import { BuffTerminal } from '../entities/BuffTerminal.js';
 import { MerchantDialogue } from '../ui/MerchantDialogue.js';
+import { isTouchCapable, buildTouchButtonElement } from '../ui/TouchControls.js';
 
 // How close the player needs to be (center to center) to the level-end
 // portal for the [E] prompt to show/register - see _updatePortalPrompt()
@@ -82,6 +83,45 @@ export class Interactables {
     }
 
     /**
+     * Builds one of the four [E]-prompt elements (Portal/Merchant/
+     * SecretDoor/BuffTerminal) - on a touch device this is a wrapper around
+     * a real Interact icon button (TouchControls.js's buildTouchButtonElement(),
+     * same plate+icon look as the fixed corner buttons) plus a text label
+     * below it, instead of the plain "[E] ..." text desktop gets. The button
+     * taps through to InputHandler.triggerPress('interact'), the same
+     * edge-triggered press a physical E key already produces, so
+     * LevelSession's existing consumeInteractPress() poll picks either up
+     * identically. Shown/hidden/positioned per-frame by each _update*Prompt()
+     * method below exactly as before - this only changes how it's built.
+     * @param {string} text
+     * @returns {HTMLElement}
+     */
+    _createInteractPrompt(text) {
+        const el = document.createElement('div');
+        el.className = 'interact-prompt';
+        el.hidden = true;
+
+        const touch = isTouchCapable();
+        if (touch) {
+            el.classList.add('tappable');
+            const button = buildTouchButtonElement('btn-icon-interact', 'interact-prompt-icon');
+            button.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                this.game.input.triggerPress('interact');
+            });
+            el.appendChild(button);
+        }
+
+        const label = document.createElement('div');
+        // "[E] " reads as a stray artifact on a device with no E key.
+        label.textContent = touch ? text.replace('[E] ', '') : text;
+        el.appendChild(label);
+
+        this.game.overlay.appendChild(el);
+        return el;
+    }
+
+    /**
      * Level-end portal (01_core-gameplay-loop.md) - locked until every enemy
      * is dead (see updatePrompts()'s levelFullyRevealed param), then
      * interactable via [E] in range. Not every level has one placed in
@@ -99,11 +139,7 @@ export class Interactables {
         if (!this.portal) {
             console.warn('Interactables: no ExitPortal object in this level - it can\'t be completed.');
         }
-        this.interactPromptEl = document.createElement('div');
-        this.interactPromptEl.className = 'interact-prompt';
-        this.interactPromptEl.textContent = '[E] Exit Level';
-        this.interactPromptEl.hidden = true;
-        this.game.overlay.appendChild(this.interactPromptEl);
+        this.interactPromptEl = this._createInteractPrompt('[E] Exit Level');
     }
 
     /**
@@ -122,11 +158,7 @@ export class Interactables {
         this.merchant = null;
         this.tokens = [];
         this.merchantDialogue = new MerchantDialogue(this.game.overlay);
-        this.merchantPromptEl = document.createElement('div');
-        this.merchantPromptEl.className = 'interact-prompt';
-        this.merchantPromptEl.textContent = '[E] Talk';
-        this.merchantPromptEl.hidden = true;
-        this.game.overlay.appendChild(this.merchantPromptEl);
+        this.merchantPromptEl = this._createInteractPrompt('[E] Talk');
     }
 
     /**
@@ -169,11 +201,7 @@ export class Interactables {
                 opensFps: 12,
             }, greyFilterCSS)
             : null;
-        this.secretDoorPromptEl = document.createElement('div');
-        this.secretDoorPromptEl.className = 'interact-prompt';
-        this.secretDoorPromptEl.textContent = `[E] Open (${SECRET_DOOR_PRISMA_COST} Prisma)`;
-        this.secretDoorPromptEl.hidden = true;
-        this.game.overlay.appendChild(this.secretDoorPromptEl);
+        this.secretDoorPromptEl = this._createInteractPrompt(`[E] Open (${SECRET_DOOR_PRISMA_COST} Prisma)`);
     }
 
     /**
@@ -187,11 +215,7 @@ export class Interactables {
         this.buffTerminal = spawn
             ? new BuffTerminal(spawn.x, spawn.y, spawn.width, spawn.height, this.game.assets.getImage('buffterminal'))
             : null;
-        this.buffTerminalPromptEl = document.createElement('div');
-        this.buffTerminalPromptEl.className = 'interact-prompt';
-        this.buffTerminalPromptEl.textContent = '[E] Choose Buff';
-        this.buffTerminalPromptEl.hidden = true;
-        this.game.overlay.appendChild(this.buffTerminalPromptEl);
+        this.buffTerminalPromptEl = this._createInteractPrompt('[E] Choose Buff');
     }
 
     /**
@@ -428,7 +452,14 @@ export class Interactables {
             this.merchantPromptEl.style.top = `${(this.merchant.y - camera.y) * camera.zoom}px`;
         }
 
-        if (inRange && interactPressed) this._openMerchantDialogue();
+        // Hidden explicitly here, not left to the next frame's inRange
+        // check above - MerchantDialogue freezes LevelSession's update loop
+        // (see its own isOpen early-return), so this method stops running
+        // the instant the dialogue opens and would otherwise never hide it.
+        if (inRange && interactPressed) {
+            this.merchantPromptEl.hidden = true;
+            this._openMerchantDialogue();
+        }
     }
 
     /**
@@ -524,7 +555,12 @@ export class Interactables {
             this.buffTerminalPromptEl.style.top = `${(this.buffTerminal.y - camera.y) * camera.zoom}px`;
         }
 
+        // Hidden explicitly here, same reasoning as _updateMerchantPrompt()
+        // above - pushing BuffState stops this session from getting any
+        // more update() calls at all while it's on top, so nothing would
+        // otherwise ever hide this again.
         if (inRange && interactPressed) {
+            this.buffTerminalPromptEl.hidden = true;
             this.game.stateMachine.push('buff', { player: this.player, buffTerminal: this.buffTerminal });
         }
     }
