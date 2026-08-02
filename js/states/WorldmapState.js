@@ -1,6 +1,7 @@
 import { State } from './State.js';
 import { isBossLevel } from './LevelSession.js';
 import { ColorZone } from '../mechanics/ColorZone.js';
+import { MENU_ZONE, MENU_TRACK_KEYS } from '../core/MusicPlaylist.js';
 
 // 02_game-structure.md 2.1 - only Prologue is active at game start, the rest
 // unlock as previous chapters are completed.
@@ -41,6 +42,10 @@ export class WorldmapState extends State {
     enter(params) {
         this.background = this.game.assets.getImage('worldmap-prologue-bg');
         this._computeFit();
+        // Shares the Menu's zone (02_game-structure.md's Worldmap has no
+        // music of its own) - no-op if a level's own zone hasn't taken over
+        // since the last time this played here.
+        this.game.music.setZone(MENU_ZONE, MENU_TRACK_KEYS);
 
         this.completedLevels = this.game.completedLevels;
         this.selectedIndex = null;

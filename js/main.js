@@ -3,7 +3,7 @@ import { AssetLoader } from './core/AssetLoader.js';
 import { InputHandler } from './core/InputHandler.js';
 import { SaveSystem } from './core/SaveSystem.js';
 import { SoundManager } from './core/SoundManager.js';
-import { MusicPlaylist } from './core/MusicPlaylist.js';
+import { MusicPlaylist, MENU_ZONE, MENU_TRACK_KEYS } from './core/MusicPlaylist.js';
 import { applyAudioPreferences } from './ui/SettingsPanel.js';
 import { LoadingState } from './states/LoadingState.js';
 import { MenuState } from './states/MenuState.js';
@@ -29,17 +29,17 @@ function trackFullscreenChanges(save) {
     });
 }
 
-// 'ost-08' ("The Iron Sentinel") is deliberately excluded - reserved for
-// boss encounters, wired in separately once GameState triggers it.
-const AMBIENT_TRACK_KEYS = ['ost-00', 'ost-01', 'ost-02', 'ost-03', 'ost-04', 'ost-05', 'ost-06', 'ost-07'];
-
 const game = new Game('game-canvas', 'ui-overlay');
 game.assets = new AssetLoader();
 game.input = new InputHandler(game.canvas);
 game.save = new SaveSystem();
 game.loadProgress();
 game.sound = new SoundManager();
-game.music = new MusicPlaylist(game.sound, AMBIENT_TRACK_KEYS);
+game.music = new MusicPlaylist(game.sound);
+// Menu/Worldmap's zone, set here so it's already in place by the time
+// LoadingState.js's proceed() calls music.start() - MenuState/WorldmapState
+// only need to re-set this on returning to either later.
+game.music.setZone(MENU_ZONE, MENU_TRACK_KEYS);
 applyAudioPreferences(game);
 trackFullscreenChanges(game.save);
 game.devPanel = new DevPanel(game);

@@ -11,6 +11,7 @@ import { DeathSequence, GHOST_FRAME_SIZE } from '../mechanics/DeathSequence.js';
 import { Interactables } from '../mechanics/Interactables.js';
 import { CombatCoordinator } from '../mechanics/CombatCoordinator.js';
 import { TouchControls } from '../ui/TouchControls.js';
+import { LEVEL_MUSIC_ZONES } from '../core/MusicPlaylist.js';
 import { HUD, HEALTH_BAR, SHIELD_BAR, scaleRect } from '../ui/HUD.js';
 import { DamageNumbers } from '../ui/DamageNumbers.js';
 
@@ -83,6 +84,7 @@ export class LevelSession {
         this.levelNumber = level;
 
         this._loadLevel();
+        this._setMusicZone();
         this._buildLevelCanvas();
         this._initColorZone();
         this._spawnPlayer();
@@ -107,6 +109,16 @@ export class LevelSession {
         this.level = Level.load(this.game.assets, levelKey, buildTilesetRegistry(this.game.assets));
         this.collision = new Collision(this.level, 'terrain', { oneWay: true, wallLayerName: 'walls', noDropLayerName: 'noDrop' });
         this.camera = new Camera(this.game.width, this.game.height);
+    }
+
+    /**
+     * Switches the music playlist to this level's zone (MusicPlaylist.js's
+     * LEVEL_MUSIC_ZONES) - a no-op if it's already active, so e.g. Lv1 -> Lv2
+     * (same zone) doesn't interrupt whatever's currently playing.
+     */
+    _setMusicZone() {
+        const { zone, trackKeys } = LEVEL_MUSIC_ZONES[this.levelNumber];
+        this.game.music.setZone(zone, trackKeys);
     }
 
     /**

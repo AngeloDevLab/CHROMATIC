@@ -4,6 +4,15 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.15.0] - 2026-08-02
+
+### Changed
+- Ranged Sword Throw no longer costs Prisma - instead a 3s cooldown (`RANGED_ATTACK_COOLDOWN_SECONDS`, `mechanics/Combat.js`/`CombatCoordinator.js`) and half melee's damage (`RANGED_ATTACK_DAMAGE`). Attempting a throw during the cooldown shows a status text ("Ranged Attack on Cooldown") instead of the old "No Prisma" one - no persistent HUD indicator (session decision, there's no dedicated ranged button to attach one to, attack mode is auto-picked by distance).
+- `MusicPlaylist.js` reworked from a single global random rotation into named, sequential zones - `setZone(zone, trackKeys)` switches the active track list, no-op if that zone is already playing (so e.g. Lv1 -> Lv2, which share a zone, never interrupts whatever's currently chaining). Menu/Worldmap share one 9-track zone (all OST tracks, in file order, including `ost-08` "The Iron Sentinel" - no longer boss-exclusive); each level/level-group got its own shorter, hand-picked list instead (`LEVEL_MUSIC_ZONES`) - Lv1/Lv2 and Lv4/Lv5 share a zone each, Lv3/Lv6 (both boss levels) each include `ost-08` in their own rotation rather than needing a forced crossfade override the instant a boss fight starts. Playback is sequential everywhere now, not randomized (session decision). `setZone()` itself only actually plays once `start()` has run (a new `_started` gate) - it's called once at boot (`main.js`) before the "press any key/tap" gesture that unlocks the AudioContext, so it has to just record the pending zone rather than try to play immediately.
+
+### Fixed
+- The zone rework above initially caused music to cut in and out in a rapid, self-sustaining loop from the first zone switch onward (e.g. entering a level). `SoundManager.playMusic()`'s crossfade stops the outgoing track via `source.stop()`, which fires that track's `onended` the same as reaching the end naturally - a track cut short by a zone switch still fired its own `onEnded` a `fadeSeconds` later, and since `index`/`trackKeys` live on the single shared `MusicPlaylist` instance, that stale callback advanced/replayed whatever zone was current *by then*, not the one it was actually attached to. Fixed with a generation counter - `_playCurrentTrack()` bumps it, and a stale `onEnded` closure whose captured generation no longer matches is silently ignored instead of firing.
+
 ## [0.14.0] - 2026-08-02
 
 ### Added

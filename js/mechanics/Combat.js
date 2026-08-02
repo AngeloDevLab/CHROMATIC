@@ -9,14 +9,19 @@
 // player isn't forced into the enemy's own contact range just to land a hit.
 const ATTACK_REACH_PX = 40;
 
-// 03_mechanics.md 4.3: uniform for melee and ranged, no separate balancing variable.
 export const PLAYER_ATTACK_DAMAGE = 10;
 
-// Ranged Sword Throw spends Prisma as a resource cost (Player.js's
-// consumeShield(), not takeDamage()) rather than being free - without this it
-// could be spammed as long as an enemy stays just out of melee range. Melee
-// itself stays free; only the ranged path (GameState.js) charges this.
-export const RANGED_ATTACK_PRISMA_COST = 10;
+// Ranged Sword Throw deals less than melee (deliberately half, session
+// decision - melee is the stronger option, ranged is for reach/safety) and
+// no longer spends Prisma (see RANGED_ATTACK_COOLDOWN_SECONDS below for what
+// replaced that as the anti-spam gate).
+export const RANGED_ATTACK_DAMAGE = PLAYER_ATTACK_DAMAGE * 0.5;
+
+// Cooldown between ranged throws (CombatCoordinator.js's own timer, same
+// pattern as its hit-stop timer) - replaces the old Prisma cost as the
+// reason a player can't just spam ranged while an enemy sits just out of
+// melee range. First-guess like every other tuning constant in this codebase.
+export const RANGED_ATTACK_COOLDOWN_SECONDS = 3;
 
 // Per-enemy cooldown between contact-damage ticks, so standing inside an enemy
 // doesn't deal damage every single frame.

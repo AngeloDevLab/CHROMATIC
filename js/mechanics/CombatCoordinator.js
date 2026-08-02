@@ -6,8 +6,8 @@ import {
     resolveEnemyProjectileHits,
     findNearestEnemy,
     isWithinMeleeRange,
-    PLAYER_ATTACK_DAMAGE,
-    RANGED_ATTACK_PRISMA_COST,
+    RANGED_ATTACK_DAMAGE,
+    RANGED_ATTACK_COOLDOWN_SECONDS,
 } from './Combat.js';
 
 // Combat feel: a brief total freeze the instant a hit lands (melee or
@@ -52,6 +52,7 @@ export class CombatCoordinator {
         // these against the player, so there's no ambiguity to sort out.
         this.enemyProjectiles = [];
         this._hitStopTimer = 0;
+        this._rangedCooldownTimer = 0;
     }
 
     /**
@@ -74,6 +75,7 @@ export class CombatCoordinator {
      * @param {string} difficulty - Game.difficulty, for incoming-damage scaling (Combat.js).
      */
     update(dt, difficulty) {
+        this._rangedCooldownTimer = Math.max(0, this._rangedCooldownTimer - dt);
         const hits = this._resolvePlayerAttack();
         hits.push(...this._updateProjectiles(dt));
         this._updateEnemyProjectiles(dt, difficulty);
@@ -91,9 +93,9 @@ export class CombatCoordinator {
      * 03_mechanics.md 4.3: melee if the nearest enemy is in reach, a
      * thrown-sword projectile otherwise - both share the same swing
      * animation/timing (Player.js is untouched), only what happens at the
-     * swing's impact frame differs. The ranged throw spends Prisma (see
-     * RANGED_ATTACK_PRISMA_COST) so it can't be spammed indefinitely while
-     * an enemy sits just out of melee range - melee itself stays free.
+     * swing's impact frame differs. The ranged throw is on its own cooldown
+     * (RANGED_ATTACK_COOLDOWN_SECONDS) so it can't be spammed indefinitely
+     * while an enemy sits just out of melee range - melee itself stays free.
      * @returns {{enemy:Enemy,amount:number}[]} Melee hits, if any landed this frame.
      */
     _resolvePlayerAttack() {
@@ -112,15 +114,16 @@ export class CombatCoordinator {
      * @param {Enemy} target
      */
     _throwSwordAt(target) {
-        if (!this.player.consumeShield(RANGED_ATTACK_PRISMA_COST)) {
-            this.damageNumbers.spawnStatus(this.player.centerX, this.player.visualTopY, 'No Prisma for Ranged Attack');
+        if (this._rangedCooldownTimer > 0) {
+            this.damageNumbers.spawnStatus(this.player.centerX, this.player.visualTopY, 'Ranged Attack on Cooldown');
             return;
         }
+        this._rangedCooldownTimer = RANGED_ATTACK_COOLDOWN_SECONDS;
 
         this.player.facing = target.centerX >= this.player.centerX ? 1 : -1;
         const direction = this.player.facing;
         const spawnCenterX = direction === 1 ? this.player.x + this.player.width : this.player.x;
-        this.projectiles.push(new Projectile(spawnCenterX, this.player.centerY, direction, this.thrownSwordSprite, PLAYER_ATTACK_DAMAGE, this.thrownSwordTrailSprite));
+        this.projectiles.push(new Projectile(spawnCenterX, this.player.centerY, direction, this.thrownSwordSprite, RANGED_ATTACK_DAMAGE, this.thrownSwordTrailSprite));
     }
 
     /**

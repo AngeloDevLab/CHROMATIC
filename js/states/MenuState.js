@@ -8,6 +8,7 @@ import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 import { MenuButtons } from '../ui/MenuButtons.js';
 import { Panel } from '../ui/Panel.js';
 import { buildSettingsBody, wireSettingsPanel } from '../ui/SettingsPanel.js';
+import { MENU_ZONE, MENU_TRACK_KEYS } from '../core/MusicPlaylist.js';
 
 const PLAYER_SPEED = 60;
 const ENEMY_SPEED = 70;
@@ -82,32 +83,29 @@ function buildCreditsBody(credits) {
     `;
 }
 
-// Literal placeholder fields (still need the real details filled in before
-// this ever goes live) - .legal-placeholder (style.css) renders them in a
-// loud color so an unfilled field can't be missed by accident.
 const LEGAL_NOTICE_BODY = `
     <h3>Legal Notice</h3>
     <p>Information according to § 5 DDG (German Digital Services Act)</p>
-    <p class="legal-placeholder">
-        [Angelo Pietsch]<br>
-        [Haydnstraße 45]<br>
-        [02709, Löbau]<br>
-        [Sachsen]
+    <p>
+        Angelo Pietsch<br>
+        Haydnstraße 45<br>
+        02709 Löbau<br>
+        Sachsen, Germany
     </p>
     <p><strong>Contact:</strong><br>
-        Email: <span class="legal-placeholder">[apietsch94@gmail.com]</span><br>
+        Email: apietsch94@gmail.com
     </p>
     <p><strong>Responsible for content according to § 18 (2) MStV:</strong><br>
-        <span class="legal-placeholder">[Angelo Pietsch]</span>, address as above
+        Angelo Pietsch, address as above
     </p>
 `;
 
 const PRIVACY_POLICY_BODY = `
     <h3>Privacy Policy</h3>
     <p><strong>1. Controller</strong><br>
-        <span class="legal-placeholder">[Angelo Pietsch]</span><br>
-        <span class="legal-placeholder">[Haydnstraße 45, 02709, Löbau]</span><br>
-        <span class="legal-placeholder">[apietsch94@gmail.com]</span>
+        Angelo Pietsch<br>
+        Haydnstraße 45, 02709 Löbau, Germany<br>
+        apietsch94@gmail.com
     </p>
     <p><strong>2. No data collection by the game</strong><br>
         CHROMATIC does not process any personal data. There is no account
@@ -129,7 +127,7 @@ const PRIVACY_POLICY_BODY = `
     <p><strong>5. Your rights</strong><br>
         Since no personal data is stored by us, access, deletion, and
         objection rights against us are effectively not applicable in
-        practice. For questions, contact: <span class="legal-placeholder">[apietsch94@gmail.com]</span>
+        practice. For questions, contact: apietsch94@gmail.com
     </p>
 `;
 
@@ -150,6 +148,11 @@ export class MenuState extends State {
     enter() {
         this.level = Level.load(this.game.assets, 'menu-background-level', buildTilesetRegistry(this.game.assets));
         const groundSurfaceY = this.level.findGroundSurfaceY();
+
+        // No-op if already playing (the common case, boot straight into
+        // Menu) - only actually restarts when returning here from a level's
+        // own zone (e.g. Game Over's "Main Menu" choice).
+        this.game.music.setZone(MENU_ZONE, MENU_TRACK_KEYS);
 
         this._buildBackground(groundSurfaceY);
         this._buildColorZone();
