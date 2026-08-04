@@ -12,9 +12,9 @@ The central game mechanic. Color is not just visual but functional.
 
 Purely visual feature - no combat bonus for the player and no malus for enemies in colored zones. Color trail width around the player: fixed value, does not grow with progress.
 
-**Exception - Templateboss/Chapterboss fights:** the color mechanic is fully suspended for the duration of the fight (no new colored ground, no reverting either) - see [05_enemies-bosses.md](05_enemies-bosses.md) 6.2.1 for the arena presentation this enables.
+**Exception - Templateboss/Chapterboss fights:** the color mechanic itself keeps working completely normally throughout the fight - the player still colors the ground by moving, same as anywhere else. The one difference: the instant the boss's own attack fires, the whole room snaps back to grey except a small safe pocket around the player, then normal coloring resumes until the next attack. See [05_enemies-bosses.md](05_enemies-bosses.md) 6.2.1 for the arena presentation this is part of, including a current-implementation note on how it plays out for the Prologue's Wraith fights specifically.
 
-**Exception - Main Menu living background:** the demo scene behind the main menu (see [08_menu-flow.md](08_menu-flow.md)) reuses the same color-reveal technique in a decorative, non-permanent mode - the reveal follows the character as a fading bubble that dissolves back to dark after a few seconds, instead of staying colorful forever. Presentation choice for the menu only, not representative of real gameplay behavior.
+**Main Menu living background:** the demo scene behind the main menu (see [08_menu-flow.md](08_menu-flow.md)) uses the exact same permanent-reveal mode as real gameplay - the Guardian sprite walking across leaves a real, lasting color trail. It's a patrolling enemy crossing afterward that darkens it back, the same enemy-reverts-color rule as real gameplay - not a decorative fading effect. The whole thing just repeats in a loop for the menu.
 
 ## 4.2 Movement & Controls
 
@@ -30,9 +30,11 @@ Purely visual feature - no combat bonus for the player and no malus for enemies 
 | Air Attack | Unlockable | Attack while airborne |
 | Swimming | Phase 2 / Optional | - |
 
+Build status: only Double Jump and Dash exist in code so far (the guaranteed first two Merchant options, see 4.4). Wall Jump/Slide+Attack/Air Attack are designed but not yet implemented.
+
 ## 4.3 Combat System
 
-The combat system is based on automatic distance calculation. On Desktop the player clicks in the direction of the enemy, on Mobile they press the Attack Button (automatic targeting of the nearest enemy, no manual aiming) - in both cases the game automatically decides the attack mode. Both modes are available from the start (already in the Prologue) - the dynamic melee/ranged decision is part of the Core Loop from minute one, see [01_core-gameplay-loop.md](01_core-gameplay-loop.md).
+The combat system is based on automatic distance calculation. On both Desktop and Mobile, an attack automatically targets the nearest enemy - Desktop's mouse click doesn't aim, it just triggers the attack the same way Mobile's Attack Button does. In both cases the game automatically decides the attack mode (melee vs. ranged) based on distance. Both modes are available from the start (already in the Prologue) - the dynamic melee/ranged decision is part of the Core Loop from minute one, see [01_core-gameplay-loop.md](01_core-gameplay-loop.md).
 
 | Mode | Condition | Action |
 |---|---|---|
@@ -40,7 +42,7 @@ The combat system is based on automatic distance calculation. On Desktop the pla
 | Ranged | Enemy beyond threshold | Sword throw |
 
 - Weapon: Energy Sword (Rainbow/Color) — not a carried item, but a manifestation of his energy, only appears during attack animations
-- Desktop: mouse click in the direction of the enemy
+- Desktop: mouse click (any direction - the game auto-targets the nearest enemy, same as Mobile)
 - Mobile: Attack Button, automatic targeting of the nearest enemy
 - Base power: 10 damage per melee hit; ranged throw deals half that (5) and is limited by a 3s cooldown instead of a resource cost
 - Ranged throw is a single hit, not a boomerang - it doesn't return to the player
@@ -60,7 +62,9 @@ In addition to health points (see [04_health-save-system.md](04_health-save-syst
 |---|---|
 | Enemy touches the barrier | Enemy takes damage, Prisma weakens |
 | Prisma fully depleted | Follow-up damage goes directly to health points |
-| Health points at 0 | Death, back to the last checkpoint |
+| Health points at 0 | Death, restarts the level from the beginning (see [04_health-save-system.md](04_health-save-system.md) 5.1 - no mid-level checkpoint) |
 | Over time | Prisma regenerates passively at 1 point/second (base value) - 50 points (1 Secret Room) take about 50 seconds from empty |
-| Character buff (Secret Room) | One of three types per Secret Room found, cumulative: +10 Max Health, +10 Max Shield, or +1 Shield Regen/second |
+| Character buff (Secret Room) | One of three types per Secret Room found, cumulative: +20 Max Health, +20 Max Shield, or +0.5 Shield Regen/second |
 | Opening a Secret Room | Costs 50 Prisma (no key item) - the player pays with their own color energy to bring more color back to the world. Fixed value for now, may later be balanced as a % of Max Prisma |
+
+A Prisma-refill pickup (analogous to the planned Healthpacks, see [04_health-save-system.md](04_health-save-system.md) 5.1) is also wanted - not yet designed in detail (drop rates/values undecided) or implemented.

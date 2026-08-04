@@ -4,6 +4,11 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.15.1] - 2026-08-04
+
+### Changed
+- GDD-consistency pass across `docs/GDD/` (01/02/03/04/05/07/08/10/11, plus `_ideas-inbox.md`) - reconciled a large batch of text that had drifted from actual shipped behavior. Notable fixes: `10_technical-architecture.md`'s folder/assets tables and 11.7.3 rewritten to match the real `js/`/`assets/` layout (camera-zoom text was already stale, superseded by the arena-sized buffer approach); Merchant-appears wording (01/02/05) corrected from "Templateboss/Chapterboss only" to "every boss tier, gated by the player's Token balance, not the boss's own drop size" (a real code deviation from this design intent was found and logged in `TODO.md`, not fixed yet); boss-fight color-suspension text (03/05) corrected - the color mechanic runs normally throughout a fight, only the attack instant itself re-greys the room; Secret Room buff numbers (`03_mechanics.md`) corrected to the actual +20/+20/+0.5 values; Healthpacks (+ a wanted Prisma equivalent) marked designed-not-built; mid-level checkpoints removed from the design entirely and moved to `_ideas-inbox.md` (current levels are short enough that a full level restart on death is an accepted choice for now); save-system table (04) trimmed to the actually-persisted keys; `07_ui-hud.md`'s HUD table corrected (Token Counter added, Chapter/Level display and Ability Popup marked not-yet-built, touch button layout fixed); `08_menu-flow.md`'s state table/flow text corrected (BossState covers all boss tiers, BuffState is the Secret Room buff choice not Merchant purchases, Main Menu background uses a real permanent color trail not a fading bubble, Chap 1's Worldmap button stays disabled regardless of Prologue completion per the v1 scope cut, though the still-unbuilt closing cutscene should narratively tease Chap 1 anyway); `11_scope-milestones.md`'s 12.4 progress table updated to mark Worldmap color-reveal/Merchant shop UI/Touch controls/Landscape gate/LocalStorage save/Legal pages as actually done, matching CHANGELOG 0.11.0-0.14.0.
+
 ## [0.15.0] - 2026-08-02
 
 ### Changed

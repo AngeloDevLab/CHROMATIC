@@ -21,7 +21,7 @@ Scope cut from the original Prologue + Chap 1 target - Chap 1's ~18 remaining le
 - Story for the Prologue
 - Game output in English
 
-**Narrative note**: the Prologue's closing cutscene (02_game-structure.md 2.6) currently ends on "then Chap 1 opens on the Worldmap" - needs a rewrite for a standalone v1 ending now that Chap 1 doesn't open next, still to be written.
+**Narrative note**: the Prologue's closing cutscene (02_game-structure.md 2.6) currently ends on "then Chap 1 opens on the Worldmap" - the Worldmap unlock part is stale (Chap 1's button stays disabled regardless, v1 is Prologue-only), but the cutscene should still narratively tease/introduce Chap 1 as a hook for what's coming, just without it actually being playable yet. Still to be written either way - not built at all right now.
 
 ## 12.2 Phase 2 / Optional
 
@@ -59,17 +59,17 @@ Tracks actual status against the 12.1 checklist - update this instead of trying 
 | Miniboss + Templateboss | Both done. Miniboss (Wraith of the Shifting Sands, Lvl 3) rebalanced (HP/contact-damage/enrage, CHANGELOG 0.8.0). Templateboss (Lvl 6, Wraith of the Grey City) built this session (CHANGELOG 0.10.0) - extends `Wraith.js` per 05_enemies-bosses.md 6.3.1 rather than duplicating it, rolls horizontal/vertical beam axis each attack, enrage forces alternation. Remaining tuning constants (shared `Wraith.js` timers/speeds plus Templateboss-specific ones) still first-guess, see `TODO.md`. |
 | Combat system (melee + ranged) | Done, regular-enemy balance still first-guess (see `TODO.md`); boss-side damage-number/vulnerable-window bugs fixed this session (CHANGELOG 0.8.0) |
 | Color mechanic (in-level) | Done |
-| Color mechanic (Worldmap reveal) | Not built |
+| Color mechanic (Worldmap reveal) | Done (CHANGELOG 0.12.0) - the Prologue's Worldmap path is split into one zone per level, revealing hard-edged the instant that level is completed; the just-finished level's own zone instead sweeps left-to-right |
 | Shield/Prisma system | Done |
 | Difficulty selection | Done |
 | Secret Room + buff system | Done (CHANGELOG 0.6.2) - buff magnitudes still first-guess, see `TODO.md` |
-| Token economy + Merchant | Real post-boss flow done (either boss drops a Token, collecting it spawns the Merchant at its Tiled-placed position, CHANGELOG 0.9.0) - what's still missing, and the single remaining piece here, is the actual shop UI/spend flow (talk to Merchant -> spend 2 Tokens -> `Player.unlockAbility()`; Double Jump/Dash currently only unlockable via Dev Panel, see `TODO.md`'s Abilities section) |
+| Token economy + Merchant | Done (CHANGELOG 0.9.0/0.11.0) - both boss tiers drop real, collectible Tokens, and the real Merchant shop UI is live (talk to Merchant -> spend 2 Tokens -> ability unlocked), no longer Dev-Panel-only |
 | Worldmap chapter bar | Done (all 6 chapters listed, only Prologue unlocked) |
-| Touch controls | Not built (keyboard/mouse only) |
-| Landscape mode check | Not built |
-| LocalStorage save | Partial - `SaveSystem.js` (CHANGELOG 0.7.0) exists and backs Settings preferences (fullscreen, volumes, mute); `Game.completedLevels`/`Game.buffs` are still session-only, not yet migrated |
+| Touch controls | Done (CHANGELOG 0.13.0) - virtual D-Pad/Attack/Pause buttons plus a contextual Interact prompt, confirmed working on a real phone (not just DevTools touch emulation) |
+| Landscape mode check | Done (CHANGELOG 0.13.0) - a portrait-orientation gate blocks play on a touch device until it's rotated to landscape |
+| LocalStorage save | Done (CHANGELOG 0.11.0) - `completedLevels`/`buffs`/`tokens`/`abilities`/`difficulty` all persist across page reloads now, not just Settings preferences |
 | Main menu core (Start/Continue/Settings/Info) | Done |
-| Legal pages (Credits/Imprint/Privacy) | Placeholder only ("coming soon" text, `MenuState.js`) |
+| Legal pages (Credits/Imprint/Privacy) | Done (CHANGELOG 0.14.0) - real Credits/Legal Notice/Privacy Policy content, including real contact details |
 | Intro cutscene | Done |
 | Prologue closing cutscene | Not built - Lvl 6 now exists (CHANGELOG 0.10.0) so no longer blocked on that, still needs the narrative rewrite noted in 12.1 (standalone v1 ending, not "Chap 1 opens next") |
 | Prologue story | Partial (intro only so far) |

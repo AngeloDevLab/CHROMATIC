@@ -7,9 +7,9 @@
 | System | Numeric health bar, base value 100 |
 | Player display | Health bar top left in the HUD |
 | Enemy display | HP bar above the enemy's head |
-| Healthpacks | Random drop per enemy type. Small (+20 Health) - common drop from normal enemies. Large (+50 Health) - rarer, mostly from stronger enemies/minibosses |
-| Death | Back to the last checkpoint |
-| Color on death | Stays in place - only position and health reset |
+| Healthpacks | Designed, not yet implemented. Random drop per enemy type - Small (+20 Health) common from normal enemies, Large (+50 Health) rarer, mostly from stronger enemies/minibosses. A similar pickup for Prisma is wanted too, not yet designed (see [03_mechanics.md](03_mechanics.md) 4.5) |
+| Death | Restarts the level from the beginning - no mid-level checkpoint system. Considered and cut for now: current levels are short enough that a real checkpoint doesn't pay for itself yet (see `_ideas-inbox.md`) |
+| Color on death | Also resets - since the whole level restarts fresh, any color revealed during that attempt is lost along with position/health |
 
 Numeric instead of hearts, so Health can use the same bar UI component and the same damage code path as the Prisma (see 5.2). A heart-row skin on top of the numeric value remains a purely visual option later.
 
@@ -33,21 +33,16 @@ Reference Chapterboss hit (base value 100, 50% of the 200 pool on Normal): Easy 
 
 ## 5.4 Save System
 
-LocalStorage - no backend needed. Save object:
+LocalStorage - no backend needed. Currently saved:
 
 | Key | Content |
 |---|---|
-| playerPosition | x, y coordinates |
-| unlockedAbilities | Array of unlocked abilities |
-| coloredAreas | Array of colored area IDs |
-| defeatedBosses | Array of defeated bosses (Miniboss/Templateboss/Chapterboss) |
+| completedLevels | Which levels are finished - drives Worldmap color-reveal and whether Continue is offered |
 | tokens | Number of Tokens collected |
-| characterBuffs | Array/object of permanent stat buffs from Secret Rooms |
-| health | Current health value |
-| shield | Current Prisma value |
+| abilities | Array of unlocked abilities |
+| buffs | Permanent stat buffs unlocked from Secret Rooms |
 | difficulty | Chosen difficulty (Easy/Normal/Hard) |
-| checkpointId | Last active checkpoint |
-| currentChapter | Current chapter (Prologue, Chap 1, Chap 2, ...) |
-| prologComplete | Boolean - unlocks Chap 1 on the Worldmap |
+
+Not currently saved (reset every time a level is (re-)entered, since there's no mid-level checkpoint - see 5.1): player position, current health/shield, color revealed within a level. Also not saved yet since only the Prologue exists so far: which specific bosses were defeated (implied by `completedLevels` for now) and the current chapter (nothing to track beyond Prologue yet).
 
 Firebase as an optional extension for cross-device saves in Phase 2. No Firebase needed for asset delivery (sprites, sounds) - static hosting is enough, see [10_technical-architecture.md](10_technical-architecture.md).

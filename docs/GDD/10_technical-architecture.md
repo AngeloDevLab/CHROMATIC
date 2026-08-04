@@ -12,28 +12,33 @@
 
 | Folder | Content |
 |---|---|
-| core/ | Game.js, StateMachine.js, AssetLoader.js, InputHandler.js |
-| states/ | State.js (base), LoadingState, MenuState, WorldmapState, GameState, PauseState, BossState, BuffState, GameOverState, CutsceneState |
-| entities/ | Entity.js (base), Player.js |
-| entities/enemies/ | Enemy.js (base), Patroller, Charger, Shooter, Sentinel |
-| entities/bosses/ | Boss.js (base), Miniboss.js, Templateboss.js (Chapterboss inherits from Templateboss) |
-| mechanics/ | Combat.js, ColorZone.js, Shield.js, Ability.js (base), DoubleJump, Dash, WallJump, TokenEconomy.js |
-| world/ | World.js, Level.js, Room.js, Checkpoint.js |
-| ui/ | HUD.js, BossHealthBar.js, ShieldBar.js, AbilityUnlock.js, MobileControls.js |
-| utils/ | SaveManager.js, Camera.js, Collision.js, SpriteAnimation.js |
+| core/ | Game.js, StateMachine.js, AssetLoader.js, InputHandler.js, SoundManager.js, MusicPlaylist.js, SaveSystem.js |
+| states/ | State.js (base), LoadingState, MenuState, WorldmapState, PauseState, BuffState, GameOverState, CutsceneState, plus GameState/BossState - both thin wrappers around the shared LevelSession.js that owns the actual level's entities/camera/HUD |
+| entities/ | Entity.js (base), Enemy.js (base), Boss.js (base), Player.js (with its composed PlayerHealth.js/PlayerRenderer.js), DoubleJumpAbility.js/DashAbility.js, EnemyFactory.js, CharacterAnimations.js, and the level-interactable entities (Portal.js, Token.js, Merchant.js, SecretDoor.js, BuffTerminal.js, Trapdoor.js, Projectile.js, VfxEffect.js) |
+| entities/enemies/ | Charger.js, Sentinel.js, Shooter.js, ShooterProjectile.js - Patroller has no dedicated subclass, it's the base Enemy.js with patrol behavior enabled (see EnemyFactory.js) |
+| entities/bosses/ | Wraith.js (shared Miniboss/Templateboss moveset, extends Boss.js), WraithBeam.js, WraithTemplateboss.js (extends Wraith.js) |
+| mechanics/ | ColorZone.js, Combat.js, CombatCoordinator.js, EnemyRoster.js, Interactables.js, PlayerFx.js, DeathSequence.js |
+| world/ | Level.js, TilesetRegistry.js |
+| ui/ | HUD.js, Panel.js, MenuButtons.js, SettingsPanel.js, DamageNumbers.js, MerchantDialogue.js, TouchControls.js, LandscapeGate.js, DevPanel.js |
+| utils/ | Camera.js, Collision.js, SpriteAnimation.js |
 
-Inheritance chain: Entity → Enemy → Boss → Templateboss → Chapterboss. Patroller/Charger/Shooter/Sentinel inherit directly from Enemy, Player inherits directly from Entity. Abilities (DoubleJump/Dash/WallJump) are not inheritance, but composition - they're attached to the Player as Ability instances.
+Inheritance chain: Entity → Enemy → Boss → Wraith → WraithTemplateboss (a future Chapterboss would extend Boss the same way). Charger/Sentinel/Shooter inherit directly from Enemy, Patroller is the base Enemy class itself, Player inherits directly from Entity. Abilities (DoubleJump/Dash, Wall Jump not yet built) are not inheritance, but composition - they're attached to the Player as Ability instances.
 
 ### 11.2.1 Assets Folder
 
 | Folder | Content |
 |---|---|
 | assets/images/character/ | Player sprite sheets (e.g. `idle.png`, `running.png`) |
+| assets/images/enemys/ | Enemy + boss sprite sheets, one subfolder per type |
+| assets/images/objects/ | Interactable/prop sprites (Token, Portal, Trapdoor, Merchant, etc.) |
+| assets/images/vfx/ | Dash/jump/landing smoke sheets |
 | assets/images/tilesets/ | Tileset PNGs + their Tiled `.tsx` companion files |
-| assets/images/backgrounds/ | Parallax background images |
+| assets/images/backgrounds/ | Shared forest backdrop + per-scene background images (no parallax subfolder - a separately-scrolling parallax layer was tried and dropped for now, see the Background Layering note under 11.6.1 below) |
+| assets/icons/ | UI icons (touch controls, ability/menu icons) |
 | assets/levels/ | Tiled JSON level exports |
 | assets/fonts/ | Self-hosted font files (see [09_audio-visual.md](09_audio-visual.md) 10.1) |
-| assets/sounds/ | Music, SFX |
+| assets/sounds/ost/, assets/sounds/sfx/ | Music tracks, sound effect files |
+| assets/credits.json | Per-asset credit/license data, rendered into the Menu's Credits panel |
 
 ## 11.3 Controls
 
@@ -69,19 +74,13 @@ Tiles in the terrain layer must visually fill their full 32x32 cell, opaque edge
 
 **One-way by default:** levels built from several stacked walkable floors (Prologue Level 1 and onward, unless a level specifically needs solid walls) use `terrain` as a one-way platform - it only blocks when the player lands on it from above (falling onto it), and is otherwise fully passable (jumping up through it from below, walking through it sideways). `Collision.js`'s `oneWay` option controls this per level; a level that needs real solid walls (e.g. once Wall Jump unlocks in Chap 2, see [03_mechanics.md](03_mechanics.md) 4.2) sets `oneWay: false` instead, which restores full solid-from-every-side blocking - so the two collision styles coexist per level rather than being a single global rule.
 
-### Background vs. Parallax
+### Background Layering
 
-Two separate layers that complement rather than replace each other:
+For now, every level bakes in the same shared forest backdrop image as its static base layer, with each level's own Tiled Background tile layer optionally painted on top to override it where needed (e.g. a cave interior covering the forest entirely rather than showing through).
 
-- **Tiled Background layer** (part of the tilemap): scrolls 1:1 with the camera, for the immediate wall/floor texture right behind the playable area
-- **Parallax layer** (own images, not painted in Tiled, rendered in `Camera.js` with its own scroll factor e.g. 0.2x-0.5x): for distant atmosphere (sky, skyline, tree lines)
+An earlier attempt at a separately-scrolling parallax layer (its own, slower scroll speed for a sense of depth) was tried and dropped again - it doesn't compose cleanly with the world's color reveal/darken mechanic (see [03_mechanics.md](03_mechanics.md) 4.1), which needs one flat backdrop to punch color reveals into rather than several independently-moving layers. Worth revisiting once a clean way to combine the two is found - not a permanent decision, just deferred.
 
-Both are generally present at the same time, only the visual weight shifts depending on the scene:
-
-- **Enclosed spaces** (e.g. a cave passage): the Tiled Background carries the main work (rock wall right behind the platform) - little "distance" to show, parallax minimal or omitted
-- **Open areas** (e.g. an overpass above that same cave): parallax carries most of the weight (trees/bushes/sky in the distance), the Tiled Background stays sparse (at most a few nearby bushes right at the bridge railing)
-
-Saving effort: Combat/Exploration corridors get a simple, repeating tile pattern as background (reusable across many levels), real hand-painted background compositions are only worth it in boss rooms and Secret Rooms, where the player lingers and looks around.
+Later chapters will need their own distinct backdrop image(s) instead of reusing the Prologue's forest backdrop, once their settings diverge from generic forest.
 
 ### 11.6.2 Objects Layer: Markers Instead of Sprites
 
@@ -102,7 +101,7 @@ Example object in the JSON export:
   ]
 }
 ```
-The loader in `world/Level.js` reads `type` + `properties` and creates the matching entity from it (e.g. `new Patroller(320, 480)`). A door is deliberately treated as an Object/Entity rather than a Terrain tile, because it has a state (open/closed) that a static tile cannot represent.
+The level loader flattens each object into a plain `{ type, x, y, properties }` marker rather than creating entities itself - the state that owns the level reads those markers afterward and spawns the matching entity from them. A door is deliberately treated as an Object/Entity rather than a Terrain tile, because it has a state (open/closed) that a static tile cannot represent.
 
 ## 11.7 Resolution, Scaling & Size Convention
 
@@ -143,13 +142,13 @@ Deliberately **no** larger field of view on larger screens - otherwise players w
 | Secret/Exploration | ~100-140 | ~35-50 | Networked, multiple branches - lean toward the taller end to bury the Secret Room itself off the main path (e.g. underground, some corridors deliberately dead-ending) rather than it being obviously reachable |
 | Special/Gimmick | ~60-100 | ~30-40 | Or flipped (~30-40 x ~60-100) for a vertically-paced gimmick instead - orientation follows whichever axis the specific gimmick's tension plays out on ("water rising" wants height, a chase/timed sequence might want width), not a fixed rule. Confirmed against Lv_4 (60x40) |
 | Platform | ~50-70 | ~60-100 | Narrow and vertical, relevant once Wall Jump unlocks (Chap 2+) |
-| Boss level | ~30-40 | ~20-25 | ~1.5-2 screens, enclosed - should roughly match the boss zoom field of view (see 11.7.3) so an empty border doesn't show once the camera zooms out. Still tentative - needs final alignment with actual boss pacing/ability space (short travel distances, but enough room for the moveset) once an arena is fully built; Lv_3 (36x21) is the closest current reference |
+| Boss level | ~30-40 | ~20-25 | ~1.5-2 screens, enclosed - the arena's own dimensions become the render buffer directly (see 11.7.3), so there's no empty border to hide. Still tentative - needs final alignment with actual boss pacing/ability space (short travel distances, but enough room for the moveset) once an arena is fully built; Lv_3 (36x21) is the closest current reference |
 
 Note: Secret/Exploration and taller Special/Gimmick instances above already exceed the older "~35 tiles max without Wall Jump" guidance (e.g. Lv_4 at 40) - not a problem in practice as long as the extra height is crossed via drops/stacked one-way floors rather than continuous upward climbing, but worth keeping in mind when laying out a level that tall.
 
-### 11.7.3 Camera Zoom (Boss Fights)
+### 11.7.3 Arena-Sized Buffer (Boss Fights)
 
-Boss zoom-outs are a camera parameter, not a change to the base resolution. `Camera.js` normally renders tiles at an effective size of 32px (zoom 1.0). `BossState` sets a reduced zoom value on entry (e.g. 0.75 → effectively 24px per tile), which lets more tiles fit into the same 640x360 buffer (~26-27 instead of 20) - more field of view for the boss arena, without touching the base resolution or screen scaling. Zoom resets when leaving `BossState`.
+Supersedes the camera-zoom approach originally planned here (see CHANGELOG 0.8.0) - `BossState.enter()` instead resizes the render buffer itself to exactly match the boss arena's pixel dimensions (e.g. Lv_3's 960x512) before the session builds, so there's no empty border to hide and no zoom math needed. `Game._handleResize()`'s integer window-fit scale ends up smaller for the same physical window since the buffer itself is bigger - `Game.hudScale` compensates so HUD bars/labels stay a constant on-screen size regardless of the arena's buffer size (see `BossState.js`). The buffer resets to the base 640x360 on `BossState.exit()`.
 
 ## 11.8 UI Overlay & Text Rendering
 
@@ -164,4 +163,4 @@ The dividing line is interactivity and text, not "inside vs outside the game wor
 - **HTML overlay** - anything the player clicks/taps/focuses (menu items, panels, Worldmap chapter buttons, mobile touch controls, Pause menu) and any text/numbers anywhere (HUD values, labels, titles, dialogue). Partly for the crisp-font reason above, partly because native DOM elements get hit-testing, hover/press states, and multi-touch for free instead of hand-rolled canvas equivalents.
 - **Canvas** - everything rendered every frame as part of the game loop that is purely visual and non-interactive: the game world itself, sprite/tile rendering, the color mechanic, and HUD bar fills (Health/Prisma/Boss HP/Shield bars are colored rectangles, not text).
 
-A HUD bar is therefore a hybrid: the bar itself (background + proportional fill) is drawn on the canvas each frame by `ui/HUD.js`, while its accompanying number is a small HTML element in the overlay. To keep both in sync, the bar's position/size lives once as an exported constant (e.g. `HEALTH_BAR = { x: 8, y: 8, width: 64, height: 8 }` in `ui/HUD.js`) that both the canvas draw call and the HTML element's positioning read from, instead of duplicating matching magic numbers in two separate places.
+A HUD bar is therefore a hybrid: the bar itself (background + proportional fill) is drawn on the canvas each frame by `ui/HUD.js`, while its accompanying number is a small HTML element in the overlay. To keep both in sync, the bar's position/size lives once as an exported constant (e.g. `HEALTH_BAR = { x: 8, y: 8, width: 72, height: 8 }` in `ui/HUD.js`) that both the canvas draw call and the HTML element's positioning read from, instead of duplicating matching magic numbers in two separate places.

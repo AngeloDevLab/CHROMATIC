@@ -29,10 +29,10 @@ A Miniboss and its Templateboss/Chapterboss within a Template are not a random p
 
 ### 6.2.1 Arena Presentation & Combat (Templateboss/Chapterboss only)
 
-Unlike the Miniboss, Templateboss and Chapterboss fights get a dedicated arena presentation:
+Unlike the Miniboss, Templateboss and Chapterboss fights get a dedicated arena presentation - though for the Prologue's Wraiths specifically, both tiers currently share the same fight structure, so both get it, not just the Templateboss:
 
-- The boss manifests as a dark, corrupted cloud-mass entering from the left, right, and top screen edges. The camera zooms out (see 11.7.3 in [10_technical-architecture.md](10_technical-architecture.md)), and the boss's own cloud-mass visually bounds the enlarged arena on those three sides - the boss itself is the wall of the arena, not just a sprite inside it.
-- The world's color mechanic is fully suspended for the duration of the fight (see [03_mechanics.md](03_mechanics.md) 4.1): no new ground colors from movement, no reverting of existing colored ground either. The player's Prisma/Shield bar remains the only active color-coded UI element - visually, the player is the sole point of color left on screen, everything else corrupted grey/dark by the boss.
+- The arena is enlarged to its own dedicated size rather than the camera merely zooming out on the normal-sized level (see 11.7.3 in [10_technical-architecture.md](10_technical-architecture.md)). The boss manifesting as a dark, corrupted cloud-mass that visually bounds the arena on three sides is still a planned visual - currently the boss just spawns and renders like a regular enemy with its own sprite.
+- The world's color mechanic keeps working completely normally throughout the fight (see [03_mechanics.md](03_mechanics.md) 4.1) - the player still colors the ground by moving, same as anywhere else. The one exception: the instant the boss's own attack fires, the whole room snaps back to grey except a small safe pocket around the player, then normal coloring resumes until the next attack.
 - Combat uses the same base toolkit as regular enemies: melee (run up and swing) or ranged (sword throw) depending on distance, see [03_mechanics.md](03_mechanics.md) 4.3. Additionally, the boss exposes weak spot(s) via its own telegraphed abilities/attacks - hitting the weak spot during its window deals bonus damage.
 - The Chapterboss keeps this same arena presentation as its baseline, then adds the further black/white maximum-contrast escalation on top (see table above).
 

@@ -4,7 +4,7 @@
 
 Between levels, the player is on a Worldmap. The Worldmap consists of nodes (level entry points) that are connected linearly - matching the fixed level order within a Template.
 
-A permanent chapter bar sits at the top of the screen with up to 6 buttons: **Prologue, Chap 1, Chap 2, Chap 3, Chap 4, Epilogue**. At the start of the game only the Prologue button is active, the others are greyed out with a "Coming Soon" label and unlock once the previous chapter is completed. Details on the menu flow in [08_menu-flow.md](08_menu-flow.md).
+A permanent chapter bar sits at the top of the screen with up to 6 buttons: **Prologue, Chap 1, Chap 2, Chap 3, Chap 4, Epilogue**. At the start of the game only the Prologue button is active, the others are greyed out and unlock once the previous chapter is completed. Details on the menu flow in [08_menu-flow.md](08_menu-flow.md).
 
 The Worldmap plays into the color mechanic: defeated levels and their connecting paths turn colorful on the Worldmap - the Darkness is visibly pushed back.
 
@@ -38,6 +38,8 @@ The Chapterboss is therefore not a fourth tier, but the special edition of the T
 | Chap 1 | 3 |
 | Chap 2–4 | variable, 3-5+ (decided fresh per chapter) |
 | Epilogue | 1 (final confrontation) |
+
+**v1 note**: only the Prologue is in the current v1 scope - Chap 1 onward is Phase 2/Optional (see [11_scope-milestones.md](11_scope-milestones.md) 12.1/12.2). The rest of this section documents the full intended structure regardless.
 
 ## 2.3 Level Types
 
@@ -92,7 +94,7 @@ The Prisma paywall makes opening one a real trade-off (power now vs. power later
 | Templateboss | 2 Tokens |
 | Chapterboss | 2 Tokens (same as Templateboss, same tier slot) |
 
-Tokens are the sole currency at the Merchant, who appears after every Templateboss/Chapterboss. Abilities cost 2 Tokens. Secret Rooms do **not** contribute to the Token economy - they're a completely separate reward track for permanent stat upgrades.
+Tokens are the sole currency at the Merchant, who appears after every boss defeat, regardless of tier. Whether a shop actually opens depends on the player's Token balance at that point (2 minimum for an ability), not the boss's tier by itself - in the Prologue this happens to line up with tier (the Miniboss is always the player's first boss ever, so its 1 Token can't afford anything yet; the Templateboss's own 2 push the running total to 3, which can), but from Chap 1 onward a Miniboss encountered with Tokens already banked from an earlier boss can unlock a real shop too. Abilities cost 2 Tokens. Secret Rooms do **not** contribute to the Token economy - they're a completely separate reward track for permanent stat upgrades.
 
 Tokens carry over across chapters and are never lost or reset - if more Tokens exist than there are currently purchasable abilities (e.g. because Wall Jump is only available from Chap 2 onward, see [03_mechanics.md](03_mechanics.md) 4.2), they're automatically carried into the next chapter.
 
@@ -110,14 +112,16 @@ Story: The Darkness devours the world. Just before it buries everything beneath 
 |---|---|---|
 | 1 | Combat (Tutorial) | Introduce running, jumping, dropping through platforms, melee combat; Patroller and Charger introduced |
 | 2 | Combat (Tutorial) | Introduce ranged combat (sword throw); Shooter and Sentinel introduced |
-| 3 | Boss (Miniboss) | First Miniboss, introduces first boss theme → 1 Token |
-| 4 | Special | A trapdoor leads to a random underground level |
+| 3 | Boss (Miniboss) | First Miniboss, introduces first boss theme → 1 Token, Merchant appears (flavor-only tease, 1 Token can't afford anything yet) |
+| 4 | Special | A trapdoor breaks open under the player, dropping them into a hidden underground passage |
 | 5 | Secret | Secret Room, easy to find → first character buff |
 | 6 | Boss (Templateboss) | Boss at the city → 2 Tokens, Merchant appears, first ability purchasable |
 
 After Lvl 6: a short cutscene with the first story fragment, then Chap 1 opens on the Worldmap.
 
 ## 2.7 Chapter 1 - "The Awoken"
+
+**Phase 2/Optional** - not part of the current v1 scope (see [11_scope-milestones.md](11_scope-milestones.md) 12.1/12.2), documented here as the intended next content.
 
 Story: The Guardian reaches the outskirts of the city, fights his way inward and then through the surrounding land - until he stands at the edge of the forest and recognizes the scale of the Darkness across the entire kingdom. He still knows nothing about his own origin at this point — that only comes together over the following chapters and the Epilogue.
 
@@ -131,7 +135,7 @@ Surface. Sprawling. Decayed streets, buildings, squares. Enemies: Patroller, Sen
 | 1 | Combat | First Patrollers, combat system in a new setting |
 | 2 | Combat | More enemies, first Sentinels |
 | 3 | Secret | Exploration, first Secret Room of the chapter |
-| 4 | Boss (Miniboss) | **The Gatebreaker** → 1 Token |
+| 4 | Boss (Miniboss) | **The Gatebreaker** → 1 Token, Merchant appears |
 | 5 | Special | Level almost completely dark - only the color radius lights it |
 | 6 | Combat | Higher enemy density, build-up to the Templateboss |
 | 7 | Boss (Templateboss) | **Ashlord of the City** → 2 Tokens, Merchant appears |
@@ -143,7 +147,7 @@ Underground. Tight. Wet. More dangerous. Enemies: Patroller, Charger, Sentinel.
 |---|---|---|
 | 1 | Combat | New zone, Charger introduced |
 | 2 | Secret | Secret Room, branching layout |
-| 3 | Boss (Miniboss) | **The Sludge Colossus** → 1 Token |
+| 3 | Boss (Miniboss) | **The Sludge Colossus** → 1 Token, Merchant appears |
 | 4 | Special | Rising water forces the player to rush upward |
 | 5 | Combat | Pre-Boss, short and intense |
 | 6 | Boss (Templateboss) | **The Flood Lord** → 2 Tokens, Merchant appears |
@@ -156,7 +160,7 @@ Outside the city. Sprawling. Dark. Threatening. Enemies: all types, Shooter new.
 | 1 | Combat | Forest's edge, Shooter introduced, sprawling |
 | 2 | Combat | Dense forest, all enemy types at once |
 | 3 | Secret | Deepest point of the forest, last Secret Room, story fragment |
-| 4 | Boss (Miniboss) | **The Thorn Colossus** → 1 Token |
+| 4 | Boss (Miniboss) | **The Thorn Colossus** → 1 Token, Merchant appears |
 | 5 | Special | Thick fog - only the color radius shows safe paths |
 | 6 | Combat | Clearing, short build-up, cutscene preparation |
 | 7 | Boss (Chapterboss) | **Forest Spirit of Darkness** → 2 Tokens, Merchant appears |
@@ -164,6 +168,8 @@ Outside the city. Sprawling. Dark. Threatening. Enemies: all types, Shooter new.
 Closing cutscene: the Guardian steps out of the forest - the entire kingdom lies in Darkness. End of Chap 1, cliffhanger.
 
 ## 2.8 Planned Chapters - World Geography
+
+**Phase 2/Optional** - all beyond the Prologue (see 11_scope-milestones.md 12.1/12.2).
 
 | Chapter | Theme | Zones |
 |---|---|---|
