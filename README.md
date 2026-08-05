@@ -25,25 +25,13 @@ Implemented with two Canvas layers using `destination-out` compositing, no dupli
 
 ## Current Status
 
-Concept phase complete, implementation underway.
-
-- [x] Game Design Document (complete, maintained iteratively)
-- [x] Scope defined and bounded
-- [x] Technical architecture planned (state machine, inheritance hierarchy, asset/level pipeline)
-- [x] Foundation: game loop, state machine, canvas rendering, fullscreen window-fill scaling
-- [x] Color-mechanic prototype (validated via the main menu's living background demo scene)
-- [ ] Real player movement & input handling (desktop first)
-- [ ] Prologue (6 levels)
+The Prologue - v1's full scope - is playable start to finish: all 6 levels, both bosses, the full combat/color/shield/ability/token systems, touch and keyboard controls, and a LocalStorage save. Currently in a polish phase - playtesting and balancing, a closing cutscene, and a final legal review still ahead before release.
 
 ## Scope
 
-Deliberately kept disciplined:
+Deliberately kept disciplined: v1 is a complete **Prologue** - 1 template, 6 levels, combat system, color mechanic, shield system, boss hierarchy, and token economy. Chapter 1 and beyond (3 more templates, ~20 levels) is intentionally out of scope for this project rather than an unfinished stretch goal - the Prologue proves the reusable system end to end, everything beyond it would be content scaling, not new architectural risk.
 
-- **Goal (v1):** a complete **Prologue**: 1 template, 6 levels, including combat system, color mechanic, shield system, boss hierarchy, and token economy.
-- **Stretch goal:** Chapter 1 (3 templates, ~20 levels), only if time remains after the Prologue.
-- **Timeframe:** 3–5 weeks (3 weeks full-time baseline, realistically 4–5 due to the training running in parallel).
-
-The Prologue proves the reusable system; everything beyond it is content scaling, not new architectural risk.
+Targeted for 3–5 weeks (3 weeks full-time baseline, realistically 4–5 due to a training program running in parallel).
 
 ## Tech Stack
 
@@ -55,21 +43,36 @@ The Prologue proves the reusable system; everything beyond it is content scaling
 - **Audio:** Web Audio API (GainNode hierarchy: Master → Music / SFX / Ambience)
 - **Platforms:** desktop (keyboard/mouse) and mobile (touch), landscape
 
+## Getting Started
+
+No build step, no dependencies - it's static files loaded directly by the browser. Since it loads modules via `<script type="module">` and levels via `fetch()`, it needs to be served over HTTP rather than opened as a `file://` URL:
+
+```bash
+git clone https://github.com/AngeloDevLab/CHROMATIC.git
+cd CHROMATIC
+npx serve .
+# or: python -m http.server
+```
+
+Then open the served `index.html` in your browser. Using VS Code instead? The [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) extension works too - no Node/Python needed, just right-click `index.html` → "Open with Live Server".
+
 ## Controls
 
 | | Desktop | Mobile |
 |---|---|---|
-| Move | WASD / arrow keys | directional buttons |
-| Jump | W / spacebar | jump button |
-| Crouch | S / shift | crouch button |
-| Attack | click toward enemy | attack button (auto-targeting) |
-| Pause | ESC | pause button |
+| Move | A/D or Left/Right arrows | directional buttons |
+| Jump | W / spacebar / Up arrow | jump button |
+| Drop through platform | S / Down arrow | drop button |
+| Dash (once unlocked) | double-tap A or D | double-tap left/right |
+| Attack | click | attack button (auto-targeting) |
+| Interact | E | contextual on-screen prompt |
+| Pause | P | pause button |
 
 The game decides between melee and ranged attacks automatically based on distance to the enemy.
 
 ## Documentation
 
-The full Game Design Document lives in [`docs/`](./docs): story, mechanics, balancing, technical architecture, asset list, and milestones.
+The full Game Design Document lives in [`docs/GDD/`](./docs/GDD): story, mechanics, balancing, technical architecture, and milestones.
 
 ## Project Context
 
