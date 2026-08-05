@@ -44,7 +44,7 @@ The combat system is based on automatic distance calculation. On both Desktop an
 - Weapon: Energy Sword (Rainbow/Color) — not a carried item, but a manifestation of his energy, only appears during attack animations
 - Desktop: mouse click (any direction - the game auto-targets the nearest enemy, same as Mobile)
 - Mobile: Attack Button, automatic targeting of the nearest enemy
-- Base power: 10 damage per melee hit; ranged throw deals half that (5) and is limited by a 3s cooldown instead of a resource cost
+- Base power: 10 damage per melee hit; ranged throw deals half that (5) and is limited by a 2s cooldown instead of a resource cost
 - Ranged throw is a single hit, not a boomerang - it doesn't return to the player
 - Combos: Phase 2 / Optional
 

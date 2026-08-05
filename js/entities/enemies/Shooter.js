@@ -1,14 +1,14 @@
 import { Enemy } from '../Enemy.js';
 import { ShooterProjectile } from './ShooterProjectile.js';
 
-// 05_enemies-bosses.md 6.5 (Zone 3+ balancing draft) - untested, so this
-// stays at the GDD's own raw values (same reasoning as Charger.js's
-// CHARGE_HP/Sentinel.js's SENTINEL_HP). The table gives one "Damage/Hit"
-// value for the type, reused for both its contact damage (if the player
-// closes in anyway) and its projectile damage.
-const SHOOTER_HP = 15;
-const SHOOTER_CONTACT_DAMAGE = 8;
-const SHOOTER_PROJECTILE_DAMAGE = 8;
+// 05_enemies-bosses.md 6.5 - set this session's balancing pass. 20 HP (2
+// melee hits, up from 15) so it doesn't melt instantly if a player does
+// close the distance. Contact/projectile damage both unified to 10 (matches
+// every other enemy type's contact hit) - the table gives one "Damage/Hit"
+// value for the type, reused for both.
+const SHOOTER_HP = 20;
+const SHOOTER_CONTACT_DAMAGE = 10;
+const SHOOTER_PROJECTILE_DAMAGE = 10;
 
 // "Keeps distance" (05_enemies-bosses.md 6.1) - engages from farther out than
 // Charger's own 190px charge range, since threatening from range rather than
@@ -17,8 +17,10 @@ const SHOOTER_RANGE_PX = 260;
 const SHOOTER_HEIGHT_TOLERANCE_PX = 24;
 // After a shot (windup + recovery), how long before the next - without this
 // it'd fire as fast as the animation allows, reading as a hose rather than
-// individual shots. First-guess, needs playtesting.
-const DEFAULT_SHOT_COOLDOWN_SECONDS = 1.8;
+// individual shots. Bumped 1.8->2 this session's balancing pass, paired with
+// the projectile speed cut (ShooterProjectile.js) so shots read as more
+// dodgeable individually rather than a fast, dense stream.
+const DEFAULT_SHOT_COOLDOWN_SECONDS = 2;
 // Frame within the 6-frame shoot animation the projectile actually spawns at
 // - mirrors Player.js's ATTACK_IMPACT_FRAME (animation and the actual
 // game-logic spawn are two different things kept in sync by frame index).

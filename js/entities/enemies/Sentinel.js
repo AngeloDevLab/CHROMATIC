@@ -1,10 +1,11 @@
 import { Enemy } from '../Enemy.js';
 
-// 05_enemies-bosses.md 6.5 (Zone 1 balancing draft) - untested, so this stays
-// at the GDD's own raw values rather than guessing a bump (same reasoning as
-// Charger.js's CHARGE_HP).
-const SENTINEL_HP = 30;
-const SENTINEL_CONTACT_DAMAGE = 8;
+// 05_enemies-bosses.md 6.5 - set this session's balancing pass. 35 HP (4
+// melee hits, the tankiest of the roster) compensates for Sentinel being
+// stationary and never having to be chased down. Contact damage unified to
+// 10 (matches every other enemy type's contact hit).
+const SENTINEL_HP = 35;
+const SENTINEL_CONTACT_DAMAGE = 10;
 
 // Fully below its own former position while buried (its whole 64px frame
 // height, not a partial sink) - belt-and-suspenders in case the terrain art
@@ -19,8 +20,10 @@ const BURY_DEPTH_PX = 64;
 const DEFAULT_RISE_DURATION_SECONDS = 0.6;
 // Simple radius check (not a rectangular tolerance like Charger's) - a static
 // sentry reacting to distance in every direction reads fine, no need for the
-// same-floor nuance a moving charge attack needs.
-const DEFAULT_AGGRO_RANGE_PX = 80;
+// same-floor nuance a moving charge attack needs. Bumped 80->90 this
+// session's balancing pass, a slightly earlier warning felt fairer given how
+// little time the rise animation otherwise leaves to react.
+const DEFAULT_AGGRO_RANGE_PX = 90;
 
 // Sentinel behavior (05_enemies-bosses.md 6.1: "Static, aggros when
 // approached"). Deliberately the simplest enemy in the roster - unlike

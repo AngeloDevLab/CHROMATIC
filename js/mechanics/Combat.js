@@ -20,8 +20,10 @@ export const RANGED_ATTACK_DAMAGE = PLAYER_ATTACK_DAMAGE * 0.5;
 // Cooldown between ranged throws (CombatCoordinator.js's own timer, same
 // pattern as its hit-stop timer) - replaces the old Prisma cost as the
 // reason a player can't just spam ranged while an enemy sits just out of
-// melee range. First-guess like every other tuning constant in this codebase.
-export const RANGED_ATTACK_COOLDOWN_SECONDS = 3;
+// melee range. Cut 3->2 this session's balancing pass, 3s read as too
+// sluggish for a half-damage option that's supposed to be the safer/faster
+// alternative to closing the distance.
+export const RANGED_ATTACK_COOLDOWN_SECONDS = 2;
 
 // Per-enemy cooldown between contact-damage ticks, so standing inside an enemy
 // doesn't deal damage every single frame.

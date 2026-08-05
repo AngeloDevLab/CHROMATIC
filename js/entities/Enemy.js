@@ -13,9 +13,10 @@ export const HIT_FLASH_SECONDS = 0.15;
 // patrolSpeed * facing on the very next frame, making the hit invisible.
 const KNOCKBACK_LOCK_SECONDS = 0.15;
 
-// Patroller behavior (05_enemies-bosses.md), HP bumped up from the GDD's 20
-// (Zone 1 balancing draft) per playtesting feedback - 2 hits felt too fast.
-const DEFAULT_HP = 50;
+// Patroller behavior (05_enemies-bosses.md). 30 HP (3 melee hits) - set this
+// session's balancing pass, down from an earlier 50 that read as too tanky
+// for the roster's baseline enemy.
+const DEFAULT_HP = 30;
 // Bumped from the GDD's original 5 - at 5, the difficulty multiplier's effect
 // on a single Patroller hit was too small to actually notice while playing.
 const DEFAULT_CONTACT_DAMAGE = 10;

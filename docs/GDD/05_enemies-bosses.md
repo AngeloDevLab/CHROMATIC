@@ -80,10 +80,12 @@ Rough values for calibration, to be adjusted after playtesting. Base: player dam
 
 | Type | HP | Damage/Hit | Player hits until enemy dead | Enemy hits until player dead (1v1, isolated) |
 |---|---|---|---|---|
-| Patroller | 20 | 10 | 2 | 20 |
-| Sentinel | 30 | 8 | 3 | 25 |
-| Charger (Zone 2+) | 25 | 10 | 3 | 20 |
-| Shooter (Zone 3+) | 15 | 8 | 2 | 25 |
+| Patroller | 30 | 10 | 3 | 20 |
+| Sentinel | 35 | 10 | 4 | 20 |
+| Charger (Zone 2+) | 25 | 10 (20 while mid-charge) | 3 | 20 (10 if repeatedly caught mid-charge) |
+| Shooter (Zone 3+) | 20 | 10 | 2 | 20 |
+
+Revised this session: contact/projectile damage unified to 10 across every type (previously 8-10) - Sentinel and Shooter both compensate for the higher damage with more HP (Sentinel's own HP also reflects it being stationary and never chased down), landing every type at the same 20-hit baseline for how long a player can tank isolated hits.
 
 Zone 3 "stronger variants" (see [02_game-structure.md](02_game-structure.md) 2.4): +50% to HP and damage.
 
