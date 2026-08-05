@@ -192,6 +192,7 @@ export class LevelSession {
             revealRadius: PLAYER_REVEAL_RADIUS,
             damageNumbers: this.damageNumbers,
             collision: this.collision,
+            levelNumber: this.levelNumber,
             onComplete: () => this._completeLevel(),
         });
 

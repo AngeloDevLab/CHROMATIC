@@ -79,6 +79,19 @@ export class Game {
         this.buffs = new Set();
         this.tokens = 0;
         this.abilities = new Set();
+        // Levels whose boss Token reward has already been granted once -
+        // separate from completedLevels (which only ever gets set via the
+        // exit portal) so replaying an already-fought boss level can't drop
+        // fresh Tokens again just because the player never reached the
+        // portal on a prior visit (Interactables.js's onBossDefeated()).
+        this.claimedBossTokens = new Set();
+        // Same reasoning as claimedBossTokens above, but for a level's Secret
+        // Room buff choice (BuffState.js's _choose()) - `buffs` alone can't
+        // guard this, since it's a Set of buff *types* (cumulative once more
+        // Secret Rooms exist in later chapters, see 03_mechanics.md 4.5), not
+        // per-level, so it can't tell "already claimed this level's buff"
+        // apart from "never claimed this buff type from any Secret Room yet".
+        this.claimedSecretRoomBuffs = new Set();
     }
 
     /**
@@ -93,6 +106,8 @@ export class Game {
         this.tokens = this.save.get('tokens', 0);
         this.abilities = new Set(this.save.get('abilities', []));
         this.difficulty = this.save.get('difficulty', null);
+        this.claimedBossTokens = new Set(this.save.get('claimedBossTokens', []));
+        this.claimedSecretRoomBuffs = new Set(this.save.get('claimedSecretRoomBuffs', []));
     }
 
     /**
@@ -108,6 +123,8 @@ export class Game {
         this.save.set('tokens', this.tokens);
         this.save.set('abilities', [...this.abilities]);
         this.save.set('difficulty', this.difficulty);
+        this.save.set('claimedBossTokens', [...this.claimedBossTokens]);
+        this.save.set('claimedSecretRoomBuffs', [...this.claimedSecretRoomBuffs]);
     }
 
     /**
@@ -123,6 +140,8 @@ export class Game {
         this.buffs = new Set();
         this.tokens = 0;
         this.abilities = new Set();
+        this.claimedBossTokens = new Set();
+        this.claimedSecretRoomBuffs = new Set();
     }
 
     /**

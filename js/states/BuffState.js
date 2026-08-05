@@ -2,7 +2,8 @@ import { State } from './State.js';
 import { Panel } from '../ui/Panel.js';
 
 // Secret Room reward (docs/GDD/02_game-structure.md 2.5) - pushed on top of
-// GameState from BuffTerminal's interact handler (GameState._updateBuffTerminal()).
+// GameState from BuffTerminal's interact handler (Interactables.js's
+// _updateBuffTerminalPrompt()).
 // Dismissible (session decision: a player who doesn't want to choose right
 // now can back out with ×/backdrop/Escape) since the terminal itself has no
 // cost of its own and stays unused, so they can just walk up and try again
@@ -16,11 +17,12 @@ import { Panel } from '../ui/Panel.js';
 // of them have to remember to do it themselves.
 export class BuffState extends State {
     /**
-     * @param {{player: import('../entities/Player.js').Player, buffTerminal: import('../entities/BuffTerminal.js').BuffTerminal}} params
+     * @param {{player: import('../entities/Player.js').Player, buffTerminal: import('../entities/BuffTerminal.js').BuffTerminal, levelNumber: number}} params
      */
-    enter({ player, buffTerminal }) {
+    enter({ player, buffTerminal, levelNumber }) {
         this._player = player;
         this._buffTerminal = buffTerminal;
+        this._levelNumber = levelNumber;
         this.panel = new Panel(this.game.overlay);
         this.panel.openChoices('Choose a Buff', [
             { id: 'maxHealth', label: '+20 Max Health', onClick: () => this._choose('maxHealth') },
@@ -40,6 +42,16 @@ export class BuffState extends State {
      * @param {string} buffId - One of Player.applyBuff()'s recognized buff ids.
      */
     _choose(buffId) {
+        // Belt-and-suspenders against replaying this level: Interactables.js
+        // already pre-marks the terminal `used` on spawn if this level's
+        // buff was already claimed, so this shouldn't normally be reachable,
+        // but applyBuff() is additive (+=) - worth guarding directly too
+        // rather than relying solely on the UI not offering the choice.
+        if (this.game.claimedSecretRoomBuffs.has(this._levelNumber)) {
+            this.panel.close();
+            return;
+        }
+        this.game.claimedSecretRoomBuffs.add(this._levelNumber);
         this.game.buffs.add(buffId);
         this.game.saveProgress();
         this._player.applyBuff(buffId);

@@ -81,12 +81,37 @@ export class CombatCoordinator {
         this._updateEnemyProjectiles(dt, difficulty);
 
         const contactHits = resolveContactDamage(dt, this.player, this.enemies, difficulty);
-        hits.push(...contactHits);
+        this._displayContactHitsOnPlayer(contactHits);
+        // Only forward the enemy's own (unscaled) share into the shared
+        // enemy-hit display below - contactHits carries playerAmount/
+        // enemyAmount separately (Combat.js), not one shared `amount` like
+        // melee/projectile hits, and a charging enemy's enemyAmount is 0
+        // (no self-damage that tick, see Combat.js's _resolveEnemyContact())
+        // so it's filtered out here rather than showing a stray "0".
+        hits.push(...contactHits.filter((hit) => hit.enemyAmount > 0).map((hit) => ({ enemy: hit.enemy, amount: hit.enemyAmount })));
         this._displayEnemyHits(hits);
         // Contact damage always hits the player (the barrier exchange), even
         // when charging skips the enemy's own side of it - see Combat.js's
         // _resolveEnemyContact().
-        if (contactHits.length > 0) this.sound.playSfx('hit-player');
+        if (contactHits.length > 0) {
+            this._hitStopTimer = HIT_STOP_SECONDS;
+            this.sound.playSfx('hit-player');
+        }
+    }
+
+    /**
+     * Contact damage is bidirectional (Combat.js's resolveContactDamage) -
+     * the enemy's own share is folded into the shared hits array in update()
+     * above (so it goes through the same _displayEnemyHits() sfx/hit-stop
+     * path as melee/projectile hits), but the player's share needs its own
+     * display here, anchored at the player rather than the enemy - same
+     * reasoning as _updateEnemyProjectiles()'s playerHits loop.
+     * @param {{enemy:Enemy,playerAmount:number,enemyAmount:number}[]} contactHits
+     */
+    _displayContactHitsOnPlayer(contactHits) {
+        for (const hit of contactHits) {
+            this.damageNumbers.spawn(this.player.centerX, this.player.visualTopY, hit.playerAmount);
+        }
     }
 
     /**

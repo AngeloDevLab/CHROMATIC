@@ -255,12 +255,18 @@ export function resolveEnemyProjectileHits(projectiles, player, difficulty) {
  * as a placeholder pending real balancing. Dead means no more Prisma barrier
  * - without this, an enemy idly overlapping the player's frozen
  * death-position hitbox would keep taking contact damage from a "ghost"
- * that shouldn't be a combatant anymore.
+ * that shouldn't be a combatant anymore. Returns both sides' amounts
+ * separately (playerAmount/enemyAmount) rather than one shared `amount` like
+ * the other resolve* functions - a contact hit is bidirectional, and the two
+ * sides can differ (difficulty multiplier and the charge multiplier only
+ * apply to the player's side, see _resolveEnemyContact()) - collapsing them
+ * into one number previously showed the player's (difficulty-scaled) damage
+ * floating over the *enemy*, which read as the enemy's own HP loss.
  * @param {number} dt - Elapsed time in seconds.
  * @param {Player} player
  * @param {Enemy[]} enemies
  * @param {string} difficulty
- * @returns {{enemy:Enemy,amount:number}[]}
+ * @returns {{enemy:Enemy,playerAmount:number,enemyAmount:number}[]}
  */
 export function resolveContactDamage(dt, player, enemies, difficulty) {
     if (player.dead) return [];
@@ -278,18 +284,19 @@ export function resolveContactDamage(dt, player, enemies, difficulty) {
  * Dormant (Sentinel.js, buried and not yet triggered) is harmless by design
  * - the ambush is the aggro range, not a surprise touch. A Charger mid-rush
  * is deliberately attacking, not just idly bumping into the barrier - hits
- * harder and skips the self-damage mirror, or every successful charge would
- * tick it to death off its own rush (25 HP / 10 contactDamage = dead in 3
- * barrier touches, which read as the Charger "suiciding" into the player).
- * The 1s contactCooldown still applies either way, so this can't fire more
- * than once per second per enemy regardless of charging. Pushes both apart
- * along whichever side the player is standing on, rather than a fixed
- * direction - mirrors the melee push above.
+ * harder and skips the self-damage mirror (enemyAmount comes back 0, so no
+ * damage number shows over an enemy that took none), or every successful
+ * charge would tick it to death off its own rush (25 HP / 10 contactDamage =
+ * dead in 3 barrier touches, which read as the Charger "suiciding" into the
+ * player). The 1s contactCooldown still applies either way, so this can't
+ * fire more than once per second per enemy regardless of charging. Pushes
+ * both apart along whichever side the player is standing on, rather than a
+ * fixed direction - mirrors the melee push above.
  * @param {number} dt - Elapsed time in seconds.
  * @param {Player} player
  * @param {Enemy} enemy
  * @param {number} multiplier - Difficulty damage multiplier.
- * @returns {{enemy:Enemy,amount:number}|null} The hit, if contact damage actually landed this frame.
+ * @returns {{enemy:Enemy,playerAmount:number,enemyAmount:number}|null} The hit, if contact damage actually landed this frame.
  */
 function _resolveEnemyContact(dt, player, enemy, multiplier) {
     if (enemy.dead || enemy.dormant) return null;
@@ -299,14 +306,14 @@ function _resolveEnemyContact(dt, player, enemy, multiplier) {
     if (!rectsOverlap(player, enemy)) return null;
 
     const isCharging = !!enemy.charging;
-    const playerDamage = enemy.contactDamage * multiplier * (isCharging ? CHARGE_CONTACT_DAMAGE_MULTIPLIER : 1);
+    const playerAmount = enemy.contactDamage * multiplier * (isCharging ? CHARGE_CONTACT_DAMAGE_MULTIPLIER : 1);
+    const enemyAmount = isCharging ? 0 : enemy.takeDamage(enemy.contactDamage);
 
-    player.takeDamage(playerDamage);
-    if (!isCharging) enemy.takeDamage(enemy.contactDamage);
+    player.takeDamage(playerAmount);
 
     const pushDir = player.centerX >= enemy.centerX ? 1 : -1;
     player.applyKnockback(pushDir * PLAYER_KNOCKBACK_SPEED);
     enemy.applyKnockback(-pushDir * ENEMY_KNOCKBACK_SPEED);
     enemy.contactCooldown = CONTACT_DAMAGE_COOLDOWN_SECONDS;
-    return { enemy, amount: playerDamage };
+    return { enemy, playerAmount, enemyAmount };
 }

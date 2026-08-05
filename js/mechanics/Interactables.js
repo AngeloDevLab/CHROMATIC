@@ -65,14 +65,16 @@ export class Interactables {
      * @param {number} options.revealRadius - LevelSession's PLAYER_REVEAL_RADIUS, reused so "revealed" tracks the same distance as the color trail.
      * @param {DamageNumbers} options.damageNumbers - For "not enough Prisma" status text.
      * @param {Collision} options.collision - For the boss-drop Tokens' fall onto the floor (_updateTokens()).
+     * @param {number} options.levelNumber - This level's number, to key `Game.claimedBossTokens` (onBossDefeated()) so a boss's Token reward is only ever granted once per level, independent of completedLevels/how the level is left.
      * @param {() => void} options.onComplete - Called when the player exits through the completed level's portal.
      */
-    constructor(game, level, player, { greyFilterCSS, revealRadius, damageNumbers, collision, onComplete }) {
+    constructor(game, level, player, { greyFilterCSS, revealRadius, damageNumbers, collision, levelNumber, onComplete }) {
         this.game = game;
         this.player = player;
         this._revealRadius = revealRadius;
         this.damageNumbers = damageNumbers;
         this._collision = collision;
+        this._levelNumber = levelNumber;
         this._onComplete = onComplete;
 
         this._spawnPortal(level, greyFilterCSS);
@@ -215,6 +217,14 @@ export class Interactables {
         this.buffTerminal = spawn
             ? new BuffTerminal(spawn.x, spawn.y, spawn.width, spawn.height, this.game.assets.getImage('buffterminal'))
             : null;
+        // Already claimed on an earlier visit (Game.claimedSecretRoomBuffs,
+        // BuffState.js's _choose()) - start pre-used so replaying this level
+        // can't offer (and stack) a second buff choice from the same
+        // terminal. `used` alone (BuffTerminal.js's own instance field)
+        // doesn't survive a replay's fresh LevelSession on its own.
+        if (this.buffTerminal && this.game.claimedSecretRoomBuffs.has(this._levelNumber)) {
+            this.buffTerminal.used = true;
+        }
         this.buffTerminalPromptEl = this._createInteractPrompt('[E] Choose Buff');
     }
 
@@ -283,7 +293,13 @@ export class Interactables {
      * boss's position (see _buildTokenDrop()) for the player to walk over,
      * and remembers the boss's name (Boss.js) for _openMerchantDialogue()
      * once they're all collected. No-op if this level has no Merchant object
-     * placed in Tiled, or this has already fired once.
+     * placed in Tiled, this has already fired once this session, or this
+     * level's boss reward was already claimed on an earlier visit
+     * (Game.claimedBossTokens - replaying a level, e.g. via the Worldmap or
+     * by leaving through Pause instead of the exit portal, must not let the
+     * same boss drop fresh Tokens indefinitely). Marks the reward claimed
+     * and saves immediately, rather than waiting for the Tokens to actually
+     * be picked up - once the boss is dead the reward is committed.
      * @param {number} centerX - Boss's centerX at time of death.
      * @param {number} centerY - Boss's centerY at time of death.
      * @param {string} bossName - Boss.name, shown in the Templateboss+ greeting.
@@ -291,6 +307,9 @@ export class Interactables {
      */
     onBossDefeated(centerX, centerY, bossName, tokenReward) {
         if (!this._merchantSpawn || this.tokens.length || this.merchant) return;
+        if (this.game.claimedBossTokens.has(this._levelNumber)) return;
+        this.game.claimedBossTokens.add(this._levelNumber);
+        this.game.saveProgress();
         this._bossName = bossName;
         this._tokenReward = tokenReward;
         this.tokens = this._buildTokenDrop(centerX, centerY, tokenReward);
@@ -561,7 +580,7 @@ export class Interactables {
         // otherwise ever hide this again.
         if (inRange && interactPressed) {
             this.buffTerminalPromptEl.hidden = true;
-            this.game.stateMachine.push('buff', { player: this.player, buffTerminal: this.buffTerminal });
+            this.game.stateMachine.push('buff', { player: this.player, buffTerminal: this.buffTerminal, levelNumber: this._levelNumber });
         }
     }
 

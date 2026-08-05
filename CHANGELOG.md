@@ -4,6 +4,21 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.15.4] - 2026-08-05
+
+### Fixed
+- Contact-damage floating numbers showed the wrong value over the wrong combatant. `Combat.js`'s `resolveContactDamage()` returned one shared `amount` for a bidirectional hit - actually the player's own (difficulty-scaled) damage taken - which `CombatCoordinator.js` then displayed floating over the *enemy*, misread as the enemy's own HP loss (e.g. 10 contact damage on Easy's ×0.5 multiplier showed "5" over the enemy, which had actually lost the full unscaled 10 HP). The player also never got any damage number of their own for contact hits at all. A charging Charger made it worse still: it takes no self-damage mid-charge by design, but a number still floated over it as if it had. Fixed by returning `playerAmount`/`enemyAmount` separately and displaying each at the right position - the enemy's share now also skips the number entirely while charging, matching that it took none.
+
+## [0.15.3] - 2026-08-05
+
+### Fixed
+- Boss Token and Secret Room buff rewards could be farmed without limit by replaying an already-completed level - neither reward had any persistent per-level "already claimed" record, only session-local instance state (`Interactables.js`'s `this.tokens`/`this.merchant`, `BuffTerminal.js`'s `used`) that reset every time a fresh `LevelSession` was built, whether from the Worldmap (which never blocked re-entering a completed level) or from leaving via Pause -> Main Menu without ever reaching the exit portal (the only path that sets `completedLevels`). Fixed with two new persisted `Game` fields, `claimedBossTokens`/`claimedSecretRoomBuffs` (both `Set<levelNumber>`, saved/loaded/reset alongside `completedLevels` etc.) - `Interactables.onBossDefeated()` and `BuffState._choose()` now check and claim against these directly, independent of level-completion state. Levels themselves stay freely replayable (a boss can still be re-fought, a Secret Room re-entered) - only the one-time reward no longer re-grants.
+
+## [0.15.2] - 2026-08-05
+
+### Changed
+- Regular-enemy balancing pass (`docs/GDD/05_enemies-bosses.md` 6.5): Patroller HP 50->30, Sentinel HP 30->35 + contact damage 8->10 + aggro range 80px->90px, Shooter HP 15->20 + contact/projectile damage 8->10 + shot cooldown 1.8s->2s + projectile speed 190->180 (`entities/Enemy.js`/`enemies/Sentinel.js`/`enemies/Shooter.js`/`enemies/ShooterProjectile.js`). Every regular enemy type now deals a uniform 10 contact damage and takes 20 isolated hits to kill the player at Normal difficulty. Charger and all boss numbers deliberately untouched. Ranged sword-throw cooldown also cut 3s->2s (`RANGED_ATTACK_COOLDOWN_SECONDS`, `mechanics/Combat.js`) - 3s read as too sluggish for the supposedly faster/safer ranged option. First real playtest-ready pass, not yet confirmed by actual play.
+
 ## [0.15.1] - 2026-08-04
 
 ### Changed
