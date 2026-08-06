@@ -4,6 +4,72 @@ Working list of what's next. Update together at the end of a session (see `CHANG
 
 ## Architecture (next up, high priority)
 
+- **In progress: comment/JSDoc convention pass across every file** (started 2026-08-06, not in CHANGELOG yet - only logs there once the whole pass is done, see the 0.8.1 entry below for the shape that'll take). Goal per CLAUDE.md's comment convention: move why-prose out of function bodies into JSDoc at its natural anchor (a class field, a method's own doc block) instead, or a top-of-file block only when it's genuinely shared across many methods (not just convenient) - plus split out a helper where a function's grown past ~14 lines partly because of this. File-by-file checklist, check off as done:
+  - [x] `js/main.js` - reviewed, no changes needed
+  - [x] `js/core/Game.js` - comments relocated to class-field JSDoc, `_loop()`/`resizeBuffer()` split into named helpers
+  - [x] `js/core/StateMachine.js` - stale cross-reference + top-comment rewrap fixed
+  - [x] `js/core/AssetLoader.js` - reviewed, already clean
+  - [x] `js/core/InputHandler.js` - top block trimmed, `_onKeyDown()`'s comment moved into its own JSDoc
+  - [x] `js/core/SaveSystem.js` - reviewed, already clean
+  - [x] `js/core/SoundManager.js` - reviewed, already clean
+  - [x] `js/core/MusicPlaylist.js` - constructor fields converted to class fields + JSDoc
+  - [x] `js/ui/LandscapeGate.js` - reviewed, already clean
+  - [ ] `js/ui/SettingsPanel.js`
+  - [ ] `js/ui/DevPanel.js`
+  - [ ] `js/states/State.js`
+  - [ ] `js/states/LoadingState.js`
+  - [ ] `js/states/MenuState.js`
+  - [ ] `js/states/CutsceneState.js`
+  - [ ] `js/states/WorldmapState.js`
+  - [ ] `js/states/GameState.js`
+  - [ ] `js/states/BossState.js`
+  - [ ] `js/states/PauseState.js`
+  - [ ] `js/states/GameOverState.js`
+  - [ ] `js/states/BuffState.js`
+  - [ ] `js/states/LevelSession.js` - big file, save for a dedicated pass
+  - [ ] `js/mechanics/Interactables.js` - big file, save for a dedicated pass
+  - [ ] `js/mechanics/CombatCoordinator.js`
+  - [ ] `js/mechanics/Combat.js`
+  - [ ] `js/mechanics/ColorZone.js`
+  - [ ] `js/mechanics/DeathSequence.js`
+  - [ ] `js/mechanics/EnemyRoster.js`
+  - [ ] `js/mechanics/PlayerFx.js`
+  - [ ] `js/entities/Entity.js`
+  - [ ] `js/entities/Player.js` - big file, save for a dedicated pass
+  - [ ] `js/entities/PlayerHealth.js`
+  - [ ] `js/entities/PlayerRenderer.js`
+  - [ ] `js/entities/CharacterAnimations.js`
+  - [ ] `js/entities/DashAbility.js`
+  - [ ] `js/entities/DoubleJumpAbility.js`
+  - [ ] `js/entities/Enemy.js`
+  - [ ] `js/entities/EnemyFactory.js`
+  - [ ] `js/entities/Boss.js`
+  - [ ] `js/entities/bosses/Wraith.js` - big file, save for a dedicated pass
+  - [ ] `js/entities/bosses/WraithBeam.js`
+  - [ ] `js/entities/bosses/WraithTemplateboss.js`
+  - [ ] `js/entities/enemies/Charger.js`
+  - [ ] `js/entities/enemies/Sentinel.js`
+  - [ ] `js/entities/enemies/Shooter.js`
+  - [ ] `js/entities/enemies/ShooterProjectile.js`
+  - [ ] `js/entities/Projectile.js`
+  - [ ] `js/entities/Portal.js`
+  - [ ] `js/entities/SecretDoor.js`
+  - [ ] `js/entities/Trapdoor.js`
+  - [ ] `js/entities/BuffTerminal.js`
+  - [ ] `js/entities/Merchant.js`
+  - [ ] `js/entities/Token.js`
+  - [ ] `js/entities/VfxEffect.js`
+  - [ ] `js/ui/HUD.js`
+  - [ ] `js/ui/DamageNumbers.js`
+  - [ ] `js/ui/MenuButtons.js`
+  - [ ] `js/ui/MerchantDialogue.js`
+  - [ ] `js/ui/Panel.js`
+  - [ ] `js/ui/TouchControls.js`
+  - [ ] `js/utils/Camera.js`
+  - [ ] `js/utils/Collision.js`
+  - [ ] `js/utils/SpriteAnimation.js`
+  - [ ] `js/world/Level.js`
+  - [ ] `js/world/TilesetRegistry.js`
 - **GameState/BossState split - done** (see CHANGELOG 0.8.0): `GameState.js`/`BossState.js` are now thin wrappers around `LevelSession`, itself further split into `Interactables`/`CombatCoordinator` (`js/mechanics/`). Convention cleanup (JSDoc/~14-line functions) applied to `LevelSession.js`, `Wraith.js`, and `WraithBeam.js`.
 - **Convention cleanup fully done** (see CHANGELOG 0.8.1): `Player.js`/`ColorZone.js`, the last two files from the Group 1-7 pass (CHANGELOG 0.7.0), now have JSDoc/~14-line-function/top-of-file-only-comment conventions applied. Also added a new CLAUDE.md convention (file length ~400 lines, cohesive chunks pulled into composed sub-modules instead of growing one file) and applied it immediately: `Player.js` (588 lines post-cleanup) split into `Player.js` (movement/physics/animation) + `PlayerHealth.js` (Health/Shield/buff/damage) + `PlayerRenderer.js` (sprite-drawing pipeline) - `Player.js` keeps thin delegating methods/getters so no external caller needed to change. Not retroactive (see CLAUDE.md's Code Style intro), but worth noting for a future pass: `LevelSession.js` (813 lines, grew further this session with Lvl 6 Templateboss spawn/animation wiring plus the new player VFX system), `Interactables.js` (450), `Wraith.js` (487, grew from the Templateboss's shared extension-point hooks), and `Player.js` (496, after this session's VFX mailbox) are now over the new ~400-line guideline. `WraithTemplateboss.js` (new this session, 122 lines) and `WraithBeam.js` (197 lines, grew with axis support) stay comfortably under it despite the added mechanic.
 - **Boss fight (Wraith of the Shifting Sands) - feels solid now** (see CHANGELOG 0.8.0: HP/contact-damage/enrage rebalance, vulnerable-window bugfix, boss HP bar). The small floating per-enemy HP bar is now suppressed for Boss-type enemies (`HUD.renderEnemyBar()`), no longer redundant alongside the top-center boss bar. Still open, deliberately deferred as separate/lower-priority: boss-specific SFX/VFX (boss currently reuses the generic `hit-enemy`/`enemy-death` cues, see "Content/systems still needed" below).

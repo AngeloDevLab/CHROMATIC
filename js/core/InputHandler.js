@@ -1,8 +1,10 @@
-// Key -> logical action name. Movement/jump/drop are held states read via
-// isDown(); attack/pause/interact are edge-triggered one-shot presses (see
-// _presses below) since a mouse click or P/E tap should fire exactly
-// once, not keep re-triggering every frame the input happens to still read
-// as active.
+/**
+ * Key -> logical action name. Movement/jump/drop are held states read via
+ * isDown(); attack/pause/interact are edge-triggered one-shot presses (see
+ * _presses below) since a mouse click or P/E tap should fire exactly once,
+ * not keep re-triggering every frame the input happens to still read as
+ * active.
+ */
 const KEY_MAP = {
     ArrowLeft: 'left', KeyA: 'left',
     ArrowRight: 'right', KeyD: 'right',
@@ -10,26 +12,21 @@ const KEY_MAP = {
     ArrowDown: 'drop', KeyS: 'drop',
 };
 
-// Every edge-triggered action (attack/jump/drop/pause/interact) follows the
-// same consume-once contract: consumeXPress() returns true at most once per
-// press and clears itself, so callers can poll every frame regardless of
-// whether they're currently able to act on it right now (Player.js stashes
-// a jump press into its own buffer window instead of losing one that
-// arrived a few frames before landing; a click during an ongoing attack
-// doesn't queue up and fire late once the swing ends). clearXPress()
-// discards a pending press without consuming it as a real action - used
-// when switching screens, so a leftover P/click/E from the previous
-// screen doesn't instantly pause/attack/interact on the very next one.
-// Jump and drop each *also* have a held state in `actions` (jump's for
-// Player.js's variable jump height; drop's kept purely for symmetry with
-// jump's repeat-guard, nothing else reads it) - both edge-triggered presses
-// are guarded against the browser's own keydown auto-repeat in _onKeyDown,
-// so holding the key doesn't re-trigger the press every repeat tick.
+// Every edge-triggered action follows a consume-once contract:
+// consumeXPress() returns true at most once per press, then clears itself -
+// callers can poll every frame regardless of whether they can currently act
+// on it (e.g. Player.js buffers an early jump press until landing).
+// clearXPress() discards a pending press without consuming it, used when
+// switching screens so a leftover press doesn't fire on the next one.
+// Jump/drop also keep a held state in `actions` (jump's for variable jump
+// height; drop's unused, kept only for symmetry) - both presses are guarded
+// against the browser's keydown auto-repeat in _onKeyDown, so holding the
+// key doesn't refire every tick.
 // mousedown/contextmenu are scoped to the canvas, not window: a click on UI
 // (worldmap "Start Level", menu panels, ...) would otherwise queue up an
 // attack that fires the instant GameState's Player exists next frame, and
 // right-click is reserved for gameplay (planned), so the browser's own
-// context menu is suppressed only over the canvas, not the HTML overlay.
+// context menu is suppressed only over the canvas.
 // blur/visibilitychange both release all held actions: a held key's keyup
 // never reaches the page if focus leaves the window/tab first (Alt+Tab,
 // switching apps/tabs), and either event can fire without the other
@@ -96,17 +93,14 @@ export class InputHandler {
     }
 
     /**
+     * Routes a keydown to the matching held/edge-triggered action. Pause is
+     * bound to KeyP, not Escape: the Fullscreen API reserves Escape as an
+     * unoverridable "exit fullscreen" key, so pausing via Escape would also
+     * unpredictably drop fullscreen (Panel.js's own Escape-to-dismiss
+     * handling for sub-panels is separate and unaffected).
      * @param {KeyboardEvent} e - The browser keydown event.
      */
     _onKeyDown(e) {
-        // KeyP, not Escape (not a KEY_MAP entry - same reasoning as KeyE
-        // below) - the Fullscreen API reserves Escape as a browser-level
-        // "always exits fullscreen" key that pages can't override, so
-        // pausing via Escape while fullscreen also (unavoidably, and
-        // unpredictably from the player's POV) drops out of it. Deliberately
-        // not bound to pause for that reason, even though it's the genre
-        // convention - Panel.js's own separate Escape-to-dismiss handling
-        // (sub-panels like Settings/difficulty picker) is unaffected.
         if (e.code === 'KeyP') {
             this._presses.pause = true;
             return;

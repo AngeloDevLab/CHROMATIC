@@ -1,12 +1,12 @@
-// push()/pop() let a state (Pause/GameOver/Buff) stack on top of whatever is
-// currently running instead of replacing it -
-// the state underneath never gets exit()/enter()'d, so it stays exactly as
-// it was (mid-level position, timers, entities) and keeps rendering its last
-// frame behind the overlay. change() is still the right call for an actual
-// replacement (Menu/Worldmap/GameState/BossState) - it now also unwinds the
-// whole stack first, not just `current`, so nothing pushed earlier leaks
-// (e.g. Game Over's "Retry"/"Main Menu" must tear the dead GameState down
-// too, not just the Game Over panel on top of it).
+// push()/pop() let a state (Pause/GameOver/Buff) stack on top of whatever
+// is currently running instead of replacing it - the state underneath
+// never gets exit()/enter()'d, so it stays exactly as it was (mid-level
+// position, timers, entities) and keeps rendering its last frame behind
+// the overlay. change() is still the right call for an actual replacement
+// (Menu/Worldmap/GameState/BossState) - it now also unwinds the whole
+// stack first, not just `current`, so nothing pushed earlier leaks (e.g.
+// Game Over's "Retry"/"Main Menu" must tear the dead GameState down too,
+// not just the Game Over panel on top of it).
 export class StateMachine {
     /**
      * @param {Game} game - The owning Game instance, passed through to states.
@@ -76,7 +76,7 @@ export class StateMachine {
 
     /**
      * Exits `current` and every state still beneath it on the stack, then
-     * clears the stack - see change()'s own comment for why this has to
+     * clears the stack - see the top-of-file comment for why this has to
      * unwind the whole thing instead of just the top.
      */
     _exitStack() {
