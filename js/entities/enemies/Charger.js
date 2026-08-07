@@ -1,31 +1,43 @@
 import { Enemy } from '../Enemy.js';
 
-// 05_enemies-bosses.md 6.5 (Zone 2+ balancing draft) - distinct from the base
-// Enemy/Patroller defaults (50 HP, tuned up from playtesting - see Enemy.js),
-// no equivalent playtesting done for Charger yet so this stays at the GDD's
-// own raw value instead of guessing a similar bump.
+/**
+ * 05_enemies-bosses.md 6.5 (Zone 2+ balancing draft) - distinct from the
+ * base Enemy/Patroller defaults (50 HP, tuned up from playtesting - see
+ * Enemy.js), no equivalent playtesting done for Charger yet so this stays
+ * at the GDD's own raw value instead of guessing a similar bump.
+ */
 const CHARGE_HP = 25;
 
-// Nudged down twice now (170 -> 140 -> 115) - first-guess, needs playtesting.
+/**
+ * Nudged down twice now (170 -> 140 -> 115) - first-guess, needs playtesting.
+ */
 const DEFAULT_CHARGE_SPEED = 115;
-// How close (and how level with the charger, vertically) the player needs to
-// be to trigger a charge - a simple distance+height check rather than a real
-// line-of-sight raycast, consistent with the rest of this codebase's 2D
-// collision checks. Raised from 150 for an earlier detection/telegraph.
+
+/**
+ * How close (and how level with the charger, vertically) the player needs
+ * to be to trigger a charge - a simple distance+height check rather than a
+ * real line-of-sight raycast, consistent with the rest of this codebase's
+ * 2D collision checks. Raised from 150 for an earlier detection/telegraph.
+ */
 const CHARGE_RANGE_PX = 190;
 const CHARGE_HEIGHT_TOLERANCE_PX = 24;
-// A charge travels this far and then stops, win or lose - a bit more than
-// CHARGE_RANGE_PX so it usually still reaches a player who hasn't moved, but
-// bounded rather than an indefinite homing chase (facing is locked once at
-// the start below, not re-aimed every frame) - a dodge (sidestep, jump over)
-// actually ends the encounter instead of the charger endlessly re-tracking.
-// Trimmed from 220 alongside the CHARGE_RANGE_PX increase above, keeping it
-// just past that range rather than growing the gap between them.
+
+/**
+ * A charge travels this far and then stops, win or lose - a bit more than
+ * CHARGE_RANGE_PX so it usually still reaches a player who hasn't moved,
+ * but bounded rather than an indefinite homing chase (facing is locked
+ * once at the start below, not re-aimed every frame) - a dodge (sidestep,
+ * jump over) actually ends the encounter instead of the charger endlessly
+ * re-tracking.
+ */
 const DEFAULT_CHARGE_DISTANCE_PX = 210;
-// After a charge ends (wall hit or losing the player), how long before it can
-// trigger another one - without this it would immediately re-charge the
-// instant conditions are met again (e.g. right off a wall bounce), which
-// reads as relentless rather than a readable "rush, then recover" beat.
+
+/**
+ * After a charge ends (wall hit or losing the player), how long before it
+ * can trigger another one - without this it would immediately re-charge
+ * the instant conditions are met again (e.g. right off a wall bounce),
+ * which reads as relentless rather than a readable "rush, then recover" beat.
+ */
 const DEFAULT_CHARGE_COOLDOWN_SECONDS = 5;
 
 // Charger behavior (05_enemies-bosses.md 6.1: "Spots the player, rushes in").

@@ -4,9 +4,11 @@ const VOLUME_BUSES = [
     { id: 'sfx', label: 'SFX' },
 ];
 
-// Defaults to 50%, not full volume - untested raw levels (esp. the OST,
-// see main.js) plus system/speaker volume stacking on top can get
-// uncomfortably loud on a first run, so new players start at a safer level.
+/**
+ * Defaults to 50%, not full volume - untested raw levels (esp. the OST,
+ * see main.js) plus system/speaker volume stacking on top can get
+ * uncomfortably loud on a first run, so new players start at a safer level.
+ */
 const DEFAULT_VOLUME = 0.5;
 
 /**
@@ -69,11 +71,13 @@ function buildDisplaySection() {
     `;
 }
 
-// Mirrors InputHandler.js's KEY_MAP plus its two hardcoded keys (KeyP/
-// KeyE) and the mouse-click attack (03_mechanics.md 4.3) - read-only display
-// only, no rebinding logic here. Key rebinding UI is Phase 2 (same
-// deferred-feature convention as e.g. Swimming in 03_mechanics.md 4.2), not
-// built yet - this section exists so Controls isn't just a placeholder until then.
+/**
+ * Mirrors InputHandler.js's KEY_MAP plus its two hardcoded keys (KeyP/
+ * KeyE) and the mouse-click attack (03_mechanics.md 4.3) - read-only display
+ * only, no rebinding logic here. Key rebinding UI is Phase 2 (same
+ * deferred-feature convention as e.g. Swimming in 03_mechanics.md 4.2), not
+ * built yet - this section exists so Controls isn't just a placeholder until then.
+ */
 const CONTROLS = [
     { label: 'Run', keys: 'A / D or Left/Right Arrow' },
     { label: 'Jump', keys: 'W / Space / Up Arrow' },

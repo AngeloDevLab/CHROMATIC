@@ -4,14 +4,19 @@ import { Sentinel } from './enemies/Sentinel.js';
 import { Shooter } from './enemies/Shooter.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 
-// Enemy sheets (assets/images/enemys/<type>/) are their own 64x64 convention,
-// independent of the player's 96x96 one.
+/**
+ * Enemy sheets (assets/images/enemys/<type>/) are their own 64x64
+ * convention, independent of the player's 96x96 one.
+ */
 const ENEMY_FRAME_SIZE = 64;
-// Maps an EnemySpawn object's Tiled Name field to its asset keys - add an
-// entry here once a new enemy type actually exists in code. `charge` is
-// Charger-only (its distinct rush sprite, see enemies/Charger.js); `shoot`/
-// `projectile` are Shooter-only (its distinct firing sprite and the bolt it
-// fires, see enemies/Shooter.js) - absent for types that don't use them.
+
+/**
+ * Maps an EnemySpawn object's Tiled Name field to its asset keys - add an
+ * entry here once a new enemy type actually exists in code. `charge` is
+ * Charger-only (its distinct rush sprite, see enemies/Charger.js); `shoot`/
+ * `projectile` are Shooter-only (its distinct firing sprite and the bolt it
+ * fires, see enemies/Shooter.js) - absent for types that don't use them.
+ */
 const ENEMY_SPRITE_SETS = {
     patroller: { running: 'enemy-patroller-walking-idle', dead: 'enemy-patroller-dead' },
     charger: { running: 'enemy-charger-walking-idle', dead: 'enemy-charger-dead', charge: 'enemy-charger-charge' },

@@ -1,6 +1,9 @@
 const RISE_PX = 20;
 const DAMAGE_DURATION_SECONDS = 0.7;
-// Text takes longer to read than a 2-3 digit damage number, held up longer.
+
+/**
+ * Text takes longer to read than a 2-3 digit damage number, held up longer.
+ */
 const STATUS_DURATION_SECONDS = 1.2;
 
 // Floating popups over an entity's head - damage numbers over enemies, and

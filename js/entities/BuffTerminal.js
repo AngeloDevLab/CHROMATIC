@@ -15,9 +15,9 @@ export class BuffTerminal extends Entity {
      * @param {number} y - World Y position.
      * @param {number} width - Width from the Tiled object.
      * @param {number} height - Height from the Tiled object.
-     * @param {HTMLImageElement|null} [sprite=null] - Static terminal sprite; falls back to a filled rect if absent.
+     * @param {HTMLImageElement} sprite - Static terminal sprite.
      */
-    constructor(x, y, width, height, sprite = null) {
+    constructor(x, y, width, height, sprite) {
         super(x, y, width, height);
         this.sprite = sprite;
         this.used = false;
@@ -29,17 +29,7 @@ export class BuffTerminal extends Entity {
     render(ctx) {
         ctx.save();
         ctx.globalAlpha = this.used ? 0.35 : 1;
-
-        if (this.sprite) {
-            ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
-        } else {
-            ctx.fillStyle = '#e0c23f';
-            ctx.fillRect(this.x, this.y, this.width, this.height);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(this.x, this.y, this.width, this.height);
-        }
-
+        ctx.drawImage(this.sprite, this.x, this.y, this.width, this.height);
         ctx.restore();
     }
 }

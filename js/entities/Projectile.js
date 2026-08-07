@@ -1,29 +1,40 @@
 import { Entity } from './Entity.js';
 
-// thrown_sword.png is 32x64 (narrow, portrait) - hitbox/render size matches
-// the sprite's native resolution instead of squashing it into a square.
+/**
+ * thrown_sword.png is 32x64 (narrow, portrait) - hitbox/render size
+ * matches the sprite's native resolution instead of squashing it into a square.
+ */
 const PROJECTILE_WIDTH = 32;
 const PROJECTILE_HEIGHT = 64;
 const PROJECTILE_SPEED = 400;
-// Despawns after traveling this far without hitting anything, so a miss
-// doesn't just fly forever off the edge of the level.
+
+/**
+ * Despawns after traveling this far without hitting anything, so a miss
+ * doesn't just fly forever off the edge of the level.
+ */
 const MAX_TRAVEL_PX = 300;
 
-// How far each swept sub-step advances before re-checking for a solid tile -
-// small enough that a fast throw can't tunnel through a thin wall in one
-// frame (Collision.resolve()'s own X-axis check is disabled for one-way
-// levels, see GameState.js, so this can't just reuse that).
+/**
+ * How far each swept sub-step advances before re-checking for a solid tile -
+ * small enough that a fast throw can't tunnel through a thin wall in one
+ * frame (Collision.resolve()'s own X-axis check is disabled for one-way
+ * levels, see GameState.js, so this can't just reuse that).
+ */
 const SWEEP_STEP_PX = 4;
 
-// Continuous spin for a "thrown blade" look - thrown_sword.png is a single
-// static image (no sprite sheet), so this is the only motion cue on it.
+/**
+ * Continuous spin for a "thrown blade" look - thrown_sword.png is a single
+ * static image (no sprite sheet), so this is the only motion cue on it.
+ */
 const ROTATION_PER_PX = 0.15;
 
-// Ghost-trail echoes rendered behind the blade using thrown_sword_trail.png
-// (192x24, 8 frames of 24x24 - a motion-blur circle at 8 spin phases). Echo
-// spacing/frame are derived from distance traveled rather than a timer, so
-// the trail always lines up with where the blade actually was, in sync with
-// its own ROTATION_PER_PX spin.
+/**
+ * Ghost-trail echoes rendered behind the blade using thrown_sword_trail.png
+ * (192x24, 8 frames of 24x24 - a motion-blur circle at 8 spin phases). Echo
+ * spacing/frame are derived from distance traveled rather than a timer, so
+ * the trail always lines up with where the blade actually was, in sync
+ * with its own ROTATION_PER_PX spin.
+ */
 const TRAIL_SOURCE_FRAME_SIZE = 24;
 const TRAIL_RENDER_SIZE = 64;
 const TRAIL_FRAME_COUNT = 8;

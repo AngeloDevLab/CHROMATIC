@@ -28,8 +28,8 @@ export class Panel {
      *   one of the panel's own options instead.
      * @param {boolean} [options.closeOnEscape=dismissible] - Defaults to
      *   `dismissible`, but can be forced off while still allowing
-     *   backdrop/× - for a caller (e.g. GameState's buff-choice panel) that
-     *   needs to handle Escape itself instead of Panel's own window-level
+     *   backdrop/× - for a caller (e.g. PauseState.js's Settings sub-view)
+     *   that needs to handle Escape itself instead of Panel's own window-level
      *   listener, so the two don't both react to the same keypress (Panel
      *   closing the panel *and* the caller separately treating that same
      *   Escape as "open Pause" a frame later).

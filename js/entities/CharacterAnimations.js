@@ -1,14 +1,18 @@
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 
-// attack.png is a wider canvas than the other guardian sheets - gives the
-// sword room to swing past the body without clipping the frame edge.
+/**
+ * attack.png is a wider canvas than the other guardian sheets - gives the
+ * sword room to swing past the body without clipping the frame edge.
+ */
 const CHARACTER_FRAME_SIZE = 96;
 const ATTACK_FRAME_WIDTH = 150;
 const ATTACK_FRAME_HEIGHT = 96;
 
-// Player action smoke (entities/VfxEffect.js, Player.js's pendingVfx
-// mailbox) - all three sheets are 64x64 frames, fps first-guess to land
-// around a ~0.4-0.5s playtime.
+/**
+ * Player action smoke (entities/VfxEffect.js, Player.js's pendingVfx
+ * mailbox) - all three sheets are 64x64 frames, fps first-guess to land
+ * around a ~0.4-0.5s playtime.
+ */
 export const VFX_FRAME_SIZE = 64;
 export const VFX_CLIPS = {
     jump: { imageKey: 'vfx-jump', frameCount: 11, fps: 24 },

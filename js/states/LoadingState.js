@@ -33,7 +33,10 @@ export class LoadingState extends State {
      * Gates the state transition behind one user gesture. Assets are ready
      * at this point, but both a saved fullscreen preference (Fullscreen
      * API) and the SoundManager's AudioContext can only be (re-)applied/
-     * resumed inside a click/keypress handler, never on load.
+     * resumed inside a click/keypress handler, never on load. Listens for
+     * `pointerup`, not `pointerdown` - Chrome's Web Audio autoplay unlock
+     * isn't reliably granted on a gesture's start, only once it completes
+     * (https://developer.chrome.com/blog/autoplay/#web_audio).
      */
     _waitForContinue() {
         this.label.textContent = 'Press any key to continue';
@@ -46,9 +49,6 @@ export class LoadingState extends State {
             this.game.stateMachine.change('menu');
         };
         document.addEventListener('keydown', proceed);
-        // pointerup, not pointerdown - Chrome's Web Audio autoplay unlock
-        // isn't reliably granted on a gesture's start, only once it
-        // completes (https://developer.chrome.com/blog/autoplay/#web_audio).
         document.addEventListener('pointerup', proceed);
     }
 

@@ -1,28 +1,36 @@
 import { Enemy } from '../Enemy.js';
 
-// 05_enemies-bosses.md 6.5 - set this session's balancing pass. 35 HP (4
-// melee hits, the tankiest of the roster) compensates for Sentinel being
-// stationary and never having to be chased down. Contact damage unified to
-// 10 (matches every other enemy type's contact hit).
+/**
+ * 05_enemies-bosses.md 6.5. 35 HP (4 melee hits, the tankiest of the
+ * roster) compensates for Sentinel being stationary and never having to be
+ * chased down. Contact damage unified to 10 (matches every other enemy
+ * type's contact hit).
+ */
 const SENTINEL_HP = 35;
 const SENTINEL_CONTACT_DAMAGE = 10;
 
-// Fully below its own former position while buried (its whole 64px frame
-// height, not a partial sink) - belt-and-suspenders in case the terrain art
-// at a given spawn point isn't fully opaque there. The actual hiding
-// mechanism is GameState's render() drawing buried enemies before the
-// terrain layer, not this offset alone.
+/**
+ * Fully below its own former position while buried (its whole 64px frame
+ * height, not a partial sink) - belt-and-suspenders in case the terrain
+ * art at a given spawn point isn't fully opaque there. The actual hiding
+ * mechanism is GameState's render() drawing buried enemies before the
+ * terrain layer, not this offset alone.
+ */
 const BURY_DEPTH_PX = 64;
-// How long the rise takes once triggered, visible in front of the terrain
-// the whole time (see `buried`/`dormant` split below) - long enough to be a
-// real dodge window, not just a "notice it, too late" flash. First-guess,
-// needs playtesting.
+
+/**
+ * How long the rise takes once triggered, visible in front of the terrain
+ * the whole time (see `buried`/`dormant` split below) - long enough to be
+ * a real dodge window, not just a "notice it, too late" flash.
+ * First-guess, needs playtesting.
+ */
 const DEFAULT_RISE_DURATION_SECONDS = 0.6;
-// Simple radius check (not a rectangular tolerance like Charger's) - a static
-// sentry reacting to distance in every direction reads fine, no need for the
-// same-floor nuance a moving charge attack needs. Bumped 80->90 this
-// session's balancing pass, a slightly earlier warning felt fairer given how
-// little time the rise animation otherwise leaves to react.
+
+/**
+ * Simple radius check (not a rectangular tolerance like Charger's) - a
+ * static sentry reacting to distance in every direction reads fine, no
+ * need for the same-floor nuance a moving charge attack needs.
+ */
 const DEFAULT_AGGRO_RANGE_PX = 90;
 
 // Sentinel behavior (05_enemies-bosses.md 6.1: "Static, aggros when

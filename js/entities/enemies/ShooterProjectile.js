@@ -9,16 +9,24 @@ import { SpriteAnimation } from '../../utils/SpriteAnimation.js';
 const FRAME_SIZE = 64;
 const FRAME_COUNT = 8;
 const FPS = 16;
-// Nudged down again, 190->180, this session's balancing pass - paired with
-// Shooter.js's own shot-cooldown bump (1.8s->2s) so individual shots read as
-// more dodgeable rather than a fast, dense stream.
+
+/**
+ * Paired with Shooter.js's own shot-cooldown so individual shots read as
+ * dodgeable rather than a fast, dense stream.
+ */
 const SPEED = 180;
-// Despawns without a hit past this distance - a bit more than Shooter.js's
-// own SHOOTER_RANGE_PX (260) so it can still reach a player who was in range
-// at the moment of firing but has since drifted slightly farther.
+
+/**
+ * Despawns without a hit past this distance - a bit more than Shooter.js's
+ * own SHOOTER_RANGE_PX (260) so it can still reach a player who was in
+ * range at the moment of firing but has since drifted slightly farther.
+ */
 const MAX_TRAVEL_PX = 300;
-// Same tunneling-prevention reasoning as Projectile.js - small enough that a
-// fast shot can't skip through a thin wall in one frame.
+
+/**
+ * Same tunneling-prevention reasoning as Projectile.js - small enough that
+ * a fast shot can't skip through a thin wall in one frame.
+ */
 const SWEEP_STEP_PX = 4;
 
 export class ShooterProjectile extends Entity {

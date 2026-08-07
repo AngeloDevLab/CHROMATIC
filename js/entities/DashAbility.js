@@ -1,3 +1,7 @@
+/**
+ * First-guess, same reasoning as every other tuning constant in this
+ * codebase - needs real playtesting.
+ */
 const DASH_SPEED = 400;
 const DASH_DURATION_SECONDS = 0.18;
 const DASH_COOLDOWN_SECONDS = 0.6;
@@ -11,11 +15,14 @@ const DOUBLE_TAP_WINDOW_SECONDS = 0.25;
 // double-tap window is trigger-specific timing logic only this ability
 // needs. _trigger() sets player.vx/facing once; Player._updateHorizontalVelocity()
 // freezes both for the burst's duration the same way it already does for
-// knockback. First-guess constants above, same reasoning as every other
-// tuning constant in this codebase - needs real playtesting. No i-frames
-// paired with the dash (deliberately deferred, common pairing in the genre
-// but out of scope for this pass - revisit if playtesting wants it).
+// knockback. No i-frames paired with the dash (deliberately deferred, common
+// pairing in the genre but out of scope for this pass - revisit if
+// playtesting wants it).
 export class DashAbility {
+    /**
+     * unlocked gates update() entirely (see Player.unlockAbility()); the
+     * rest is timer/tap-detection state.
+     */
     constructor() {
         this.unlocked = false;
         this.timer = 0;

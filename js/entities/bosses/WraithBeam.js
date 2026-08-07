@@ -38,6 +38,8 @@ export class WraithBeam extends Entity {
      * @param {Collision} collision - Level collision, for the `walls` scan in _rescan().
      * @param {number} damage - Damage dealt to the player on hit (Combat.js).
      * @param {'horizontal'|'vertical'} [axis='horizontal'] - Which way the beam sweeps.
+     * _sourceX is the horizontal beam's own fixed source X - a vertical
+     * beam ignores it and instead tracks its live centerX every frame (see track()).
      */
     constructor(spawnCenterX, spawnCenterY, direction, collision, damage, axis = 'horizontal') {
         super(...WraithBeam._initialBounds(spawnCenterX, spawnCenterY, axis));
@@ -49,8 +51,6 @@ export class WraithBeam extends Entity {
         this.dead = false;
 
         this._collision = collision;
-        // The horizontal beam's own fixed source X - a vertical beam ignores
-        // this and instead tracks its live centerX every frame (see track()).
         this._sourceX = spawnCenterX;
 
         this._rescan(spawnCenterX, spawnCenterY);

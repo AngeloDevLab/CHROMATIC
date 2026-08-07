@@ -1,84 +1,75 @@
 import { Boss } from '../Boss.js';
 import { WraithBeam } from './WraithBeam.js';
 
-// 128x96 hitbox - the tested footprint the arena/feel was tuned against,
-// narrower than the padded 128x256 sheet on purpose (same reasoning as
-// Player.js's HITBOX_WIDTH/HEIGHT). Session finding: bumping HEIGHT to match
-// the sprite's full opaque height (~233px) does make Enemy.setAnimations()'s
-// derived renderSize hit the sheet's native 256px res one-for-one, but it
-// also blows the on-screen boss up past this tested size - the actual fix
-// for the sprite looking soft under a zoomed-out camera (BossState.js)
-// belongs on the art side (author frames closer to the real display size)
-// or in the dedicated boss render buffer, not by growing the hitbox.
+/**
+ * 128x96 hitbox - the tested footprint the arena/feel was tuned against,
+ * narrower than the padded 128x256 sheet on purpose (same reasoning as
+ * Player.js's HITBOX_WIDTH/HEIGHT). Don't grow HEIGHT to match the
+ * sprite's opaque height to fix soft-looking art under BossState's
+ * zoomed-out camera - tried that, it blows the on-screen boss up past
+ * this tested size instead; the real fix belongs on the art/render-buffer
+ * side.
+ */
 const WRAITH_WIDTH = 96;
 const WRAITH_HEIGHT = 128;
 
-// 05_enemies-bosses.md 6.5 (Miniboss row, revised this session from 150 to
-// 300 - 150 read as weaker than the player's own ~200 Health+Shield pool,
-// which shouldn't be true for a boss) - the Templateboss's 400 HP/70 dmg
-// belongs to a future WraithTemplateboss subclass, not here. "Signature Hit
-// Damage" in that table is what the beam (WraithBeam.js) deals to the
-// player, not contact damage - the table's own "~30 player hits until boss
-// dead" only checks out against 300 HP at PLAYER_ATTACK_DAMAGE (10/hit,
-// Combat.js), confirming this. Bugfix (session finding): this was also
-// being reused as `contactDamage` below, so touching the Wraith mirrored 40
-// back at it via Combat.js's passive barrier exchange - 4-5x every other
-// enemy's contact damage (8-10, see Enemy.js's DEFAULT_CONTACT_DAMAGE) and
-// enough to burn through its HP far faster than intended.
-// WRAITH_CONTACT_DAMAGE below is the fix, matching the normal convention
-// instead.
+/**
+ * 05_enemies-bosses.md 6.5 (Miniboss row - 300 HP, chosen so it's not
+ * weaker than the player's own ~200 Health+Shield pool). SIGNATURE_HIT_DAMAGE
+ * is what the beam (WraithBeam.js) deals to the player, not contact damage -
+ * WRAITH_CONTACT_DAMAGE below is deliberately separate (bugfix: this used
+ * to double as contactDamage too, mirroring 40 back at melee/contact hits,
+ * 4-5x every other enemy's, see Enemy.js's DEFAULT_CONTACT_DAMAGE).
+ * WraithTemplateboss.js overrides hp/signatureHitDamage with its own
+ * values; contactDamage stays shared/inherited.
+ */
 const WRAITH_HP = 300;
 const SIGNATURE_HIT_DAMAGE = 40;
 const WRAITH_CONTACT_DAMAGE = 10;
 
-// 05_enemies-bosses.md's Miniboss row - BossState.js's HP bar label.
+/**
+ * 05_enemies-bosses.md's Miniboss row - BossState.js's HP bar label.
+ */
 const WRAITH_NAME = 'Wraith of the Shifting Sands';
 
-// How close to the level's top edge the firing pose reaches - the bottom
-// anchor (idle AND vulnerable both sit there) is derived from the actual
-// arena's collision instead (see _initAnchors()), so the wraith travels the
-// arena's real full height rather than a fixed offset that'd need
-// re-tuning every time Lv_3's layout changes.
+/**
+ * How close to the level's top edge the firing pose reaches - the bottom
+ * anchor (idle AND vulnerable both sit there) is derived from the actual
+ * arena's collision instead (see _initAnchors()), so the wraith travels
+ * the arena's real full height rather than a fixed offset that'd need
+ * re-tuning every time Lv_3's layout changes.
+ */
 const TOP_MARGIN_PX = 32;
 
-// Hold durations for the two static poses (firing.png/vulnerable.png are
-// single-frame - their screen time isn't driven by an animation length like
-// the transitions below, so these are explicit timers) and the idle
-// cooldown between attacks - all first-guess, same reasoning as every other
-// enemy's tuning constants in this codebase. Vulnerable is deliberately
-// generous (session decision): the wraith lands at a fixed arena spot, the
-// player has to actually run/platform over to it, so the window needs real
-// slack instead of punishing them for travel time. These three (not the
-// transition clips' own playback speed) scale with Boss.timeScale on enrage,
-// so a faster cycle reads as "less waiting around", not a blurred animation
-// - the walk speed below also speeds up on enrage, but via its own dedicated
-// value rather than timeScale (see that constant's own comment). Revised
-// 3->4 this session (applies to both Wraith and WraithTemplateboss, neither
-// overrides this) - 4s normal / 2s enraged via the existing timeScale halving.
+/**
+ * Hold durations for the two static poses (firing.png/vulnerable.png are
+ * single-frame, so screen time is an explicit timer, not animation length)
+ * and the idle cooldown between attacks - first-guess like every other
+ * tuning constant here, shared as-is by WraithTemplateboss.js (never
+ * overridden). Vulnerable is deliberately generous: the wraith lands at a
+ * fixed spot and the player has to run over to it, so the window needs
+ * real travel slack. All three scale with Boss.timeScale on enrage (unlike
+ * the walk speed below, which uses its own dedicated enraged value - see
+ * that constant's own comment).
+ */
 const ATTACK_INTERVAL_SECONDS = 2.5;
 const FIRING_HOLD_SECONDS = 0.2;
 const VULNERABLE_HOLD_SECONDS = 4;
 
-// Horizontal walk to the arena's other side (session decision, corrected
-// from an earlier "facing-flip only" misunderstanding of "Seitenwechsel") -
-// happens after vulnerable, before the next idle. First-guess, same
-// reasoning as every other timing constant here. Session finding: this was
-// the missing enrage factor - the three hold timers above sped up in Phase 2
-// but the walk itself didn't, so the side-to-side leg of the cycle stayed at
-// its normal pace regardless, diluting how "faster" the enrage actually read
-// overall. Doesn't reuse ENRAGE_TIME_SCALE/timeScale for this, though -
-// inverting that ratio (1/0.5 = 2x, 200px/s) read as too fast in playtesting;
-// this is its own dedicated enraged-speed value instead, checked directly
-// against Boss.js's `enraged` getter in _updateWalk() below. Softened
-// 150->130 this session - still noticeably faster than the base 100, but
-// 150 read as too aggressive once WraithTemplateboss's firingSweep started
-// reusing this same value (see that class).
+/**
+ * Horizontal walk to the arena's other side ("Seitenwechsel"), between
+ * vulnerable and the next idle - first-guess like every other timing
+ * constant here. Doesn't scale via Boss.timeScale/`enraged` like the hold
+ * timers above - inverting that ratio read as too fast in playtesting, so
+ * this is its own dedicated enraged-speed value, checked directly in
+ * _updateWalk() below. Also reused by WraithTemplateboss.js's firingSweep.
+ */
 const WALK_SPEED_PX_PER_SEC = 100;
 const ENRAGE_WALK_SPEED_PX_PER_SEC = 130;
 
 // Wraith of the Shifting Sands (Lvl 3 Miniboss) - also the shared base
-// moveset the Lvl 6 Templateboss (Wraith of the Grey City) extends per
-// 05_enemies-bosses.md 6.3.1, though that subclass doesn't exist yet.
+// moveset WraithTemplateboss.js (Lvl 6, Wraith of the Grey City) extends
+// per 05_enemies-bosses.md 6.3.1.
 //
 // State machine, one state per sprite clip (see LoadingState.js's
 // 'boss-wraith-*' keys) - each clip has its own drawn end pose rather than
@@ -93,8 +84,7 @@ const ENRAGE_WALK_SPEED_PX_PER_SEC = 130;
 //   pose morph, one-shot) -> walking (horizontal glide to the arena's other
 //   fixed side, idle animation looping, facing = travel direction) -> idle
 //   (arrived, faces the player, counts down to the next attack), repeat.
-// Idle and vulnerable deliberately share the same height (session decision,
-// corrected from an earlier "float mid-air" draft) - the wraith is
+// Idle and vulnerable deliberately share the same height - the wraith is
 // grounded except for the trip up top to fire.
 // Phase 2 (Boss.js's `enraged`, HP <= 50%) doesn't add a new state, just
 // shortens the three hold timers (via `timeScale`) and speeds up the walk
@@ -106,16 +96,16 @@ export class Wraith extends Boss {
      * @param {number} y - World Y spawn position (Tiled's EnemySpawn row).
      * @param {Collision} collision - Level collision, for ground/wall scans.
      * @param {Player} player - Tracked to face/aim at.
+     * signatureHitDamage is an instance property, not just the module
+     * const, so WraithTemplateboss.js can overwrite it post-super() the
+     * same way it overwrites hp/maxHp/contactDamage/name - 05_enemies-bosses.md
+     * 6.5's Templateboss row uses a different "Signature Hit Damage" than the Miniboss.
      */
     constructor(x, y, collision, player) {
         super(x, y, null, WRAITH_WIDTH, WRAITH_HEIGHT);
         this.hp = WRAITH_HP;
         this.maxHp = WRAITH_HP;
         this.contactDamage = WRAITH_CONTACT_DAMAGE;
-        // Instance property (not just the module const below) so
-        // WraithTemplateboss.js can overwrite it post-super() the same way
-        // it overwrites hp/maxHp/contactDamage/name - 05_enemies-bosses.md
-        // 6.5's Templateboss row uses a different "Signature Hit Damage" than the Miniboss.
         this.signatureHitDamage = SIGNATURE_HIT_DAMAGE;
         this.name = WRAITH_NAME;
         this.collision = collision;
@@ -127,18 +117,12 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Ground/top anchors from the actual level, not a fixed offset - scans
-     * the real `terrain`/`walls` collision (not Level.js's
-     * findGroundSurfaceY, which walks every tile layer including
-     * background/decoration art that may not be solid), starting from the
-     * Tiled spawn row itself and scanning down from there - not from the
-     * very top of the level, or a stacked-platform layout like Lv_3's would
-     * find whatever platform happens to be topmost in that column instead
-     * of the floor actually under the spawn point, collapsing the rise to a
-     * few px instead of the arena's real height. Also sets the two fixed X
-     * anchors ("Seitenwechsel") - the spawn position and its mirror across
-     * the level's horizontal center, so this adapts to whatever width Lv_3
-     * ends up being instead of a hardcoded offset.
+     * Ground/top anchors from the actual level, not a fixed offset - see
+     * _findGroundY() for why that's not Level.js's findGroundSurfaceY().
+     * Also sets the two fixed X anchors ("Seitenwechsel") - the spawn
+     * position and its mirror across the level's horizontal center, so
+     * this adapts to whatever width Lv_3 ends up being instead of a
+     * hardcoded offset.
      * @param {Collision} collision
      * @param {number} x
      * @param {number} y
@@ -233,17 +217,16 @@ export class Wraith extends Boss {
      * is live and tracking during all three, see _trackActiveBeam()) or
      * mid-walk (facing there is travel direction instead, set once in
      * _enterWalking() - a walking mob faces where it's going, not where the
-     * player is). Bugfix history: this used to only run during 'idle'
-     * itself, but the player naturally crosses to the wraith's other side
-     * *during* vulnerable/toIdle (running over to melee it), so freezing
-     * facing until idle proper started meant it almost never visibly
-     * turned by the time the next attack began.
+     * player is). Deliberately not scoped to just 'idle' - the player
+     * naturally crosses to the wraith's other side during vulnerable/toIdle
+     * too (running over to melee it), so facing needs to keep turning
+     * through those states as well. 'firingSweep' (WraithTemplateboss only,
+     * never entered by this base class) counts as traveling too - it's a
+     * crossing like 'walking', so facing is the crossing direction, not
+     * the player.
      */
     _updateFacing() {
         const committed = this.state === 'toFiring' || this.state === 'firing' || this.state === 'toVulnerable';
-        // 'firingSweep' (WraithTemplateboss only, never entered by this base
-        // class) travels like 'walking' - facing is the crossing direction,
-        // not the player.
         const traveling = this.state === 'walking' || this.state === 'firingSweep';
         if (!committed && !traveling && this.player) {
             this.facing = this.player.centerX >= this.centerX ? 1 : -1;
@@ -255,6 +238,8 @@ export class Wraith extends Boss {
      * split per-state, since jumping between seven near-trivial methods
      * would read worse than the cycle laid out in one place (see the class
      * comment above for the full idle->...->idle sequence this drives).
+     * `default` is an extension point only - this base class never enters
+     * any other state; WraithTemplateboss.js's 'firingSweep' lands there.
      * @param {number} dt
      * @param {SpriteAnimation} [anim] - The currently playing clip, if animations are wired up.
      */
@@ -288,8 +273,6 @@ export class Wraith extends Boss {
                 this._updateWalk(dt);
                 break;
             default:
-                // Extension point only - this base class never enters any
-                // other state; WraithTemplateboss.js's 'firingSweep' lands here.
                 this._updateCustomState(dt, anim);
                 break;
         }
@@ -350,14 +333,11 @@ export class Wraith extends Boss {
     /**
      * Shared entry for all three one-shot glides - `telegraphing` (Boss.js's
      * placeholder tint, harmless once real art is wired) only lights up for
-     * toFiring, the actual "no instant/unreactable hits" windup. Bugfix
-     * (session finding): the vulnerable window was only ever turned off in
-     * _enterIdle(), which doesn't run until the *whole* walk to the other
-     * side finishes - so a hit landed anywhere across toIdle's pose morph
-     * AND the entire walking leg (often several seconds) still doubled,
-     * reading as "always double damage" regardless of whether the wraith
-     * still looked exposed. The window should end the moment it starts
-     * getting up, not once it's already back on patrol.
+     * toFiring, the actual "no instant/unreactable hits" windup. Clears
+     * `vulnerable` here already for toIdle, not left for _enterIdle() - the
+     * window should end the moment it starts getting up, not linger through
+     * the pose morph and the entire walk back (often several seconds) still
+     * reading as double damage.
      * @param {'toFiring'|'toVulnerable'|'toIdle'} state
      * @param {number} fromY
      * @param {number} toY

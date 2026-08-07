@@ -1,8 +1,10 @@
 import { Wraith } from './Wraith.js';
 import { WraithBeam } from './WraithBeam.js';
 
-// 05_enemies-bosses.md 6.5's Templateboss row (400 HP / 70 Signature Hit
-// Damage) and 6.3's name for the Lvl 6 fight.
+/**
+ * 05_enemies-bosses.md 6.5's Templateboss row (400 HP / 70 Signature Hit
+ * Damage) and 6.3's name for the Lvl 6 fight.
+ */
 const TEMPLATEBOSS_HP = 400;
 const TEMPLATEBOSS_SIGNATURE_HIT_DAMAGE = 70;
 const TEMPLATEBOSS_NAME = 'Wraith of the Grey City';
@@ -28,6 +30,12 @@ const TEMPLATEBOSS_TOKEN_REWARD = 2;
 // vulnerable); a horizontal attack crosses once (the normal end-of-cycle walk).
 export class WraithTemplateboss extends Wraith {
     /**
+     * Last axis actually fired, for _rollAxis()'s enrage bias - null until
+     * the first attack, so that first roll is always a fair coinflip.
+     */
+    _lastAxis = null;
+
+    /**
      * @param {number} x - World X spawn position.
      * @param {number} y - World Y spawn position (Tiled's EnemySpawn row).
      * @param {Collision} collision - Level collision, for ground/wall scans.
@@ -40,9 +48,6 @@ export class WraithTemplateboss extends Wraith {
         this.signatureHitDamage = TEMPLATEBOSS_SIGNATURE_HIT_DAMAGE;
         this.name = TEMPLATEBOSS_NAME;
         this.tokenReward = TEMPLATEBOSS_TOKEN_REWARD;
-        // Last axis actually fired, for _rollAxis()'s enrage bias below - null
-        // until the first attack, so that first roll is always a fair coinflip.
-        this._lastAxis = null;
     }
 
     /**

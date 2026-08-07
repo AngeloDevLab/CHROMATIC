@@ -3,27 +3,39 @@ import { Entity } from './Entity.js';
 const DEFAULT_PATROL_SPEED = 40;
 const DEFAULT_GRAVITY = 700;
 
-// Brief white tint on taking damage, mirrors Player.js's HIT_FLASH_SECONDS
-// (see SpriteAnimation.draw's flashAmount). Exported for Boss.js, which needs
-// the same value to compute flashAmount in its own non-square render() override.
+/**
+ * Brief white tint on taking damage, mirrors Player.js's HIT_FLASH_SECONDS
+ * (see SpriteAnimation.draw's flashAmount). Exported for Boss.js, which
+ * needs the same value to compute flashAmount in its own non-square
+ * render() override.
+ */
 export const HIT_FLASH_SECONDS = 0.15;
 
-// How long a knockback push overrides the normal patrol vx assignment for -
-// without this, _updatePatrol would stomp the pushed-back vx with
-// patrolSpeed * facing on the very next frame, making the hit invisible.
+/**
+ * How long a knockback push overrides the normal patrol vx assignment for -
+ * without this, _updatePatrol would stomp the pushed-back vx with
+ * patrolSpeed * facing on the very next frame, making the hit invisible.
+ */
 const KNOCKBACK_LOCK_SECONDS = 0.15;
 
-// Patroller behavior (05_enemies-bosses.md). 30 HP (3 melee hits) - set this
-// session's balancing pass, down from an earlier 50 that read as too tanky
-// for the roster's baseline enemy.
+/**
+ * Patroller behavior (05_enemies-bosses.md). 30 HP (3 melee hits) - set
+ * this session's balancing pass, down from an earlier 50 that read as too
+ * tanky for the roster's baseline enemy.
+ */
 const DEFAULT_HP = 30;
-// Bumped from the GDD's original 5 - at 5, the difficulty multiplier's effect
-// on a single Patroller hit was too small to actually notice while playing.
+
+/**
+ * Bumped from the GDD's original 5 - at 5, the difficulty multiplier's
+ * effect on a single Patroller hit was too small to actually notice while playing.
+ */
 const DEFAULT_CONTACT_DAMAGE = 10;
 
-// How far past its own leading edge to probe for "is the way ahead blocked" -
-// small enough to react before actually stepping off, large enough to not
-// trigger on the enemy's own hitbox tiles.
+/**
+ * How far past its own leading edge to probe for "is the way ahead blocked" -
+ * small enough to react before actually stepping off, large enough to not
+ * trigger on the enemy's own hitbox tiles.
+ */
 const LOOKAHEAD_PX = 4;
 
 // Patroller behavior (05_enemies-bosses.md): walks left/right along whatever

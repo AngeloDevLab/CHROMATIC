@@ -34,19 +34,22 @@ export class BuffState extends State {
         });
     }
 
+    /**
+     * Closes the buff-choice panel.
+     */
     exit() {
         this.panel.close();
     }
 
     /**
+     * Belt-and-suspenders against replaying this level: Interactables.js
+     * already pre-marks the terminal `used` on spawn if this level's buff
+     * was already claimed, so this shouldn't normally be reachable, but
+     * applyBuff() is additive (+=) - worth guarding directly too rather
+     * than relying solely on the UI not offering the choice.
      * @param {string} buffId - One of Player.applyBuff()'s recognized buff ids.
      */
     _choose(buffId) {
-        // Belt-and-suspenders against replaying this level: Interactables.js
-        // already pre-marks the terminal `used` on spawn if this level's
-        // buff was already claimed, so this shouldn't normally be reachable,
-        // but applyBuff() is additive (+=) - worth guarding directly too
-        // rather than relying solely on the UI not offering the choice.
         if (this.game.claimedSecretRoomBuffs.has(this._levelNumber)) {
             this.panel.close();
             return;

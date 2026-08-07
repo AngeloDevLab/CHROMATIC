@@ -1,8 +1,10 @@
 import { Entity } from './Entity.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 
-// portal-closed.png/portal-open.png/portal-opens.png are all 128x128 (opens
-// is a 10-frame strip, 1280x128).
+/**
+ * portal-closed.png/portal-open.png/portal-opens.png are all 128x128
+ * (opens is a 10-frame strip, 1280x128).
+ */
 const SIZE = 128;
 const OPENS_FRAME_COUNT = 10;
 const OPENS_FPS = 12;

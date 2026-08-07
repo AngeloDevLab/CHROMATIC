@@ -1,21 +1,32 @@
-// 04_health-save-system.md 5.1/5.2: both base value 100.
+/**
+ * 04_health-save-system.md 5.1/5.2: both base value 100.
+ */
 const MAX_HEALTH = 100;
 const MAX_SHIELD = 100;
-// 03_mechanics.md 4.5: "50 points (1 Secret Room) take about 50 seconds from empty".
+
+/**
+ * 03_mechanics.md 4.5: "50 points (1 Secret Room) take about 50 seconds from empty".
+ */
 const SHIELD_REGEN_PER_SECOND = 1;
 
-// Secret Room buff amounts (02_game-structure.md 2.5) - GDD names the three
-// buff types but not their magnitude, first-guess round numbers.
+/**
+ * Secret Room buff amounts (02_game-structure.md 2.5) - GDD names the three
+ * buff types but not their magnitude, first-guess round numbers.
+ */
 const BUFF_MAX_HEALTH_BONUS = 20;
 const BUFF_SHIELD_REGEN_BONUS = 0.5;
 const BUFF_MAX_SHIELD_BONUS = 20;
 
-// Brief invincibility after any hit, so multiple/lingering enemies can't
-// stack damage every frame - independent of an enemy's own contactCooldown.
+/**
+ * Brief invincibility after any hit, so multiple/lingering enemies can't
+ * stack damage every frame - independent of an enemy's own contactCooldown.
+ */
 const INVINCIBILITY_SECONDS = 0.5;
 
-// Brief white tint on taking damage, deliberately shorter than
-// INVINCIBILITY_SECONDS - a quick hit reaction, not a "still invincible" indicator.
+/**
+ * Brief white tint on taking damage, deliberately shorter than
+ * INVINCIBILITY_SECONDS - a quick hit reaction, not a "still invincible" indicator.
+ */
 const HIT_FLASH_SECONDS = 0.15;
 
 // Player's Health/Shield/buff bookkeeping (03_mechanics.md 4.5,

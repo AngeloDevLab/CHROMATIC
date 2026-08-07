@@ -3,8 +3,10 @@ import { isBossLevel } from './LevelSession.js';
 import { ColorZone } from '../mechanics/ColorZone.js';
 import { MENU_ZONE, MENU_TRACK_KEYS } from '../core/MusicPlaylist.js';
 
-// 02_game-structure.md 2.1 - only Prologue is active at game start, the rest
-// unlock as previous chapters are completed.
+/**
+ * 02_game-structure.md 2.1 - only Prologue is active at game start, the
+ * rest unlock as previous chapters are completed.
+ */
 const CHAPTERS = [
     { id: 'prologue', label: 'Prologue', available: true },
     { id: 'chap1', label: 'Chap 1', available: false },
@@ -14,12 +16,14 @@ const CHAPTERS = [
     { id: 'epilogue', label: 'Epilogue', available: false },
 ];
 
-// Positions along the path, as a fraction of the SOURCE worldmap image
-// (768x256) - not the viewport, since the image is contain-fit (see render())
-// and converted to screen coordinates via that fit's offset/scale in
-// _layoutNodes(). Rough estimate tracing the visible path, tune further once
-// checked against the art. Slots match 02_game-structure.md 2.6 (Prologue,
-// 1 Template, 6 levels).
+/**
+ * Positions along the path, as a fraction of the SOURCE worldmap image
+ * (768x256) - not the viewport, since the image is contain-fit (see
+ * render()) and converted to screen coordinates via that fit's
+ * offset/scale in _layoutNodes(). Rough estimate tracing the visible path,
+ * tune further once checked against the art. Slots match
+ * 02_game-structure.md 2.6 (Prologue, 1 Template, 6 levels).
+ */
 const PROLOGUE_NODES = [
     { level: 1, type: 'Combat (Tutorial)', hasSecret: false, x: 0.06, y: 0.40 },
     { level: 2, type: 'Combat (Tutorial)', hasSecret: false, x: 0.20, y: 0.75 },
@@ -38,13 +42,14 @@ export class WorldmapState extends State {
      * (enter()/exit()), so a local Set here would forget completions the
      * instant the player left for a level and came back. Persisted across
      * page reloads via SaveSystem (Game.js's loadProgress()/saveProgress()).
+     * Shares the Menu's music zone, since the Worldmap has no music of its
+     * own (02_game-structure.md).
+     * @param {{justCompleted?: number}} [params] - Forwarded from
+     *   LevelSession's exit-portal transition, see _initColorZone().
      */
     enter(params) {
         this.background = this.game.assets.getImage('worldmap-prologue-bg');
         this._computeFit();
-        // Shares the Menu's zone (02_game-structure.md's Worldmap has no
-        // music of its own) - no-op if a level's own zone hasn't taken over
-        // since the last time this played here.
         this.game.music.setZone(MENU_ZONE, MENU_TRACK_KEYS);
 
         this.completedLevels = this.game.completedLevels;

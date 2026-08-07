@@ -1,8 +1,10 @@
 const ICON_BASE = 'assets/icons/';
 
-// Held while pressed - InputHandler.pressAction()/releaseAction() apply the
-// exact same start-of-hold edge-press guard as a real keydown/keyup, so a
-// touch Jump/Drop tap behaves identically to the matching key.
+/**
+ * Held while pressed - InputHandler.pressAction()/releaseAction() apply
+ * the exact same start-of-hold edge-press guard as a real keydown/keyup,
+ * so a touch Jump/Drop tap behaves identically to the matching key.
+ */
 const HOLD_BUTTONS = [
     { action: 'left', icon: 'btn-icon-left', className: 'touch-left' },
     { action: 'right', icon: 'btn-icon-right', className: 'touch-right' },
@@ -10,12 +12,14 @@ const HOLD_BUTTONS = [
     { action: 'drop', icon: 'btn-icon-down', className: 'touch-drop' },
 ];
 
-// One-shot on tap (InputHandler.triggerPress()), no held state to release.
-// Pause is built separately below (always, regardless of touch capability -
-// see the constructor) - Interact is deliberately not here either, it's
-// context-sensitive (Portal/Merchant/SecretDoor/BuffTerminal), shown/
-// positioned by Interactables.js's existing [E] prompt elements instead of
-// a fixed corner button.
+/**
+ * One-shot on tap (InputHandler.triggerPress()), no held state to release.
+ * Pause is built separately below (always, regardless of touch capability -
+ * see the constructor) - Interact is deliberately not here either, it's
+ * context-sensitive (Portal/Merchant/SecretDoor/BuffTerminal), shown/
+ * positioned by Interactables.js's existing [E] prompt elements instead of
+ * a fixed corner button.
+ */
 const TAP_BUTTONS = [
     { name: 'attack', icon: 'btn-icon-attack', className: 'touch-attack' },
 ];

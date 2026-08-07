@@ -1,14 +1,12 @@
 import { LEVEL_JSON_KEYS, isBossLevel } from '../states/LevelSession.js';
 
-// Fixed to the document, deliberately outside #ui-overlay - that overlay is
-// scaled together with the canvas (Game._handleResize) to stay consistent
-// with in-game HUD/menus, but a dev tool reads better at a constant size
-// regardless of window/game scale.
 const TOGGLE_KEY_CODE = 'Backquote';
 
-// Prologue only, matches WorldmapState's level-skip target - no chapter
-// selector needed while only one chapter is playable at all
-// (11_scope-milestones.md 12.1).
+/**
+ * Prologue only, matches WorldmapState's level-skip target - no chapter
+ * selector needed while only one chapter is playable at all
+ * (11_scope-milestones.md 12.1).
+ */
 const CHAPTER_ID = 'prologue';
 const LEVEL_COUNT = 6;
 
@@ -45,6 +43,11 @@ export class DevPanel {
 
     /**
      * Builds and attaches the panel, then wires up its interactive controls.
+     * Appended straight to `document.body`, deliberately outside
+     * `#ui-overlay` - that overlay is scaled together with the canvas
+     * (`Game._handleResize`) to stay consistent with in-game HUD/menus, but
+     * a dev tool reads better at a constant size regardless of window/game
+     * scale.
      */
     _render() {
         this.open = true;

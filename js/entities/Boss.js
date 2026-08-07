@@ -1,15 +1,19 @@
 import { Enemy, HIT_FLASH_SECONDS } from './Enemy.js';
 
-// 05_enemies-bosses.md 6.2.1: "hitting the weak spot during its window deals
-// bonus damage" - applies to any Boss/Templateboss subclass that sets
-// `vulnerable`, not just Wraith.js (the only one that exists yet).
+/**
+ * 05_enemies-bosses.md 6.2.1: "hitting the weak spot during its window
+ * deals bonus damage" - applies to any Boss/Templateboss subclass that
+ * sets `vulnerable`, not just Wraith.js (the only one that exists yet).
+ */
 const VULNERABLE_DAMAGE_MULTIPLIER = 2;
 
-// 05_enemies-bosses.md 6.2.1: "same moveset repeats faster" once a boss drops
-// to half HP or below - shared threshold/scale so a future Templateboss
-// enrages the same way without re-deriving this. 0.65 (35% faster) read as
-// barely noticeable in playtesting; 0.5 (twice the cycle speed) is the value
-// that actually reads as a real phase change.
+/**
+ * 05_enemies-bosses.md 6.2.1: "same moveset repeats faster" once a boss
+ * drops to half HP or below - shared threshold/scale so a future
+ * Templateboss enrages the same way without re-deriving this. 0.65 (35%
+ * faster) read as barely noticeable in playtesting; 0.5 (twice the cycle
+ * speed) is the value that actually reads as a real phase change.
+ */
 const ENRAGE_HP_FRACTION = 0.5;
 const ENRAGE_TIME_SCALE = 0.5;
 
@@ -24,33 +28,45 @@ const ENRAGE_TIME_SCALE = 0.5;
 // _renderPlaceholder()'s tinted box until then.
 export class Boss extends Enemy {
     /**
+     * Landed/exposed window (05_enemies-bosses.md 6.2.1) - subclasses flip
+     * this during their own state machine (see Wraith.js), takeDamage()
+     * just reacts to it.
+     */
+    vulnerable = false;
+
+    /**
+     * Windup telegraph (05_enemies-bosses.md 6.3.1's "short visible
+     * windup") - separate from `vulnerable` since they're different beats
+     * of the same attack; only used by _renderPlaceholder() until real
+     * animations exist.
+     */
+    telegraphing = false;
+
+    /**
+     * Display name for BossState.js's top-center HP bar label (e.g.
+     * 05_enemies-bosses.md's "Wraith of the Shifting Sands") - subclasses
+     * set this themselves after calling super(), null here is only a
+     * fallback for a Boss subclass that hasn't set one yet.
+     */
+    name = null;
+
+    /**
+     * Tokens dropped on death (Interactables.js's onBossDefeated()) -
+     * 05_enemies-bosses.md 6.2's Miniboss row (1), the default here since
+     * Wraith.js never overrides it; Templateboss/Chapterboss subclasses set
+     * this to 2 themselves after calling super().
+     */
+    tokenReward = 1;
+
+    /**
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {HTMLImageElement} sprite - Fallback static sprite.
      * @param {number} width - Hitbox width.
      * @param {number} height - Hitbox height.
-     *
-     * vulnerable: landed/exposed window (05_enemies-bosses.md 6.2.1) -
-     * subclasses flip this during their own state machine (see Wraith.js),
-     * takeDamage() just reacts to it. telegraphing: windup telegraph
-     * (05_enemies-bosses.md 6.3.1's "short visible windup") - separate from
-     * `vulnerable` since they're different beats of the same attack; only
-     * used by _renderPlaceholder() until real animations exist.
      */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
-        this.vulnerable = false;
-        this.telegraphing = false;
-        // Display name for BossState.js's top-center HP bar label (e.g.
-        // 05_enemies-bosses.md's "Wraith of the Shifting Sands") - subclasses
-        // set this themselves after calling super(), null here is only a
-        // fallback for a Boss subclass that hasn't set one yet.
-        this.name = null;
-        // Tokens dropped on death (Interactables.js's onBossDefeated()) -
-        // 05_enemies-bosses.md 6.2's Miniboss row (1), the default here since
-        // Wraith.js never overrides it; Templateboss/Chapterboss subclasses
-        // set this to 2 themselves after calling super().
-        this.tokenReward = 1;
     }
 
     /**

@@ -9,15 +9,18 @@ import { buildSettingsBody, wireSettingsPanel } from '../ui/SettingsPanel.js';
 // runs while it's current. The top-level Paused choices stay
 // non-dismissible (no backdrop/×/Panel-Escape) - Escape here always means
 // "unpause", handled explicitly below via pop() instead of Panel's own
-// window-level Escape listener, same reasoning GameState's old buff-choice
-// panel used (closeOnEscape: false) to avoid two things reacting to the
-// same keypress. Settings (_openSettings()) reuses the same Panel instance
-// and the same content/wiring as MenuState's own Settings (SettingsPanel.js)
-// - dismissible via ×/backdrop back to the Paused choices (onClose), but
-// closeOnEscape: false too, so Escape still only ever means "fully unpause"
-// via update() below, never "go back one level" - one Escape behavior for
-// the whole state, no race between Panel's own listener and this state's.
+// window-level Escape listener (see Panel.open()'s closeOnEscape doc for
+// why that avoids a double-reaction). Settings (_openSettings()) reuses the
+// same Panel instance and the same content/wiring as MenuState's own
+// Settings (SettingsPanel.js) - dismissible via ×/backdrop back to the
+// Paused choices (onClose), but closeOnEscape: false too, so Escape still
+// only ever means "fully unpause" via update() below, never "go back one
+// level" - one Escape behavior for the whole state, no race between Panel's
+// own listener and this state's.
 export class PauseState extends State {
+    /**
+     * Opens the Panel with the initial Paused choices.
+     */
     enter() {
         this.panel = new Panel(this.game.overlay);
         this._showChoices();
@@ -48,11 +51,13 @@ export class PauseState extends State {
         });
     }
 
+    /**
+     * silent: this exits regardless of whether Settings or the Paused
+     * choices are currently showing - Settings' own onClose (Panel.js) is
+     * only meant for a normal ×/backdrop dismiss back to the choices, not
+     * for the whole state tearing down (see Panel.close()'s comment).
+     */
     exit() {
-        // silent: this exits regardless of whether Settings or the Paused
-        // choices are currently showing - Settings' own onClose (Panel.js)
-        // is only meant for a normal ×/backdrop dismiss back to the choices,
-        // not for the whole state tearing down (see Panel.close()'s comment).
         this.panel.close({ silent: true });
     }
 

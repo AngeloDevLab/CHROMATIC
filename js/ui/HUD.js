@@ -1,8 +1,10 @@
 import { Boss } from '../entities/Boss.js';
 
-// Bar position/size as exported constants read by both this canvas draw call
-// and GameState's HTML value labels (10_technical-architecture.md 11.8), so
-// the two never drift out of sync with each other.
+/**
+ * Bar position/size as exported constants read by both this canvas draw
+ * call and GameState's HTML value labels (10_technical-architecture.md
+ * 11.8), so the two never drift out of sync with each other.
+ */
 export const HEALTH_BAR = { x: 8, y: 8, width: 72, height: 8 };
 export const SHIELD_BAR = { x: 8, y: 18, width: 72, height: 8 };
 
@@ -10,14 +12,16 @@ const ENEMY_BAR_WIDTH = 32;
 const ENEMY_BAR_HEIGHT = 4;
 const ENEMY_BAR_GAP_PX = 6;
 
-// BossState.js's top-center HP bar - wider/taller than the floating
-// per-enemy bar above, since it's the sole focus of a boss encounter.
-// Horizontally centered dynamically (see renderBossBar() below), not a
-// fixed x, since BossState's own buffer width varies per arena. HEIGHT/
-// TOP_PX exported (same reasoning as HEALTH_BAR/SHIELD_BAR above) so
-// BossState.js's own name label (above) and HP value label (below) can
-// position themselves relative to this canvas-drawn bar without
-// duplicating these numbers a second time.
+/**
+ * BossState.js's top-center HP bar - wider/taller than the floating
+ * per-enemy bar above, since it's the sole focus of a boss encounter.
+ * Horizontally centered dynamically (see renderBossBar() below), not a
+ * fixed x, since BossState's own buffer width varies per arena. HEIGHT/
+ * TOP_PX exported (same reasoning as HEALTH_BAR/SHIELD_BAR above) so
+ * BossState.js's own name label (above) and HP value label (below) can
+ * position themselves relative to this canvas-drawn bar without
+ * duplicating these numbers a second time.
+ */
 const BOSS_BAR_WIDTH = 200;
 export const BOSS_BAR_HEIGHT = 10;
 export const BOSS_BAR_TOP_PX = 26;

@@ -1,9 +1,13 @@
-// 03_mechanics.md 4.1: "Boss defeated -> the entire level turns colorful -
-// color explosion". Duration of the sweep triggered by triggerFullReveal().
+/**
+ * 03_mechanics.md 4.1: "Boss defeated -> the entire level turns colorful -
+ * color explosion". Duration of the sweep triggered by triggerFullReveal().
+ */
 const FULL_REVEAL_DURATION_SECONDS = 1.5;
 
-// 02_game-structure.md 2.1: Worldmap's "connecting paths turn colorful" -
-// duration of the horizontal sweep triggered by triggerZoneWipe().
+/**
+ * 02_game-structure.md 2.1: Worldmap's "connecting paths turn colorful" -
+ * duration of the horizontal sweep triggered by triggerZoneWipe().
+ */
 const ZONE_WIPE_DURATION_SECONDS = 1.5;
 
 /**

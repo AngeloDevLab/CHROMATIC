@@ -1,29 +1,38 @@
 import { Enemy } from '../Enemy.js';
 import { ShooterProjectile } from './ShooterProjectile.js';
 
-// 05_enemies-bosses.md 6.5 - set this session's balancing pass. 20 HP (2
-// melee hits, up from 15) so it doesn't melt instantly if a player does
-// close the distance. Contact/projectile damage both unified to 10 (matches
-// every other enemy type's contact hit) - the table gives one "Damage/Hit"
-// value for the type, reused for both.
+/**
+ * 05_enemies-bosses.md 6.5. 20 HP (2 melee hits) so it doesn't melt
+ * instantly if a player does close the distance. Contact/projectile
+ * damage both unified to 10 (matches every other enemy type's contact
+ * hit) - the table gives one "Damage/Hit" value for the type, reused for both.
+ */
 const SHOOTER_HP = 20;
 const SHOOTER_CONTACT_DAMAGE = 10;
 const SHOOTER_PROJECTILE_DAMAGE = 10;
 
-// "Keeps distance" (05_enemies-bosses.md 6.1) - engages from farther out than
-// Charger's own 190px charge range, since threatening from range rather than
-// needing to close in is this type's whole identity. Nudged up from 220.
+/**
+ * "Keeps distance" (05_enemies-bosses.md 6.1) - engages from farther out
+ * than Charger's own 190px charge range, since threatening from range
+ * rather than needing to close in is this type's whole identity.
+ */
 const SHOOTER_RANGE_PX = 260;
 const SHOOTER_HEIGHT_TOLERANCE_PX = 24;
-// After a shot (windup + recovery), how long before the next - without this
-// it'd fire as fast as the animation allows, reading as a hose rather than
-// individual shots. Bumped 1.8->2 this session's balancing pass, paired with
-// the projectile speed cut (ShooterProjectile.js) so shots read as more
-// dodgeable individually rather than a fast, dense stream.
+
+/**
+ * After a shot (windup + recovery), how long before the next - without
+ * this it'd fire as fast as the animation allows, reading as a hose
+ * rather than individual shots. Paired with the projectile speed
+ * (ShooterProjectile.js) so shots read as dodgeable individually rather
+ * than a fast, dense stream.
+ */
 const DEFAULT_SHOT_COOLDOWN_SECONDS = 2;
-// Frame within the 6-frame shoot animation the projectile actually spawns at
-// - mirrors Player.js's ATTACK_IMPACT_FRAME (animation and the actual
-// game-logic spawn are two different things kept in sync by frame index).
+
+/**
+ * Frame within the 6-frame shoot animation the projectile actually spawns
+ * at - mirrors Player.js's ATTACK_IMPACT_FRAME (animation and the actual
+ * game-logic spawn are two different things kept in sync by frame index).
+ */
 const SHOT_IMPACT_FRAME = 3;
 
 // Shooter behavior (05_enemies-bosses.md 6.1: "Keeps distance, fires
@@ -36,15 +45,18 @@ const SHOT_IMPACT_FRAME = 3;
 // but doesn't cancel the shot itself.
 export class Shooter extends Enemy {
     /**
+     * GameState's mailbox for a newly-spawned shot - read and cleared
+     * there right after enemy.update(), since Shooter itself has no
+     * access to the shared enemyProjectiles array.
+     */
+    pendingProjectile = null;
+
+    /**
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {HTMLImageElement} sprite - Fallback static sprite.
      * @param {number} width - Hitbox width.
      * @param {number} height - Hitbox height.
-     *
-     * pendingProjectile is GameState's mailbox for a newly-spawned shot -
-     * read and cleared there right after enemy.update(), since Shooter
-     * itself has no access to the shared enemyProjectiles array.
      */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
@@ -58,7 +70,6 @@ export class Shooter extends Enemy {
         this.shootCooldownTimer = 0;
         this.shooting = false;
         this._shotFired = false;
-        this.pendingProjectile = null;
     }
 
     /**

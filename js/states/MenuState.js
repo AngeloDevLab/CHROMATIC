@@ -16,13 +16,17 @@ const REVEAL_RADIUS = 55;
 const DARKEN_RADIUS = 65;
 const PASS_DELAY_SECONDS = 1;
 const CHARACTER_FRAME_SIZE = 96;
-// enemy-patroller-walking-idle.png is its own 64x64 sheet, unrelated to the
-// player's 96x96 convention above.
+/**
+ * enemy-patroller-walking-idle.png is its own 64x64 sheet, unrelated to the
+ * player's 96x96 convention above.
+ */
 const ENEMY_FRAME_SIZE = 64;
 const BACKGROUND_OVERLAP_PX = 32;
 
-// Difficulty scales only incoming damage (04_health-save-system.md 5.3) -
-// enemy HP and the player's own damage stay the same across all three.
+/**
+ * Difficulty scales only incoming damage (04_health-save-system.md 5.3) -
+ * enemy HP and the player's own damage stay the same across all three.
+ */
 const DIFFICULTIES = [
     { id: 'easy', label: 'Easy', description: 'Can afford mistakes, survives several hits. (-50% incoming damage)' },
     { id: 'normal', label: 'Normal', description: 'Normal margin for error.' },
@@ -149,9 +153,6 @@ export class MenuState extends State {
         this.level = Level.load(this.game.assets, 'menu-background-level', buildTilesetRegistry(this.game.assets));
         const groundSurfaceY = this.level.findGroundSurfaceY();
 
-        // No-op if already playing (the common case, boot straight into
-        // Menu) - only actually restarts when returning here from a level's
-        // own zone (e.g. Game Over's "Main Menu" choice).
         this.game.music.setZone(MENU_ZONE, MENU_TRACK_KEYS);
 
         this._buildBackground(groundSurfaceY);
@@ -288,21 +289,13 @@ export class MenuState extends State {
      * @param {string} id - Selected menu item id.
      */
     _handleMenuSelect(id) {
-        if (id === 'continue') {
-            this.game.stateMachine.change('worldmap');
-            return;
-        }
-        if (id === 'new-game') {
-            this._openDifficultySelect();
-            return;
-        }
-        if (id === 'settings') {
-            this._openSettings();
-            return;
-        }
-        if (id === 'info') {
-            this._openInfo();
-        }
+        const handlers = {
+            continue: () => this.game.stateMachine.change('worldmap'),
+            'new-game': () => this._openDifficultySelect(),
+            settings: () => this._openSettings(),
+            info: () => this._openInfo(),
+        };
+        handlers[id]?.();
     }
 
     /**

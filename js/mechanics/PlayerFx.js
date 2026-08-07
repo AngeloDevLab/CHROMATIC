@@ -1,8 +1,10 @@
 import { VfxEffect } from '../entities/VfxEffect.js';
 import { buildVfxAnimation } from '../entities/CharacterAnimations.js';
 
-// How often a footstep plays while running - first-guess, needs a real ear
-// against the running animation's own cadence.
+/**
+ * How often a footstep plays while running - first-guess, needs a real ear
+ * against the running animation's own cadence.
+ */
 const FOOTSTEP_INTERVAL_SECONDS = 0.40;
 
 // Player's ground-contact smoke (jump/landing/dash) and action SFX (attack

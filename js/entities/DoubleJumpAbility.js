@@ -3,6 +3,11 @@
 // (_applyGravityAndJump()'s _tryDoubleJump(), _updateJumpTimers()'s reset()
 // call), no per-frame update() of its own needed.
 export class DoubleJumpAbility {
+    /**
+     * unlocked gates whether _tryDoubleJump() can fire at all (see
+     * Player.unlockAbility()); used tracks the current grounded cycle's
+     * extra jump, reset() by Player._updateJumpTimers().
+     */
     constructor() {
         this.unlocked = false;
         this.used = false;

@@ -2,8 +2,10 @@ import { State } from './State.js';
 import { LevelSession, loadLevelPreview } from './LevelSession.js';
 import { BOSS_BAR_HEIGHT, BOSS_BAR_TOP_PX } from '../ui/HUD.js';
 
-// Top-center stack: name label, then HUD.renderBossBar()'s canvas bar
-// (BOSS_BAR_TOP_PX/HEIGHT), then this HP value label right below it.
+/**
+ * Top-center stack: name label, then HUD.renderBossBar()'s canvas bar
+ * (BOSS_BAR_TOP_PX/HEIGHT), then this HP value label right below it.
+ */
 const BOSS_NAME_TOP_PX = 6;
 const BOSS_HP_VALUE_TOP_PX = BOSS_BAR_TOP_PX + BOSS_BAR_HEIGHT + 2;
 
@@ -15,28 +17,24 @@ const BOSS_HP_VALUE_TOP_PX = BOSS_BAR_TOP_PX + BOSS_BAR_HEIGHT + 2;
 // and the top-center HP bar + name label. Routing to this instead of
 // GameState happens at level-load time via isBossLevel() (LevelSession.js),
 // not a mid-session trigger.
-// Session finding: the arena-sized buffer is necessarily wider/taller than
-// the base 640x360 (Lv_3's is 960x512), so Game._handleResize()'s
-// window-fit integer scale (Math.floor(innerWidth/game.width), see that
-// method) ends up smaller too, for the same physical window - anything
-// sized in fixed buffer-pixels (HUD bars, text) would otherwise render
-// smaller on screen during a boss fight than in a normal level. Game.hudScale
-// (see that getter's comment) is the general fix: this file's own
-// name/HP-bar/label positions below and HUD.js's renderBossBar() all scale
-// by it, and the .boss-name-label/.boss-hp-label CSS reads the same ratio
-// via the --hud-scale custom property, so the whole top-center HUD stays a
-// constant on-screen size regardless of the arena's actual buffer size.
+// Session finding: the arena buffer is necessarily larger than the base
+// 640x360 (Lv_3's is 960x512), so Game._handleResize()'s window-fit scale
+// ends up smaller for the same physical window - without correction, this
+// file's name/HP-bar/labels and HUD.js's renderBossBar() would render
+// smaller during a boss fight than in a normal level. Both correct for it
+// via Game.hudScale (see that getter's own comment for the general mechanism).
 export class BossState extends State {
     /**
+     * Resizes the render buffer to exactly match the arena before the
+     * session (and its Camera, which reads game.width/height) is
+     * constructed, and before this frame's first render() - the player
+     * never sees the base 640x360 buffer for a boss level, only the
+     * arena-sized one, so there's no mid-scene buffer swap to hide (see
+     * Game.resizeBuffer()'s own comment on the CSS transition covering the
+     * on-screen box growing/shrinking).
      * @param {{chapterId: string, level: number}} params - Forwarded to LevelSession.
      */
     enter(params) {
-        // Resized before the session (and its Camera, which reads
-        // game.width/height) is constructed, and before this frame's first
-        // render() - the player never sees the base 640x360 buffer for a
-        // boss level, only the arena-sized one, so there's no mid-scene
-        // buffer swap to hide (see Game.resizeBuffer()'s own comment on the
-        // CSS transition covering the on-screen box growing/shrinking).
         const arena = loadLevelPreview(this.game.assets, params.level);
         this.game.resizeBuffer(arena.pixelWidth, arena.pixelHeight);
 
@@ -53,6 +51,9 @@ export class BossState extends State {
         this.game.overlay.appendChild(this.bossHpValueEl);
     }
 
+    /**
+     * Tears down the level session and boss HUD labels, restores the base render buffer.
+     */
     exit() {
         this.session.destroy();
         this.bossNameEl.remove();

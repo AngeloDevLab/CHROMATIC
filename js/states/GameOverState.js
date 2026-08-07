@@ -12,6 +12,10 @@ import { isBossLevel } from './LevelSession.js';
 // left to freeze/unfreeze), the player has to pick one of the two buttons.
 export class GameOverState extends State {
     /**
+     * Retry's boss-vs-normal routing is re-checked rather than assumed -
+     * this death may itself have happened inside BossState, which routes
+     * here identically to GameState (see LevelSession.update()), so there's
+     * no other signal left to tell the two apart by the time this shows.
      * @param {{chapterId: string, level: number}} params - Level to retry, forwarded from the dead session.
      */
     enter({ chapterId, level } = {}) {
@@ -20,10 +24,6 @@ export class GameOverState extends State {
             {
                 id: 'retry',
                 label: 'Retry',
-                // Re-checked rather than assumed - this death may itself have
-                // happened inside BossState, which routes here identically to
-                // GameState (see LevelSession.update()), so there's no other
-                // signal left to tell the two apart by the time this shows.
                 onClick: () => {
                     const target = isBossLevel(this.game.assets, level) ? 'boss' : 'game';
                     this.game.stateMachine.change(target, { chapterId, level });
@@ -33,6 +33,9 @@ export class GameOverState extends State {
         ], { dismissible: false });
     }
 
+    /**
+     * Closes the Game Over panel.
+     */
     exit() {
         this.panel.close();
     }

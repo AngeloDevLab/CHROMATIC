@@ -25,6 +25,20 @@ const HIT_STOP_SECONDS = 0.06;
 // reaction to the hits this class resolves - LevelSession only ever needs
 // to ask isFrozen() and call tickFrozen(dt).
 export class CombatCoordinator {
+    projectiles = [];
+
+    /**
+     * Separate from the player's own projectiles above rather than one
+     * shared list with a "whose is this" flag - resolveProjectileHits only
+     * ever checks player-thrown ones against enemies, and
+     * resolveEnemyProjectileHits (Shooter.js's shots) only ever checks
+     * these against the player, so there's no ambiguity to sort out.
+     */
+    enemyProjectiles = [];
+
+    _hitStopTimer = 0;
+    _rangedCooldownTimer = 0;
+
     /**
      * @param {Player} player
      * @param {Enemy[]} enemies - Same array reference LevelSession itself iterates, so this always sees current state.
@@ -43,16 +57,6 @@ export class CombatCoordinator {
         this.thrownSwordSprite = thrownSwordSprite;
         this.thrownSwordTrailSprite = thrownSwordTrailSprite;
         this.sound = sound;
-
-        this.projectiles = [];
-        // Separate from the enemies' own projectiles below rather than one
-        // shared list with a "whose is this" flag - resolveProjectileHits
-        // only ever checks player-thrown ones against enemies, and
-        // resolveEnemyProjectileHits (Shooter.js's shots) only ever checks
-        // these against the player, so there's no ambiguity to sort out.
-        this.enemyProjectiles = [];
-        this._hitStopTimer = 0;
-        this._rangedCooldownTimer = 0;
     }
 
     /**
@@ -79,24 +83,33 @@ export class CombatCoordinator {
         const hits = this._resolvePlayerAttack();
         hits.push(...this._updateProjectiles(dt));
         this._updateEnemyProjectiles(dt, difficulty);
+        hits.push(...this._resolveContactDamage(dt, difficulty));
+        this._displayEnemyHits(hits);
+    }
 
+    /**
+     * Contact damage is bidirectional (Combat.js's resolveContactDamage) -
+     * displays the player's own share directly here, then returns the
+     * enemy's share for update() to fold into the shared hits array (so it
+     * goes through the same _displayEnemyHits() sfx/hit-stop path as
+     * melee/projectile hits). Filtered to enemyAmount > 0 - a charging
+     * enemy's own side is 0 (no self-damage that tick, see Combat.js's
+     * _resolveEnemyContact()), which would otherwise show a stray "0".
+     * Contact damage always hits the player (the barrier exchange), even
+     * when charging skips the enemy's own side of it - so the player's own
+     * hit-stop/sfx is triggered here unconditionally on any contact.
+     * @param {number} dt
+     * @param {string} difficulty
+     * @returns {{enemy:Enemy,amount:number}[]} Enemy-side contact hits this frame.
+     */
+    _resolveContactDamage(dt, difficulty) {
         const contactHits = resolveContactDamage(dt, this.player, this.enemies, difficulty);
         this._displayContactHitsOnPlayer(contactHits);
-        // Only forward the enemy's own (unscaled) share into the shared
-        // enemy-hit display below - contactHits carries playerAmount/
-        // enemyAmount separately (Combat.js), not one shared `amount` like
-        // melee/projectile hits, and a charging enemy's enemyAmount is 0
-        // (no self-damage that tick, see Combat.js's _resolveEnemyContact())
-        // so it's filtered out here rather than showing a stray "0".
-        hits.push(...contactHits.filter((hit) => hit.enemyAmount > 0).map((hit) => ({ enemy: hit.enemy, amount: hit.enemyAmount })));
-        this._displayEnemyHits(hits);
-        // Contact damage always hits the player (the barrier exchange), even
-        // when charging skips the enemy's own side of it - see Combat.js's
-        // _resolveEnemyContact().
         if (contactHits.length > 0) {
             this._hitStopTimer = HIT_STOP_SECONDS;
             this.sound.playSfx('hit-player');
         }
+        return contactHits.filter((hit) => hit.enemyAmount > 0).map((hit) => ({ enemy: hit.enemy, amount: hit.enemyAmount }));
     }
 
     /**
@@ -165,7 +178,10 @@ export class CombatCoordinator {
     /**
      * Enemy-fired shots/beams against the player - own damage-number loop
      * and hit-stop trigger, separate from the enemy-hit display below since
-     * these land on the player, not an enemy.
+     * these land on the player, not an enemy. Anchored at the player, not
+     * "the enemy" - the Shooter that fired this may be far away (or dead)
+     * by the time its shot actually lands, so showing the number at the
+     * impact point (the player) is the only position that still makes sense.
      * @param {number} dt
      * @param {string} difficulty
      */
@@ -173,10 +189,6 @@ export class CombatCoordinator {
         for (const projectile of this.enemyProjectiles) projectile.update(dt, this.collision);
         const playerHits = resolveEnemyProjectileHits(this.enemyProjectiles, this.player, difficulty);
         for (const hit of playerHits) {
-            // Anchored at the player, not "the enemy" - the Shooter that
-            // fired this may be far away (or dead) by the time its shot
-            // actually lands, so showing the number at the impact point
-            // (the player) is the only position that still makes sense.
             this.damageNumbers.spawn(this.player.centerX, this.player.visualTopY, hit.amount);
         }
         if (playerHits.length > 0) {

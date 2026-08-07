@@ -1,12 +1,12 @@
 import { Entity } from './Entity.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 
-const PLACEHOLDER_OPENING_SECONDS = 0.3;
-
-// docs/GDD/02_game-structure.md 2.5: "Costs 50 Shield/Prisma to open... the
-// player pays with their own color energy". Read directly here rather than
-// exported from Combat.js - this isn't a combat cost, just happens to share
-// the same currency.
+/**
+ * docs/GDD/02_game-structure.md 2.5: "Costs 50 Shield/Prisma to open... the
+ * player pays with their own color energy". Read directly here rather than
+ * exported from Combat.js - this isn't a combat cost, just happens to
+ * share the same currency.
+ */
 export const SECRET_DOOR_PRISMA_COST = 50;
 
 // Secret Room entrance (Lvl 5) - same closed -> opening -> open lifecycle and
@@ -21,17 +21,14 @@ export class SecretDoor extends Entity {
      * @param {number} y - World Y position.
      * @param {number} width - Width from the Tiled object.
      * @param {number} height - Height from the Tiled object.
-     * @param {{closed: HTMLImageElement, open: HTMLImageElement, opens: HTMLImageElement, opensFrameCount: number, opensFps: number}|null} [sprites=null] - Falls back to a flat-color placeholder if absent.
-     * @param {string|null} [greyFilterCSS=null] - CSS filter matching the terrain's unrevealed grey treatment.
+     * @param {{closed: HTMLImageElement, open: HTMLImageElement, opens: HTMLImageElement, opensFrameCount: number, opensFps: number}} sprites
+     * @param {string} greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
      */
-    constructor(x, y, width, height, sprites = null, greyFilterCSS = null) {
+    constructor(x, y, width, height, sprites, greyFilterCSS) {
         super(x, y, width, height);
         this.sprites = sprites;
-        this.opensAnimation = sprites
-            ? new SpriteAnimation(sprites.opens, width, height, sprites.opensFrameCount, sprites.opensFps, { loop: false })
-            : null;
+        this.opensAnimation = new SpriteAnimation(sprites.opens, width, height, sprites.opensFrameCount, sprites.opensFps, { loop: false });
         this.state = 'closed';
-        this._placeholderTimer = 0;
         this.greyFilterCSS = greyFilterCSS;
         this.revealed = false;
     }
@@ -49,8 +46,7 @@ export class SecretDoor extends Entity {
     trigger() {
         if (this.state !== 'closed') return;
         this.state = 'opening';
-        this._placeholderTimer = 0;
-        this.opensAnimation?.reset();
+        this.opensAnimation.reset();
     }
 
     /**
@@ -59,13 +55,8 @@ export class SecretDoor extends Entity {
     update(dt) {
         if (this.state !== 'opening') return;
 
-        if (this.opensAnimation) {
-            this.opensAnimation.update(dt);
-            if (this.opensAnimation.finished) this.state = 'open';
-        } else {
-            this._placeholderTimer += dt;
-            if (this._placeholderTimer >= PLACEHOLDER_OPENING_SECONDS) this.state = 'open';
-        }
+        this.opensAnimation.update(dt);
+        if (this.opensAnimation.finished) this.state = 'open';
     }
 
     /**
@@ -75,34 +66,13 @@ export class SecretDoor extends Entity {
         ctx.save();
         if (!this.revealed) ctx.filter = this.greyFilterCSS;
 
-        if (this.sprites) this._renderSprite(ctx);
-        else this._renderPlaceholder(ctx);
-
-        ctx.restore();
-    }
-
-    /**
-     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
-     */
-    _renderSprite(ctx) {
         if (this.state === 'opening') {
             this.opensAnimation.draw(ctx, this.x, this.y, this.width, this.height);
         } else {
             const sprite = this.state === 'open' ? this.sprites.open : this.sprites.closed;
             ctx.drawImage(sprite, this.x, this.y, this.width, this.height);
         }
-    }
 
-    /**
-     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
-     */
-    _renderPlaceholder(ctx) {
-        ctx.save();
-        ctx.fillStyle = this.state === 'open' ? '#3fc6e0' : this.state === 'opening' ? '#7fd8ea' : '#1f4a56';
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(this.x, this.y, this.width, this.height);
         ctx.restore();
     }
 }

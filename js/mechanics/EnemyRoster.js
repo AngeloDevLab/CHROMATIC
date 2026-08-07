@@ -3,11 +3,16 @@ import { Wraith } from '../entities/bosses/Wraith.js';
 import { WraithTemplateboss } from '../entities/bosses/WraithTemplateboss.js';
 import { buildWraithAnimations, buildTemplatebossAnimations } from '../entities/CharacterAnimations.js';
 
-// Every living enemy continuously erases color around itself while
-// patrolling, independent of the player's own reveal.
+/**
+ * Every living enemy continuously erases color around itself while
+ * patrolling, independent of the player's own reveal.
+ */
 const ENEMY_DARKEN_RADIUS = 65;
-// A bit bigger than the darken radius above - dying reveals back what the
-// enemy had darkened while patrolling, plus a bit more as a small death beat.
+
+/**
+ * A bit bigger than the darken radius above - dying reveals back what the
+ * enemy had darkened while patrolling, plus a bit more as a small death beat.
+ */
 const ENEMY_DEATH_REVEAL_RADIUS = 90;
 
 /**
@@ -61,15 +66,16 @@ export class EnemyRoster {
     }
 
     /**
+     * wraith.sprite is set explicitly rather than left as the null Wraith's
+     * constructor passes to super() - Enemy.render()'s deep fallback
+     * (anim/referenceAnim missing) draws this.sprite directly, so it needs
+     * to be a real image (same reasoning applies to _spawnWraithTemplateboss() below).
      * @param {object} spawn - EnemySpawn Tiled object.
      * @returns {Wraith}
      */
     _spawnWraith(spawn) {
         const wraith = new Wraith(spawn.x, spawn.y, this.collision, this.player);
         wraith.setAnimations(buildWraithAnimations(this.game.assets), 'idle');
-        // Enemy.render()'s deep fallback (anim/referenceAnim missing) draws
-        // this.sprite directly - keep it a real image rather than the null
-        // Wraith's constructor passes to super().
         wraith.sprite = wraith.animations.idle.image;
         this.boss = wraith;
         return wraith;
@@ -115,6 +121,8 @@ export class EnemyRoster {
      * 03_mechanics.md 4.1: "Enemy crosses a colored area -> the area turns
      * back to dark" - dying reverses that once, revealing back what it had
      * darkened (plus a bit more) instead of leaving a dark patch behind.
+     * 'enemy-death' sfx is reused for the boss too until a dedicated
+     * boss-death cue exists.
      * @param {ColorZone} colorZone
      */
     updateColorReveal(colorZone) {
@@ -124,7 +132,6 @@ export class EnemyRoster {
             } else if (!enemy.colorRevealed) {
                 enemy.colorRevealed = true;
                 colorZone.reveal(enemy.centerX, enemy.centerY, ENEMY_DEATH_REVEAL_RADIUS);
-                // Reused for the boss too until a dedicated boss-death cue exists.
                 this.game.sound.playSfx('enemy-death');
             }
         }
@@ -133,7 +140,9 @@ export class EnemyRoster {
     /**
      * Standing in for "Boss defeated" (03_mechanics.md 4.1) since Lv_1 has
      * no boss yet: clearing every enemy triggers the same color-explosion
-     * reveal, once.
+     * reveal, once. Also marks the portal revealed - its own reveal isn't
+     * position-keyed, but a full-level reveal means everything around it is
+     * revealed too by the time it's even usable, so it should be.
      * @param {ColorZone} colorZone
      * @param {Interactables} interactables
      */
@@ -142,9 +151,6 @@ export class EnemyRoster {
 
         this._levelFullyRevealed = true;
         colorZone.triggerFullReveal(this.player.centerX, this.player.visualCenterY);
-        // The portal's own reveal isn't position-keyed - but a full-level
-        // reveal means everything around it is revealed too by the time
-        // it's even usable, so it should be.
         interactables.markPortalRevealed();
     }
 

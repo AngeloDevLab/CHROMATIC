@@ -15,6 +15,9 @@ export class GameState extends State {
         this.session = new LevelSession(this.game, params);
     }
 
+    /**
+     * Tears down the level session.
+     */
     exit() {
         this.session.destroy();
     }

@@ -4,6 +4,15 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.15.5] - 2026-08-08
+
+### Changed
+- Comment/JSDoc convention pass finished across the whole codebase (~50 files, tracked file-by-file in `TODO.md`) - the goal from `CLAUDE.md`'s comment convention (no inline why-prose in function bodies; JSDoc at its natural anchor, a class field or a method's own doc block, instead - or a shared top-of-file block only when genuinely file-wide) is now applied everywhere, not just the Group 1-7 files from 0.7.0/0.8.1. Mechanically: single-const `//` blocks converted to JSDoc anchored at their constant; a few malformed constructors found where field-rationale prose had been stuffed into a `@param` JSDoc block instead of documenting an actual parameter (`Boss.js`, `Shooter.js`) - fixed by converting those always-constant fields to real class fields with their own JSDoc, matching the pattern `MusicPlaylist.js`/`CombatCoordinator.js` already used.
+- `Wraith.js` (the densest file found, 53% comment lines) got a dedicated trim pass: 259->239 comment lines, cut changelog-style "revised this session" tuning-history asides and a real duplication between two methods' JSDoc, fixed two stale references describing `WraithTemplateboss.js` as not existing yet (it shipped back in 0.10.0). `Panel.js` had a similar stale GameState/BuffState cross-reference fixed.
+- Removed dead placeholder-sprite fallback code from `Trapdoor.js`/`SecretDoor.js`/`BuffTerminal.js` - all three could render a flat-color placeholder box when constructed without a sprite, a path that hasn't been reachable since their real art shipped (`Interactables.js` has always passed full sprite sets at every call site). `sprites`/`sprite` are now required constructor params on all three.
+- A few small simplifications found along the way: `MenuState._handleMenuSelect()`'s if-chain became a dispatch map; `CombatCoordinator.update()` split its contact-damage handling into its own `_resolveContactDamage()` (matching the shape its sibling `_resolvePlayerAttack()`/`_updateProjectiles()` already had); `MerchantDialogue.open()`'s inline `onMount` callback became a named `_onMount()`.
+- Documented (not yet implemented, see `TODO.md`) several architecture findings for a future dedicated pass: lazy/staged asset loading (`LoadingState.js` currently loads every level's assets up front, slow on bad connections); `Interactables.js` splitting into one small class per interactable type instead of one class doing five jobs; `ColorZone.js` splitting its continuous trail mechanism from its triggered one-time sweep animations; `Player.js` splitting its keyboard-movement logic into a `PlayerMovement.js` composed module. `LevelSession.js`/`Interactables.js`/`Player.js` remain the three files still flagged over the ~400-line guideline.
+
 ## [0.15.4] - 2026-08-05
 
 ### Fixed

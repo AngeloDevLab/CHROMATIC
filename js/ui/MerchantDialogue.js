@@ -1,8 +1,10 @@
 import { Panel } from './Panel.js';
 
-// Faster than CutsceneState's 10 chars/sec - that's tuned for a slow,
-// scene-setting reveal, this is a quick in-level flavor line the player
-// pages through mid-run and shouldn't feel like it's dragging.
+/**
+ * Faster than CutsceneState's 10 chars/sec - that's tuned for a slow,
+ * scene-setting reveal, this is a quick in-level flavor line the player
+ * pages through mid-run and shouldn't feel like it's dragging.
+ */
 const CHARS_PER_SECOND = 30;
 const TITLE = 'Unknown Merchant';
 const PORTRAIT_SRC = 'assets/images/objects/merchant-dialog-portrait.png';
@@ -43,6 +45,10 @@ export class MerchantDialogue {
      * @param {() => number} shop.getTokens - Reads the player's current Token count.
      * @param {(id: string) => boolean} shop.isOwned - Whether an option is already unlocked.
      * @param {(id: string, cost: number) => boolean} shop.buy - Attempts a purchase, returns success.
+     * onClose is wired directly here (not routed through this class's own
+     * close()) so backdrop-click/×/Escape all still clear `isOpen` -
+     * without it, `isOpen` would stay stuck true and LevelSession.update()
+     * would never leave its dialogue-frozen branch again.
      */
     open(text, shop = null) {
         this.isOpen = true;
@@ -54,18 +60,20 @@ export class MerchantDialogue {
 
         this.panel.open('', this._buildBodyHTML(), {
             dismissible: true,
-            // Backdrop-click/×/Escape all close the Panel internally without
-            // going through this class's own close() - without this, isOpen
-            // would stay stuck true and LevelSession.update() would never
-            // leave its dialogue-frozen branch again.
             onClose: () => { this.isOpen = false; },
-            onMount: (root) => {
-                this._textEl = root.querySelector('.merchant-dialogue-text p');
-                this._shopEl = root.querySelector('.merchant-shop');
-                this._lockHeight(text);
-                if (this._shop) this._wireShopButtons();
-            },
+            onMount: (root) => this._onMount(root, text),
         });
+    }
+
+    /**
+     * @param {HTMLElement} root - The mounted panel's root element.
+     * @param {string} text - The full dialogue line, forwarded to _lockHeight().
+     */
+    _onMount(root, text) {
+        this._textEl = root.querySelector('.merchant-dialogue-text p');
+        this._shopEl = root.querySelector('.merchant-shop');
+        this._lockHeight(text);
+        if (this._shop) this._wireShopButtons();
     }
 
     /**
