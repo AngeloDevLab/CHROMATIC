@@ -1,14 +1,4 @@
-/**
- * 03_mechanics.md 4.1: "Boss defeated -> the entire level turns colorful -
- * color explosion". Duration of the sweep triggered by triggerFullReveal().
- */
-const FULL_REVEAL_DURATION_SECONDS = 1.5;
-
-/**
- * 02_game-structure.md 2.1: Worldmap's "connecting paths turn colorful" -
- * duration of the horizontal sweep triggered by triggerZoneWipe().
- */
-const ZONE_WIPE_DURATION_SECONDS = 1.5;
+import { ColorZoneTransitions } from './ColorZoneTransitions.js';
 
 /**
  * CSS `filter` string for the grey/desaturated look, standalone so
@@ -63,6 +53,7 @@ export class ColorZone {
 
         this._initCanvases(width, height);
         this._initState();
+        this._transitions = new ColorZoneTransitions(this);
     }
 
     /**
@@ -88,14 +79,11 @@ export class ColorZone {
         this._scratchCtx = this._scratchCanvas.getContext('2d');
     }
 
-    /** Fade-mode stamp aging, permanent-mode's last punch, and transition state. */
+    /** Fade-mode stamp aging and permanent-mode's last punch - transition state lives on ColorZoneTransitions.js instead. */
     _initState() {
         this._stamps = [];
         this._timeSinceLastStamp = Infinity;
         this._lastPermanentPunch = null;
-        this._fullReveal = null;
-        this._fullDarken = null;
-        this._zoneWipe = null;
     }
 
     /**
@@ -124,18 +112,8 @@ export class ColorZone {
      * @param {number} y
      */
     update(dt, x, y) {
-        if (this._fullReveal) {
-            this._updateFullReveal(dt);
-            return;
-        }
-
-        if (this._fullDarken) {
-            this._updateFullDarken(dt);
-            return;
-        }
-
-        if (this._zoneWipe) {
-            this._updateZoneWipe(dt);
+        if (this._transitions.isActive) {
+            this._transitions.update(dt);
             return;
         }
 
@@ -261,71 +239,25 @@ export class ColorZone {
      * @returns {boolean}
      */
     get isTransitioning() {
-        return !!this._fullReveal || !!this._fullDarken || !!this._zoneWipe;
+        return this._transitions.isActive;
     }
 
     /**
-     * 03_mechanics.md 4.1: "Boss defeated -> the entire level turns colorful".
-     * Expands a full-strength reveal circle from (originX, originY) past the
-     * whole canvas over FULL_REVEAL_DURATION_SECONDS, then clears the overlay
-     * outright (a growing circle never quite reaches the corners).
+     * @see ColorZoneTransitions.triggerFullReveal
      * @param {number} originX
      * @param {number} originY
      */
     triggerFullReveal(originX, originY) {
-        this._fullReveal = {
-            originX,
-            originY,
-            elapsed: 0,
-            maxRadius: Math.hypot(this.width, this.height),
-        };
+        this._transitions.triggerFullReveal(originX, originY);
     }
 
     /**
-     * @param {number} dt
-     */
-    _updateFullReveal(dt) {
-        this._fullReveal.elapsed += dt;
-        const progress = Math.min(1, this._fullReveal.elapsed / FULL_REVEAL_DURATION_SECONDS);
-
-        if (progress >= 1) {
-            this.overlayCtx.clearRect(0, 0, this.width, this.height);
-            this._fullReveal = null;
-            return;
-        }
-
-        this._punch(this.overlayCtx, this._fullReveal.originX, this._fullReveal.originY, 1, this._fullReveal.maxRadius * progress);
-    }
-
-    /**
-     * Player death - inverse of triggerFullReveal(): repaints the grey
-     * template outward from (originX, originY) until the level is grey again.
+     * @see ColorZoneTransitions.triggerFullDarken
      * @param {number} originX
      * @param {number} originY
      */
     triggerFullDarken(originX, originY) {
-        this._fullDarken = {
-            originX,
-            originY,
-            elapsed: 0,
-            maxRadius: Math.hypot(this.width, this.height),
-        };
-    }
-
-    /**
-     * @param {number} dt
-     */
-    _updateFullDarken(dt) {
-        this._fullDarken.elapsed += dt;
-        const progress = Math.min(1, this._fullDarken.elapsed / FULL_REVEAL_DURATION_SECONDS);
-
-        if (progress >= 1) {
-            this.overlayCtx.drawImage(this.greyTemplateCanvas, 0, 0);
-            this._fullDarken = null;
-            return;
-        }
-
-        this.darken(this._fullDarken.originX, this._fullDarken.originY, this._fullDarken.maxRadius * progress);
+        this._transitions.triggerFullDarken(originX, originY);
     }
 
     /**
@@ -351,27 +283,12 @@ export class ColorZone {
     }
 
     /**
-     * Animated version of revealZone() - sweeps the revealed strip from
-     * xStart to xEnd (left to right) over ZONE_WIPE_DURATION_SECONDS, for
-     * the Worldmap's "just completed this level" flourish.
+     * @see ColorZoneTransitions.triggerZoneWipe
      * @param {number} xStart
      * @param {number} xEnd
      */
     triggerZoneWipe(xStart, xEnd) {
-        this._zoneWipe = { xStart, xEnd, elapsed: 0 };
-    }
-
-    /**
-     * @param {number} dt
-     */
-    _updateZoneWipe(dt) {
-        this._zoneWipe.elapsed += dt;
-        const progress = Math.min(1, this._zoneWipe.elapsed / ZONE_WIPE_DURATION_SECONDS);
-        const { xStart, xEnd } = this._zoneWipe;
-        const right = xStart + (xEnd - xStart) * progress;
-
-        this.revealZone(xStart, right);
-        if (progress >= 1) this._zoneWipe = null;
+        this._transitions.triggerZoneWipe(xStart, xEnd);
     }
 
     /**

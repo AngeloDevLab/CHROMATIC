@@ -4,6 +4,12 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.16.3] - 2026-08-08
+
+### Changed
+- `ColorZone.js` (460 lines, over the ~400-line guideline) split its triggered, one-time sweep animations (`triggerFullReveal`/`triggerFullDarken`/`triggerZoneWipe` and their `_update*`/elapsed-progress state) into a new `ColorZoneTransitions.js`, holding a reference back to the owning `ColorZone` to reuse its shared drawing primitives (`_punch()`/`darken()`/`revealZone()`/`overlayCtx`) rather than duplicating them. `ColorZone.js` keeps the continuous per-frame trail mechanism (`paintGreyFrom`/`update`/`darken`/`reveal`/`render`) plus thin delegating methods for the moved ones, dropping to 377 lines - external callers (`LevelSession.js`/`WorldmapState.js`/`EnemyRoster.js`) unchanged.
+- Finished the comment/JSDoc convention pass (see CHANGELOG 0.15.5) on the three files that pass had deliberately skipped: `LevelSession.js`, the `Interactables.js` family, and `Player.js`/`PlayerMovement.js` (already clean after 0.16.1's split). Remaining top-of-file `//`-commented constants converted to JSDoc; inline "why" comments still scattered through method bodies consolidated into each file's existing top-of-file/class comment block instead.
+
 ## [0.16.2] - 2026-08-08
 
 ### Changed

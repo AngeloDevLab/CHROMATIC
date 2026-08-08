@@ -2,15 +2,10 @@
 
 Working list of what's next. Update together at the end of a session (see `CHANGELOG.md` for what's already shipped) - this file tracks intent, not history.
 
-## Architecture (next up, high priority)
+## Architecture
 
-- **Comment/JSDoc convention pass across every file - done** (see CHANGELOG 0.15.5). Three big files were deliberately skipped, saved for a dedicated pass:
-  - [ ] `js/states/LevelSession.js`
-  - [ ] `js/mechanics/Interactables.js`
-  - [ ] `js/entities/Player.js`
 - **Loading feels slow on bad/mobile connections** - `LoadingState.js`'s `_loadManifest()`/`_loadSounds()` load everything up front (every enemy/boss sprite set, all 3 tilesets, all 6 level JSONs, all 9 OST tracks as mp3, all SFX) before the menu ever shows. Idea to split by "what's actually needed when": a small critical boot set (menu/worldmap bg, first OST track) blocking the loading screen, everything level-specific (tilesets, enemy/boss sprites, per-level JSON) lazy-loaded on entering that level instead, remaining OST tracks fetched in the background instead of all 9 upfront. Touches `AssetLoader.js`/`LevelSession.js`/`MusicPlaylist.js`, not just `LoadingState.js` - bigger cut than the comment-convention pass, deliberately deferred to its own session.
 - **When to keep splitting a big file vs. stop**: two different reasons a file grows big need different answers. A "god object" (one class doing several independent jobs) can genuinely keep being split, since the pieces don't need each other - see `js/mechanics/interactables/` for the pattern (`Interactables.js` itself is now a thin orchestrator delegating to five small classes, one per type, each sharing a `spawn`/`update`/`render`/`destroy` shape). An "orchestrator" (a class with no logic of its own, just sequencing already-extracted subsystems, e.g. `LevelSession.js` at 519 lines - `_updateWorld()` is essentially a call list: `player.update()`, `enemyRoster.updateEnemies()`, `interactables.updateEntities()`, `combat.update()`, ...) is close to done as-is - further splitting just relocates the sequencing, it doesn't reduce it. Rule of thumb: stop when a file is mostly small, well-named, well-documented methods and its length comes from wiring order, not from owning distinct logic.
-- **`ColorZone.js` has regrown past the ~400-line guideline** (460 lines). Real split candidate: the file is really two things sharing the same canvases - the continuous per-frame trail mechanism (constructor/`paintGreyFrom`/`update`+`_updatePermanent`/`_updateFade`/`darken`/`reveal`/`_punch`/`render`) vs. triggered one-time sweep animations with their own elapsed/progress state (`triggerFullReveal`/`_updateFullReveal`, `triggerFullDarken`/`_updateFullDarken`, `triggerZoneWipe`/`_updateZoneWipe`, `isTransitioning`) that internally call back into the first group's `darken()`/`_punch()`/`overlayCtx`. Would need a sub-object holding a reference back to the `ColorZone` instance for those shared primitives, with `ColorZone.js` keeping thin delegating methods so `LevelSession.js`/`WorldmapState.js`/`EnemyRoster.js` (the external callers of `trigger*`/`isTransitioning`/`darkenAllExcept`) don't need to change.
 
 ## Game feel
 

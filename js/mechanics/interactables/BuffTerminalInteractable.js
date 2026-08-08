@@ -5,7 +5,15 @@ import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from 
 // open (or there simply isn't one placed) and hasn't already been used;
 // pushes BuffState (see StateMachine.js's push()) rather than granting
 // anything directly. Gated on secretDoor.isOpen, not its own separate
-// reveal/color state - it sits inside the room the door already guards.
+// reveal/color state - it sits inside the room the door already guards. The
+// constructor pre-marks a spawned terminal used if Game.claimedSecretRoomBuffs
+// already has this level (BuffState.js's _choose()) - `used` alone
+// (BuffTerminal.js's own instance field) doesn't survive a replay's fresh
+// LevelSession on its own, so without this a replay could offer (and stack)
+// a second buff choice from the same terminal. updatePrompt() hides its
+// prompt explicitly the instant [E] pushes BuffState, rather than leaving it
+// to next frame's inRange check - this session gets no more update() calls
+// at all while BuffState is on top, so nothing else would ever hide it again.
 export class BuffTerminalInteractable {
     /**
      * @param {Game} game
@@ -25,11 +33,6 @@ export class BuffTerminalInteractable {
         this._buffTerminal = spawn
             ? new BuffTerminal(spawn.x, spawn.y, spawn.width, spawn.height, game.assets.getImage('buffterminal'))
             : null;
-        // Already claimed on an earlier visit (Game.claimedSecretRoomBuffs,
-        // BuffState.js's _choose()) - start pre-used so replaying this level
-        // can't offer (and stack) a second buff choice from the same
-        // terminal. `used` alone (BuffTerminal.js's own instance field)
-        // doesn't survive a replay's fresh LevelSession on its own.
         if (this._buffTerminal && game.claimedSecretRoomBuffs.has(levelNumber)) {
             this._buffTerminal.used = true;
         }
@@ -49,10 +52,6 @@ export class BuffTerminalInteractable {
         this._promptEl.hidden = !inRange;
         if (inRange) positionInteractPrompt(this._promptEl, camera, this._buffTerminal.centerX, this._buffTerminal.y);
 
-        // Hidden explicitly here, not left to the next frame's inRange check
-        // above - pushing BuffState stops this session from getting any more
-        // update() calls at all while it's on top, so nothing would
-        // otherwise ever hide this again.
         if (inRange && interactPressed) {
             this._promptEl.hidden = true;
             this.game.stateMachine.push('buff', { player: this.player, buffTerminal: this._buffTerminal, levelNumber: this._levelNumber });

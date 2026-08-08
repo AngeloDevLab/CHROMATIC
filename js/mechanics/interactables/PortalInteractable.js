@@ -4,7 +4,10 @@ import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from 
 // Level-end portal (01_core-gameplay-loop.md) - locked until every enemy is
 // dead (see updatePrompt()'s levelFullyRevealed param), then interactable
 // via [E] in range. Not every level has one placed in Tiled yet, hence the
-// null-tolerant this._portal everywhere.
+// null-tolerant this._portal everywhere. updatePrompt() also reveals the
+// portal early via the player's own live-glow/permanent trail radius - same
+// as walking past any other ground, even before markRevealed()'s
+// level-fully-cleared reveal guarantees it later.
 export class PortalInteractable {
     /**
      * @param {Game} game
@@ -60,9 +63,6 @@ export class PortalInteractable {
 
         this._portal.active = levelFullyRevealed;
 
-        // Same reveal radius as the player's own live-glow/permanent trail -
-        // walking within it reveals the portal same as it would any other
-        // ground, even before the level's full-reveal (markRevealed()) guarantees it later.
         if (!this._portal.revealed) {
             const dist = Math.hypot(this.player.centerX - this._portal.centerX, this.player.visualCenterY - this._portal.centerY);
             if (dist <= this._revealRadius) this._portal.revealed = true;

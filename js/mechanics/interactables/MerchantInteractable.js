@@ -42,6 +42,11 @@ const ABILITY_SHOP_OPTIONS = [
 // Miniboss here too, session decision). Doesn't spawn at all until the boss
 // is dead and every dropped Token is collected - this._merchant stays null
 // until then, same null-tolerant pattern as the other interactable types.
+// updatePrompt() hides its prompt explicitly the instant [E] opens the
+// dialogue, rather than leaving it to next frame's inRange check - opening
+// MerchantDialogue freezes LevelSession's whole update loop (its own isOpen
+// early-return), so this method stops running altogether and would
+// otherwise never get the chance to hide it again.
 export class MerchantInteractable {
     /**
      * @param {Game} game
@@ -160,10 +165,6 @@ export class MerchantInteractable {
         this._promptEl.hidden = !inRange;
         if (inRange) positionInteractPrompt(this._promptEl, camera, this._merchant.centerX, this._merchant.y);
 
-        // Hidden explicitly here, not left to the next frame's inRange check
-        // above - MerchantDialogue freezes LevelSession's update loop (see
-        // its own isOpen early-return), so this method stops running the
-        // instant the dialogue opens and would otherwise never hide it.
         if (inRange && interactPressed) {
             this._promptEl.hidden = true;
             this._openDialogue();

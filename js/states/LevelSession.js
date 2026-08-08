@@ -17,19 +17,26 @@ import { DamageNumbers } from '../ui/DamageNumbers.js';
 
 const FALLBACK_SPAWN = { x: 64, y: 0 };
 
-// Slack past the level's bottom edge before a fall counts as death - a
-// platform flush with the edge shouldn't feel like an instant kill.
+/**
+ * Slack past the level's bottom edge before a fall counts as death - a
+ * platform flush with the edge shouldn't feel like an instant kill.
+ */
 const FALL_DEATH_MARGIN_PX = 64;
 
-// Player's live-glow/permanent color trail radius (03_mechanics.md 4.1) -
-// shared with Interactables.js's revealRadius option so Portal/Trapdoor/
-// SecretDoor "revealed" tracks the same distance.
+/**
+ * Player's live-glow/permanent color trail radius (03_mechanics.md 4.1) -
+ * shared with Interactables.js's revealRadius option so Portal/Trapdoor/
+ * SecretDoor "revealed" tracks the same distance.
+ */
 const PLAYER_REVEAL_RADIUS = 55;
 
-// Real Prologue levels (Tiled exports, assets/levels/Lv_N.json). Player/enemy
-// spawn positions come from each level's PlayerStart/EnemySpawn objects
-// (10_technical-architecture.md 11.6.2); an unrecognized EnemySpawn name is
-// skipped with a console warning rather than spawning the wrong thing.
+/**
+ * Real Prologue levels (Tiled exports, assets/levels/Lv_N.json).
+ * Player/enemy spawn positions come from each level's PlayerStart/
+ * EnemySpawn objects (10_technical-architecture.md 11.6.2); an
+ * unrecognized EnemySpawn name is skipped with a console warning rather
+ * than spawning the wrong thing.
+ */
 export const LEVEL_JSON_KEYS = {
     1: 'lv1-level',
     2: 'lv2-level',
@@ -73,6 +80,19 @@ export function isBossLevel(assets, levelNumber) {
 // State (no enter()/exit()), just a plain constructor + update()/render()/
 // destroy(), driven by whichever State owns it (GameState for a normal
 // level, BossState for a boss arena).
+//
+// A few non-obvious choices, gathered here instead of scattered near their
+// call sites: the constructor leaves Camera.js's zoom at its default (1)
+// regardless of a Boss spawning - BossState.js owns that separately, via its
+// own arena-sized buffer. _updateWorld() re-applies every unlocked ability to
+// the player every frame - idempotent and cheap enough to poll, so a DevPanel
+// unlock takes effect immediately instead of only on the next respawn.
+// _startDeathSequence() clamps the ghost's rise position to the camera's
+// visible bottom edge, since falling into a pit can put the real death
+// position below what Camera.js ever scrolls to - without this the
+// rise-and-fade would spawn off-screen and never be seen. render() draws
+// interactables ahead of enemies/player, so they read as level furniture
+// rather than a foreground object those would otherwise render behind.
 export class LevelSession {
     /**
      * @param {Game} game - Owning Game instance.
@@ -91,8 +111,6 @@ export class LevelSession {
         this.enemyRoster = new EnemyRoster(this.game, this.level, this.player, this.collision);
         this._initInteractablesAndHud();
         this._initCombat();
-        // Camera zoom stays at Camera.js's default (1) here regardless of a
-        // Boss spawning - BossState.js owns that (its own arena-sized buffer).
     }
 
     /**
@@ -315,8 +333,6 @@ export class LevelSession {
      */
     _updateWorld(dt) {
         this.player.godmode = this.game.devPanel.godmode;
-        // Idempotent - cheap enough to poll so a DevPanel unlock takes
-        // effect immediately instead of only on the next respawn.
         for (const id of this.game.abilities) this.player.unlockAbility(id);
         this.player.update(dt);
         this.playerFx.update(dt);
@@ -410,10 +426,6 @@ export class LevelSession {
      * death spot and fades out, then the Game Over panel offers Retry/Main Menu.
      */
     _startDeathSequence() {
-        // Falling into a pit can put the death position below what
-        // Camera.js ever scrolls to (it clamps to the level's bottom edge) -
-        // pin the ghost to the visible bottom edge instead of spawning it
-        // off-screen where the rise-and-fade would never be seen.
         const visibleBottom = this.camera.y + this.game.height / this.camera.zoom - GHOST_FRAME_SIZE / 2;
         const x = this.player.centerX;
         const y = Math.min(this.player.visualCenterY, visibleBottom);
@@ -452,8 +464,6 @@ export class LevelSession {
         ctx.drawImage(this.levelCanvas, 0, 0);
         this._renderColorZone(ctx);
 
-        // Ahead of enemies/player, so it reads as level furniture rather
-        // than a foreground object they'd otherwise render behind.
         this.interactables.render(ctx);
         for (const enemy of this.enemyRoster.enemies) {
             if (enemy.buried) continue;
