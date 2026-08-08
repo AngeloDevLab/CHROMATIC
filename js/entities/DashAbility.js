@@ -13,7 +13,7 @@ const DOUBLE_TAP_WINDOW_SECONDS = 0.25;
 // presses to InputHandler.js, which deliberately only tracks that for
 // actions multiple callers need (attack/jump/drop/pause/interact) - a
 // double-tap window is trigger-specific timing logic only this ability
-// needs. _trigger() sets player.vx/facing once; Player._updateHorizontalVelocity()
+// needs. _trigger() sets player.vx/facing once; PlayerMovement._updateHorizontalVelocity()
 // freezes both for the burst's duration the same way it already does for
 // knockback. No i-frames paired with the dash (deliberately deferred, common
 // pairing in the genre but out of scope for this pass - revisit if

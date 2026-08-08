@@ -176,7 +176,7 @@ export class Charger extends Enemy {
     /**
      * charger-charge.png is a distinct sprite from the walking/idle one -
      * swap to it while actually charging, same reset-on-switch reasoning as
-     * Player.js's _updateAnimationState so it never starts mid-frame.
+     * PlayerMovement.js's _updateAnimationState so it never starts mid-frame.
      */
     _updateChargeAnimation() {
         if (!this.animations?.charge) return;

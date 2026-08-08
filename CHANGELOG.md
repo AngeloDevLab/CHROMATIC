@@ -4,6 +4,11 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.16.1] - 2026-08-08
+
+### Changed
+- `Player.js` (496 lines, over the ~400-line file-length guideline) split its real keyboard-driven movement logic (`_updateControlled()`/`_handleAttackInput()`/`_updateJumpTimers()`/`_updateHorizontalVelocity()`/`_applyGravityAndJump()`/`_tryGroundJump()`/`_tryDoubleJump()`/`_updateDropThrough()`/`_startAttack()`/`_updateAnimationState()`) into a new composed `js/entities/PlayerMovement.js`, mirroring `PlayerHealth.js`/`PlayerRenderer.js`'s existing composition pattern. Unlike `PlayerHealth.js`, the extracted class owns no state of its own (matches `PlayerRenderer.js`'s shape instead) - `grounded`/`attacking`/`coyoteTimer`/etc. stay plain fields on `Player` itself, since `PlayerFx.js`/`DashAbility.js` already read/write `player.grounded`/`player.attacking`/`player.pendingVfx` directly and would otherwise need their own changes too. `Player.js` drops to 293 lines, `PlayerMovement.js` is 235. No behavior change, pure relocation.
+
 ## [0.16.0] - 2026-08-08
 
 ### Added
