@@ -1,23 +1,33 @@
-// Coyote time: how long after walking off a ledge a jump still counts as
-// grounded. Jump buffering: how long an early jump press still fires once
-// grounded. Both mask the single-frame window a rigid grounded-check would
-// otherwise need, which reads as unresponsive on a keyboard.
+/**
+ * Coyote time: how long after walking off a ledge a jump still counts as
+ * grounded. Jump buffering: how long an early jump press still fires once
+ * grounded. Both mask the single-frame window a rigid grounded-check would
+ * otherwise need, which reads as unresponsive on a keyboard.
+ */
 const COYOTE_TIME_SECONDS = 0.1;
 const JUMP_BUFFER_SECONDS = 0.12;
-// Variable jump height: releasing jump early while still rising clamps vy to
-// this fraction of full takeoff speed, for a short hop instead of always
-// launching to full height regardless of tap vs. hold.
+
+/**
+ * Variable jump height: releasing jump early while still rising clamps vy
+ * to this fraction of full takeoff speed, for a short hop instead of
+ * always launching to full height regardless of tap vs. hold.
+ */
 const SHORT_HOP_VY_FRACTION = 0.45;
 
-// Movement feel: ramps vx toward the target speed instead of snapping
-// instantly. Deceleration is faster than acceleration so stopping still reads as responsive.
+/**
+ * Movement feel: ramps vx toward the target speed instead of snapping
+ * instantly. Deceleration is faster than acceleration so stopping still reads as responsive.
+ */
 const ACCELERATION = 1800;
 const DECELERATION = 2600;
 
-// Drop-Through-Platform (03_mechanics.md 4.2, replaces the originally-planned
-// Duck): just enough to push the player past the one-way collision's
-// "already below this surface" threshold before Collision.resolve() runs
-// this same frame - gravity does the rest, no multi-frame "falling through" state needed.
+/**
+ * Drop-Through-Platform (03_mechanics.md 4.2, replaces the
+ * originally-planned Duck): just enough to push the player past the
+ * one-way collision's "already below this surface" threshold before
+ * Collision.resolve() runs this same frame - gravity does the rest, no
+ * multi-frame "falling through" state needed.
+ */
 const DROP_NUDGE_PX = 4;
 
 /**

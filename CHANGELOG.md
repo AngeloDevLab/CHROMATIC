@@ -4,6 +4,11 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.16.2] - 2026-08-08
+
+### Changed
+- `Interactables.js` (598 lines, a "god object" doing five unrelated jobs - Portal/Merchant+Tokens/Trapdoor/SecretDoor/BuffTerminal) split into a new `js/mechanics/interactables/` folder: one small class per type (`PortalInteractable.js`/`MerchantInteractable.js`/`TrapdoorInteractable.js`/`SecretDoorInteractable.js`/`BuffTerminalInteractable.js`), each sharing a `spawn` (constructor)/`update`/`updatePrompt`/`render`/`destroy` shape, plus a small shared `InteractPrompt.js` for the `[E]`-prompt element/positioning four of the five types build identically. `Interactables.js` itself is now a 117-line thin orchestrator/facade - every external call site (`LevelSession.js`, `EnemyRoster.js`) is unchanged, same external API as before. The one real cross-type dependency (BuffTerminal only interactable once SecretDoor is open) is wired via a small `isDoorOpen: () => boolean` callback rather than a direct reference between the two classes. No behavior change, pure relocation - mirrors the `Player.js` -> `PlayerMovement.js` split from 0.16.1, fanned out into five classes since these types are genuinely independent of each other. A new interactable type (a Lore-Secret variant is already sketched in `docs/GDD/_ideas-inbox.md`) is now purely additive - one new file, one new line in the orchestrator's constructor - instead of another edit to an already-600-line class.
+
 ## [0.16.1] - 2026-08-08
 
 ### Changed

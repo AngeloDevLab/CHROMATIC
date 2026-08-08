@@ -5,19 +5,25 @@ import { PlayerMovement } from './PlayerMovement.js';
 import { DoubleJumpAbility } from './DoubleJumpAbility.js';
 import { DashAbility } from './DashAbility.js';
 
-// Sprite frames carry transparent padding around the character, so the
-// collision hitbox is intentionally narrower than the full render size -
-// matches the previous 32x64 footprint (10_technical-architecture.md 11.7.2).
+/**
+ * Sprite frames carry transparent padding around the character, so the
+ * collision hitbox is intentionally narrower than the full render size -
+ * matches the previous 32x64 footprint (10_technical-architecture.md 11.7.2).
+ */
 const HITBOX_WIDTH = 32;
 const HITBOX_HEIGHT = 64;
 
-// attack.png frame where the blade reaches full extension - the swing
-// resolves its hit exactly once, here, via consumeAttackImpact() (Combat.js).
+/**
+ * attack.png frame where the blade reaches full extension - the swing
+ * resolves its hit exactly once, here, via consumeAttackImpact() (Combat.js).
+ */
 const ATTACK_IMPACT_FRAME = 4;
 
-// How long a knockback push overrides normal horizontal control - without
-// this the accel/decel movement code would immediately pull vx back toward
-// whatever's held, making the hit invisible.
+/**
+ * How long a knockback push overrides normal horizontal control - without
+ * this the accel/decel movement code would immediately pull vx back toward
+ * whatever's held, making the hit invisible.
+ */
 const KNOCKBACK_LOCK_SECONDS = 0.15;
 
 // Three mutually-exclusive movement modes, set once by whichever enableX()
