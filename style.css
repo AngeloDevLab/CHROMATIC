@@ -352,6 +352,25 @@ body {
   opacity: 0.8;
 }
 
+/* Info panel's entry point into HowToPlayPanel.js - same pill shape as
+   .merchant-shop-buy, neutral color since it isn't a purchase action. */
+.panel-link {
+  display: inline-block;
+  margin-bottom: calc(12px * var(--hud-scale));
+  font-family: 'Jersey 10', sans-serif;
+  font-size: calc(14px * var(--hud-scale));
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: calc(4px * var(--hud-scale));
+  padding: calc(4px * var(--hud-scale)) calc(10px * var(--hud-scale));
+  color: #f2f2f2;
+  cursor: pointer;
+}
+
+.panel-link:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
 /* MerchantDialogue.js's shop grid (_buildShopSectionHTML()) - card shape
    borrowed from .difficulty-option rather than inventing a third button
    style. No separate Token-count readout - each option shows its own cost
@@ -447,6 +466,25 @@ body {
   border-color: rgba(255, 255, 255, 0.15);
   background: transparent;
   cursor: default;
+}
+
+/* HowToPlayPanel.js's written sections - heading + paragraph, no preview
+   art, so a plain stacked block list is enough (no row/flex needed). */
+.how-to-play-section {
+  margin-bottom: calc(14px * var(--hud-scale));
+}
+
+.how-to-play-section h4 {
+  font-size: calc(16px * var(--hud-scale));
+  letter-spacing: 1px;
+  margin-bottom: calc(4px * var(--hud-scale));
+}
+
+.how-to-play-section p {
+  margin: 0;
+  font-size: calc(14px * var(--hud-scale));
+  line-height: 1.4;
+  opacity: 0.85;
 }
 
 .chapter-bar {

@@ -4,6 +4,14 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.16.0] - 2026-08-08
+
+### Added
+- How to Play page (`js/ui/HowToPlayPanel.js`) - four written sections (Color Trail, Movement, Combat, Levels) covering the core color mechanic, all controls (including the previously-undocumented arrow-key alternates to A/D/Space/S), and how attack range auto-switches between melee and thrown. Reachable from the Main Menu's Info panel and a new Pause menu entry, both opening the same shared `Panel` instance (content swap via `onClose`) rather than stacking a second panel-backdrop, which would otherwise register a second competing Escape listener. No live in-run HUD button (considered, dropped - Pause is already one keypress away, a second always-visible entry point would be redundant) and no preview animations or other art (also considered and built, then dropped in favor of plain written text - simpler to build/maintain and nothing to keep in sync when movement/combat gets retuned). `docs/GDD/07_ui-hud.md` 8.1 documents the final content and what was cut along the way.
+
+### Changed
+- Menu's Info panel content (Credits/Legal/Privacy) extracted from `MenuState.js` into `js/ui/InfoPanelContent.js` (`buildInfoBody()`) - `MenuState.js` was already at the project's ~400-line file-length guideline, and adding the How to Play entry point would have pushed it over.
+
 ## [0.15.5] - 2026-08-08
 
 ### Changed
