@@ -4,6 +4,13 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.16.4] - 2026-08-09
+
+### Changed
+- `LevelSession.js` (530 lines, over the ~400-line guideline) split into three: constructor setup (`_loadLevel`/`_setMusicZone`/`_buildLevelCanvas`/`_initColorZone`/`_spawnPlayer`/`_initInteractablesAndHud`/`_initCombat`) moved into a new composed `LevelSessionSetup.js`, and the render pipeline (`render`/`_renderWorld`/`_renderColorZone`/`_renderHitboxes`) moved into `LevelSessionRenderer.js`, mirroring `Player.js`'s `PlayerHealth.js`/`PlayerRenderer.js` composition pattern. `LevelSession.js` drops to 282 lines (update loop plus thin lifecycle methods), `LevelSessionSetup.js` is 196, `LevelSessionRenderer.js` is 110. External API (`destroy()`/`update()`/`render()`, plus the exported `LEVEL_JSON_KEYS`/`loadLevelPreview()`/`isBossLevel()`) unchanged. No behavior change, pure relocation.
+- `Wraith.js` (467 lines, over the guideline) had its module-level constants moved to a new `WraithConstants.js` (65 lines) and its one-time ground/side-anchor computation (previously `_initAnchors()`/`_findGroundY()`) moved to a new `WraithAnchors.js` (44 lines, `computeWraithAnchors()`). Left the state-machine methods themselves in place rather than extracting those too, since `WraithTemplateboss.js` overrides several of them (`_onRiseComplete`/`_updateCustomState`/`_onArrived`) directly on the prototype chain - moving those into a composed, non-inherited object would have broken that override mechanism. `Wraith.js` drops to 377 lines. No behavior change.
+- Root cause found for the open "dark edge along an enemy's patrol path" bug (`TODO.md`): it only reproduces with the browser's hardware acceleration disabled, not per-browser as first thought - software rasterization accumulates the antialiased blend's rounding error differently than the GPU compositing path does. Not an app-level logic bug, no code change; `TODO.md` updated with the finding and the scoped-out hard-mask fix dropped as unnecessary.
+
 ## [0.16.3] - 2026-08-08
 
 ### Changed

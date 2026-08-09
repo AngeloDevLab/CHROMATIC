@@ -1,71 +1,19 @@
 import { Boss } from '../Boss.js';
 import { WraithBeam } from './WraithBeam.js';
-
-/**
- * 128x96 hitbox - the tested footprint the arena/feel was tuned against,
- * narrower than the padded 128x256 sheet on purpose (same reasoning as
- * Player.js's HITBOX_WIDTH/HEIGHT). Don't grow HEIGHT to match the
- * sprite's opaque height to fix soft-looking art under BossState's
- * zoomed-out camera - tried that, it blows the on-screen boss up past
- * this tested size instead; the real fix belongs on the art/render-buffer
- * side.
- */
-const WRAITH_WIDTH = 96;
-const WRAITH_HEIGHT = 128;
-
-/**
- * 05_enemies-bosses.md 6.5 (Miniboss row - 300 HP, chosen so it's not
- * weaker than the player's own ~200 Health+Shield pool). SIGNATURE_HIT_DAMAGE
- * is what the beam (WraithBeam.js) deals to the player, not contact damage -
- * WRAITH_CONTACT_DAMAGE below is deliberately separate (bugfix: this used
- * to double as contactDamage too, mirroring 40 back at melee/contact hits,
- * 4-5x every other enemy's, see Enemy.js's DEFAULT_CONTACT_DAMAGE).
- * WraithTemplateboss.js overrides hp/signatureHitDamage with its own
- * values; contactDamage stays shared/inherited.
- */
-const WRAITH_HP = 300;
-const SIGNATURE_HIT_DAMAGE = 40;
-const WRAITH_CONTACT_DAMAGE = 10;
-
-/**
- * 05_enemies-bosses.md's Miniboss row - BossState.js's HP bar label.
- */
-const WRAITH_NAME = 'Wraith of the Shifting Sands';
-
-/**
- * How close to the level's top edge the firing pose reaches - the bottom
- * anchor (idle AND vulnerable both sit there) is derived from the actual
- * arena's collision instead (see _initAnchors()), so the wraith travels
- * the arena's real full height rather than a fixed offset that'd need
- * re-tuning every time Lv_3's layout changes.
- */
-const TOP_MARGIN_PX = 32;
-
-/**
- * Hold durations for the two static poses (firing.png/vulnerable.png are
- * single-frame, so screen time is an explicit timer, not animation length)
- * and the idle cooldown between attacks - first-guess like every other
- * tuning constant here, shared as-is by WraithTemplateboss.js (never
- * overridden). Vulnerable is deliberately generous: the wraith lands at a
- * fixed spot and the player has to run over to it, so the window needs
- * real travel slack. All three scale with Boss.timeScale on enrage (unlike
- * the walk speed below, which uses its own dedicated enraged value - see
- * that constant's own comment).
- */
-const ATTACK_INTERVAL_SECONDS = 2.5;
-const FIRING_HOLD_SECONDS = 0.2;
-const VULNERABLE_HOLD_SECONDS = 4;
-
-/**
- * Horizontal walk to the arena's other side ("Seitenwechsel"), between
- * vulnerable and the next idle - first-guess like every other timing
- * constant here. Doesn't scale via Boss.timeScale/`enraged` like the hold
- * timers above - inverting that ratio read as too fast in playtesting, so
- * this is its own dedicated enraged-speed value, checked directly in
- * _updateWalk() below. Also reused by WraithTemplateboss.js's firingSweep.
- */
-const WALK_SPEED_PX_PER_SEC = 100;
-const ENRAGE_WALK_SPEED_PX_PER_SEC = 130;
+import { computeWraithAnchors } from './WraithAnchors.js';
+import {
+    WRAITH_WIDTH,
+    WRAITH_HEIGHT,
+    WRAITH_HP,
+    SIGNATURE_HIT_DAMAGE,
+    WRAITH_CONTACT_DAMAGE,
+    WRAITH_NAME,
+    ATTACK_INTERVAL_SECONDS,
+    FIRING_HOLD_SECONDS,
+    VULNERABLE_HOLD_SECONDS,
+    WALK_SPEED_PX_PER_SEC,
+    ENRAGE_WALK_SPEED_PX_PER_SEC,
+} from './WraithConstants.js';
 
 // Wraith of the Shifting Sands (Lvl 3 Miniboss) - also the shared base
 // moveset WraithTemplateboss.js (Lvl 6, Wraith of the Grey City) extends
@@ -111,28 +59,9 @@ export class Wraith extends Boss {
         this.collision = collision;
         this.player = player;
 
-        this._initAnchors(collision, x, y);
+        Object.assign(this, computeWraithAnchors(collision, x, y));
         this._initStateMachine();
         this._initBeamMailbox();
-    }
-
-    /**
-     * Ground/top anchors from the actual level, not a fixed offset - see
-     * _findGroundY() for why that's not Level.js's findGroundSurfaceY().
-     * Also sets the two fixed X anchors ("Seitenwechsel") - the spawn
-     * position and its mirror across the level's horizontal center, so
-     * this adapts to whatever width Lv_3 ends up being instead of a
-     * hardcoded offset.
-     * @param {Collision} collision
-     * @param {number} x
-     * @param {number} y
-     */
-    _initAnchors(collision, x, y) {
-        this._groundY = this._findGroundY(collision, this.centerX, y) - WRAITH_HEIGHT;
-        this._topY = TOP_MARGIN_PX;
-        this._sideAX = x;
-        this._sideBX = collision.level.pixelWidth - x - WRAITH_WIDTH;
-        this._onSideA = true;
     }
 
     /**
@@ -291,25 +220,6 @@ export class Wraith extends Boss {
      */
     _onRiseComplete() {
         this._enterFiring('horizontal');
-    }
-
-    /**
-     * First solid `terrain`/`walls` row at pxX, scanning down from startY
-     * (not from the level's very top) - the real floor a falling entity
-     * starting at startY would actually land on, as opposed to Level.js's
-     * findGroundSurfaceY() (built for cosmetic static scenes, walks every
-     * tile layer regardless of whether it's solid, always from row 0).
-     * @param {Collision} collision
-     * @param {number} pxX
-     * @param {number} startY
-     * @returns {number}
-     */
-    _findGroundY(collision, pxX, startY) {
-        const tileSize = collision.level.tileSize;
-        for (let y = Math.floor(startY / tileSize) * tileSize; y < collision.level.pixelHeight; y += tileSize) {
-            if (collision.isSolidAt(pxX, y)) return y;
-        }
-        return collision.level.pixelHeight;
     }
 
     /**

@@ -1,21 +1,9 @@
 import { Level } from '../world/Level.js';
 import { buildTilesetRegistry } from '../world/TilesetRegistry.js';
-import { Player } from '../entities/Player.js';
-import { buildPlayerAnimations } from '../entities/CharacterAnimations.js';
-import { PlayerFx } from '../mechanics/PlayerFx.js';
 import { EnemyRoster, isBossSpawnName } from '../mechanics/EnemyRoster.js';
-import { Collision } from '../utils/Collision.js';
-import { Camera } from '../utils/Camera.js';
-import { ColorZone } from '../mechanics/ColorZone.js';
-import { DeathSequence, GHOST_FRAME_SIZE } from '../mechanics/DeathSequence.js';
-import { Interactables } from '../mechanics/Interactables.js';
-import { CombatCoordinator } from '../mechanics/CombatCoordinator.js';
-import { TouchControls } from '../ui/TouchControls.js';
-import { LEVEL_MUSIC_ZONES } from '../core/MusicPlaylist.js';
-import { HUD, HEALTH_BAR, SHIELD_BAR, scaleRect } from '../ui/HUD.js';
-import { DamageNumbers } from '../ui/DamageNumbers.js';
-
-const FALLBACK_SPAWN = { x: 64, y: 0 };
+import { GHOST_FRAME_SIZE } from '../mechanics/DeathSequence.js';
+import { LevelSessionSetup } from './LevelSessionSetup.js';
+import { LevelSessionRenderer } from './LevelSessionRenderer.js';
 
 /**
  * Slack past the level's bottom edge before a fall counts as death - a
@@ -26,9 +14,10 @@ const FALL_DEATH_MARGIN_PX = 64;
 /**
  * Player's live-glow/permanent color trail radius (03_mechanics.md 4.1) -
  * shared with Interactables.js's revealRadius option so Portal/Trapdoor/
- * SecretDoor "revealed" tracks the same distance.
+ * SecretDoor "revealed" tracks the same distance. Exported so
+ * LevelSessionSetup.js/LevelSessionRenderer.js can reuse the same value.
  */
-const PLAYER_REVEAL_RADIUS = 55;
+export const PLAYER_REVEAL_RADIUS = 55;
 
 /**
  * Real Prologue levels (Tiled exports, assets/levels/Lv_N.json).
@@ -79,7 +68,10 @@ export function isBossLevel(assets, levelNumber) {
 // level-hosting State doesn't have to rebuild all of this itself. Not a
 // State (no enter()/exit()), just a plain constructor + update()/render()/
 // destroy(), driven by whichever State owns it (GameState for a normal
-// level, BossState for a boss arena).
+// level, BossState for a boss arena). Construction (LevelSessionSetup.js)
+// and rendering (LevelSessionRenderer.js) are composed onto this class the
+// same way Player.js composes PlayerHealth/PlayerRenderer/PlayerMovement -
+// this file keeps the update loop and thin lifecycle methods.
 //
 // A few non-obvious choices, gathered here instead of scattered near their
 // call sites: the constructor leaves Camera.js's zoom at its default (1)
@@ -90,9 +82,7 @@ export function isBossLevel(assets, levelNumber) {
 // _startDeathSequence() clamps the ghost's rise position to the camera's
 // visible bottom edge, since falling into a pit can put the real death
 // position below what Camera.js ever scrolls to - without this the
-// rise-and-fade would spawn off-screen and never be seen. render() draws
-// interactables ahead of enemies/player, so they read as level furniture
-// rather than a foreground object those would otherwise render behind.
+// rise-and-fade would spawn off-screen and never be seen.
 export class LevelSession {
     /**
      * @param {Game} game - Owning Game instance.
@@ -102,169 +92,17 @@ export class LevelSession {
         this.game = game;
         this.chapterId = chapterId;
         this.levelNumber = level;
+        this.renderer = new LevelSessionRenderer(this);
 
-        this._loadLevel();
-        this._setMusicZone();
-        this._buildLevelCanvas();
-        this._initColorZone();
-        this._spawnPlayer();
+        const setup = new LevelSessionSetup(this);
+        setup.loadLevel();
+        setup.setMusicZone();
+        setup.buildLevelCanvas();
+        setup.initColorZone();
+        setup.spawnPlayer();
         this.enemyRoster = new EnemyRoster(this.game, this.level, this.player, this.collision);
-        this._initInteractablesAndHud();
-        this._initCombat();
-    }
-
-    /**
-     * Loads the Tiled level JSON and builds its Collision/Camera. "terrain"
-     * is one-way; the optional "walls" layer stays fully solid regardless;
-     * the optional "noDrop" layer exempts specific one-way floors from
-     * Drop-Through-Platform. All three tolerate not existing in a given level.
-     */
-    _loadLevel() {
-        const levelKey = LEVEL_JSON_KEYS[this.levelNumber];
-        if (!levelKey) {
-            throw new Error(`LevelSession: no level registered for level number ${this.levelNumber}`);
-        }
-        this.level = Level.load(this.game.assets, levelKey, buildTilesetRegistry(this.game.assets));
-        this.collision = new Collision(this.level, 'terrain', { oneWay: true, wallLayerName: 'walls', noDropLayerName: 'noDrop' });
-        this.camera = new Camera(this.game.width, this.game.height);
-    }
-
-    /**
-     * Switches the music playlist to this level's zone (MusicPlaylist.js's
-     * LEVEL_MUSIC_ZONES) - a no-op if it's already active, so e.g. Lv1 -> Lv2
-     * (same zone) doesn't interrupt whatever's currently playing.
-     */
-    _setMusicZone() {
-        const { zone, trackKeys } = LEVEL_MUSIC_ZONES[this.levelNumber];
-        this.game.music.setZone(zone, trackKeys);
-    }
-
-    /**
-     * Bakes the level's tile layers onto an offscreen canvas once, on top of
-     * the shared Prologue forest backdrop tiled across the level's width - a
-     * level's own "background" tile layer paints over this per level.
-     * ColorZone.js's grey/color compositing reads from this baked canvas
-     * rather than redrawing every tile layer every frame.
-     */
-    _buildLevelCanvas() {
-        this.levelCanvas = document.createElement('canvas');
-        this.levelCanvas.width = this.level.pixelWidth;
-        this.levelCanvas.height = this.level.pixelHeight;
-        const levelCtx = this.levelCanvas.getContext('2d');
-
-        const parallax = this.game.assets.getImage('menu-parallax-bg');
-        const parallaxScale = this.level.pixelHeight / parallax.height;
-        const parallaxWidth = parallax.width * parallaxScale;
-        for (let x = 0; x < this.level.pixelWidth; x += parallaxWidth) {
-            levelCtx.drawImage(parallax, 0, 0, parallax.width, parallax.height, x, 0, parallaxWidth, this.level.pixelHeight);
-        }
-
-        this.level.drawAllLayers(levelCtx);
-    }
-
-    /**
-     * The color mechanic (03_mechanics.md 4.1): the player leaves a
-     * permanent color trail while moving - unlike MenuState's decorative
-     * fading-bubble ColorZone, this never reverts on its own.
-     */
-    _initColorZone() {
-        this.colorZone = new ColorZone(this.level.pixelWidth, this.level.pixelHeight, PLAYER_REVEAL_RADIUS, {
-            greyBrightness: 0.15,
-            greyTint: { sepia: 0.4, hueRotate: 180, saturate: 2 },
-        });
-        this.colorZone.paintGreyFrom(this.levelCanvas);
-    }
-
-    /**
-     * Spawns the player at the level's PlayerStart marker (or a fallback) -
-     * re-applies permanent Secret Room buffs/unlocked abilities, since those
-     * live on Game, not any one Player instance.
-     */
-    _spawnPlayer() {
-        this.deathSequence = new DeathSequence(this.game.assets.getImage('guardian-dead-ghost'));
-        this.game.input.clearAttackPress();
-        this.game.input.clearPausePress();
-        this.game.input.clearJumpPress();
-        this.game.input.clearDropPress();
-
-        const playerStart = this.level.getObjectsByType('PlayerStart')[0] ?? FALLBACK_SPAWN;
-        this.player = new Player(playerStart.x, playerStart.y, buildPlayerAnimations(this.game.assets));
-        this.player.enableControl(this.game.input, this.collision);
-        for (const buffId of this.game.buffs) this.player.applyBuff(buffId);
-        for (const id of this.game.abilities) this.player.unlockAbility(id);
-        this.playerFx = new PlayerFx(this.game, this.player);
-    }
-
-    /**
-     * HUD/DamageNumbers/Interactables (Portal/Merchant/Trapdoor/SecretDoor/
-     * BuffTerminal, see Interactables.js) and the player's own HP/Shield
-     * text labels - grouped since Interactables needs damageNumbers to
-     * already exist.
-     */
-    _initInteractablesAndHud() {
-        this.hud = new HUD();
-        this.damageNumbers = new DamageNumbers(this.game.overlay);
-
-        this.interactables = new Interactables(this.game, this.level, this.player, {
-            greyFilterCSS: this.colorZone.greyFilterCSS,
-            revealRadius: PLAYER_REVEAL_RADIUS,
-            damageNumbers: this.damageNumbers,
-            collision: this.collision,
-            levelNumber: this.levelNumber,
-            onComplete: () => this._completeLevel(),
-        });
-
-        this.healthValueEl = this._createHudValueLabel(HEALTH_BAR);
-        this.shieldValueEl = this._createHudValueLabel(SHIELD_BAR);
-        this.tokenCounterEl = this._createTokenCounter();
-        this.touchControls = new TouchControls(this.game);
-    }
-
-    /**
-     * Icon+count readout below the HP/Shield bars - styled via CSS
-     * (.hud-token's ::before), this only positions it and owns the text.
-     * scaleRect() keeps the gap below the (also scaled) Shield bar
-     * proportional instead of a fixed 4px.
-     * @returns {HTMLElement}
-     */
-    _createTokenCounter() {
-        const el = document.createElement('div');
-        el.className = 'hud-token';
-        const shield = scaleRect(SHIELD_BAR, this.game.hudScale);
-        el.style.left = `${shield.x}px`;
-        el.style.top = `${shield.y + shield.height + 4 * this.game.hudScale}px`;
-        this.game.overlay.appendChild(el);
-        return el;
-    }
-
-    /**
-     * Player's melee/ranged attack resolution, both projectile pools, and
-     * the hit-stop timer they drive - see CombatCoordinator.js.
-     */
-    _initCombat() {
-        this.combat = new CombatCoordinator(this.player, this.enemyRoster.enemies, this.collision, {
-            damageNumbers: this.damageNumbers,
-            thrownSwordSprite: this.game.assets.getImage('thrown-sword'),
-            thrownSwordTrailSprite: this.game.assets.getImage('thrown-sword-trail'),
-            sound: this.game.sound,
-        });
-    }
-
-    /**
-     * scaleRect() keeps this against the (also scaled, via Game.hudScale)
-     * canvas-drawn bar regardless of buffer size - see that getter's comment.
-     * @param {{x:number,y:number,width:number,height:number}} bar - HEALTH_BAR or SHIELD_BAR (HUD.js).
-     * @returns {HTMLElement} The attached, positioned label element.
-     */
-    _createHudValueLabel(bar) {
-        const el = document.createElement('div');
-        el.className = 'hud-value';
-        const scale = this.game.hudScale;
-        const scaled = scaleRect(bar, scale);
-        el.style.left = `${scaled.x + scaled.width + 4 * scale}px`;
-        el.style.top = `${scaled.y - 2 * scale}px`;
-        this.game.overlay.appendChild(el);
-        return el;
+        setup.initInteractablesAndHud();
+        setup.initCombat();
     }
 
     /**
@@ -403,7 +241,8 @@ export class LevelSession {
     }
 
     /**
-     * Refreshes the player's HP/Shield HTML labels (_createHudValueLabel()).
+     * Refreshes the player's HP/Shield HTML labels (LevelSessionSetup.js's
+     * _createHudValueLabel()).
      */
     _updateHudText() {
         this.healthValueEl.textContent = `${Math.round(this.player.health)}/${this.player.maxHealth}`;
@@ -438,92 +277,6 @@ export class LevelSession {
      * @param {CanvasRenderingContext2D} ctx
      */
     render(ctx) {
-        ctx.save();
-        ctx.scale(this.camera.zoom, this.camera.zoom);
-        ctx.translate(-Math.round(this.camera.x), -Math.round(this.camera.y));
-
-        this._renderWorld(ctx);
-        if (this.game.devPanel.showHitboxes) this._renderHitboxes(ctx);
-
-        ctx.restore();
-        this.hud.renderPlayerBars(ctx, this.player, this.game.hudScale);
-    }
-
-    /**
-     * Everything drawn in world (camera-translated) space, back-to-front:
-     * buried enemies -> the baked level canvas -> the color mechanic ->
-     * interactables/enemies/projectiles -> the player (or its death ghost).
-     * Buried enemies (Sentinel.js, not yet triggered) draw before the
-     * terrain layer so it occludes them instead of floating in front of it.
-     * @param {CanvasRenderingContext2D} ctx
-     */
-    _renderWorld(ctx) {
-        for (const enemy of this.enemyRoster.enemies) {
-            if (enemy.buried) enemy.render(ctx);
-        }
-        ctx.drawImage(this.levelCanvas, 0, 0);
-        this._renderColorZone(ctx);
-
-        this.interactables.render(ctx);
-        for (const enemy of this.enemyRoster.enemies) {
-            if (enemy.buried) continue;
-            enemy.render(ctx);
-            this.hud.renderEnemyBar(ctx, enemy);
-        }
-        this.combat.render(ctx);
-        this.playerFx.render(ctx);
-
-        if (this.deathSequence.active) {
-            this.deathSequence.render(ctx);
-        } else {
-            this.player.render(ctx);
-        }
-    }
-
-    /**
-     * No liveGlow while dead - that would keep punching a hole open right
-     * at the death spot every frame, fighting the full-darken effect.
-     * @param {CanvasRenderingContext2D} ctx
-     */
-    _renderColorZone(ctx) {
-        if (this.deathSequence.active) {
-            this.colorZone.render(ctx);
-        } else {
-            this.colorZone.render(ctx, {
-                x: this.player.centerX,
-                y: this.player.visualCenterY,
-                radius: PLAYER_REVEAL_RADIUS,
-            });
-        }
-    }
-
-    /**
-     * Dev Panel toggle - draws each combat-relevant entity's actual
-     * Collision/Combat box, not its usually-larger sprite frame, so hit
-     * reads line up with what's on screen.
-     * @param {CanvasRenderingContext2D} ctx
-     */
-    _renderHitboxes(ctx) {
-        ctx.save();
-        ctx.lineWidth = 1;
-
-        ctx.strokeStyle = '#5cff8a';
-        ctx.strokeRect(this.player.x, this.player.y, this.player.width, this.player.height);
-
-        ctx.strokeStyle = '#ffe75c';
-        for (const enemy of this.enemyRoster.enemies) {
-            if (enemy.dead || enemy.buried) continue;
-            ctx.strokeRect(enemy.x, enemy.y, enemy.width, enemy.height);
-        }
-
-        ctx.strokeStyle = '#5cc9ff';
-        for (const projectile of this.combat.projectiles) {
-            ctx.strokeRect(projectile.x, projectile.y, projectile.width, projectile.height);
-        }
-        for (const projectile of this.combat.enemyProjectiles) {
-            ctx.strokeRect(projectile.x, projectile.y, projectile.width, projectile.height);
-        }
-
-        ctx.restore();
+        this.renderer.render(ctx);
     }
 }
