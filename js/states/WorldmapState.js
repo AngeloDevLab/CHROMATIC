@@ -61,8 +61,8 @@ export class WorldmapState extends State {
         this._buildTokenCounter();
         this._buildBackButton();
 
-        this._onCanvasClick = this._onCanvasClick.bind(this);
-        this.game.canvas.addEventListener('click', this._onCanvasClick);
+        this._onOutsideClick = this._onOutsideClick.bind(this);
+        document.addEventListener('click', this._onOutsideClick);
     }
 
     /**
@@ -284,6 +284,7 @@ export class WorldmapState extends State {
         const secretsTotal = data.hasSecret ? 1 : 0;
         const secretsFound = this.completedLevels.has(data.level) ? secretsTotal : 0;
         return `
+            <button class="worldmap-info-close" aria-label="Close">&times;</button>
             <div class="worldmap-info-title">Lvl ${data.level}</div>
             <div class="worldmap-info-type">${data.type}</div>
             <div class="worldmap-info-secrets">Secrets: ${secretsFound}/${secretsTotal}</div>
@@ -297,6 +298,7 @@ export class WorldmapState extends State {
     _wireInfoCard(index) {
         this.infoCard.addEventListener('click', (event) => event.stopPropagation());
         this.infoCard.querySelector('.worldmap-info-start').addEventListener('click', () => this._enterLevel(index));
+        this.infoCard.querySelector('.worldmap-info-close').addEventListener('click', () => this._deselect());
     }
 
     /**
@@ -328,9 +330,18 @@ export class WorldmapState extends State {
     }
 
     /**
-     * Deselects the current node (background click).
+     * Deselects the current node, if any (X button, or a click outside the
+     * node/info-card - node buttons and the info card both stopPropagation()
+     * their own clicks, so this only fires for genuine outside clicks).
      */
-    _onCanvasClick() {
+    _onOutsideClick() {
+        this._deselect();
+    }
+
+    /**
+     * Clears the current selection and closes the info card.
+     */
+    _deselect() {
         this.selectedIndex = null;
         this._closeInfoCard();
         this._layoutNodes();
@@ -340,7 +351,7 @@ export class WorldmapState extends State {
      * Tears down the chapter bar/nodes/info card and the canvas listener.
      */
     exit() {
-        this.game.canvas.removeEventListener('click', this._onCanvasClick);
+        document.removeEventListener('click', this._onOutsideClick);
 
         this.chapterBar?.remove();
         this.nodeContainer?.remove();

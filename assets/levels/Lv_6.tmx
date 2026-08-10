@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.12.2" orientation="orthogonal" renderorder="right-down" width="30" height="17" tilewidth="32" tileheight="32" infinite="0" nextlayerid="6" nextobjectid="5">
+ <editorsettings>
+  <export target="Lv_6.json" format="json"/>
+ </editorsettings>
  <tileset firstgid="1" source="../images/tilesets/tileset_grass.tsx"/>
- <layer id="1" name="background" width="30" height="17" visible="0">
+ <layer id="1" name="background" width="30" height="17">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -22,7 +25,7 @@
 12,12,12,13,14,12,12,9,12,12,12,12,8,12,8,12,8,12,12,12,12,13,14,12,12,9,12,12,12,12
 </data>
  </layer>
- <layer id="2" name="terrain" width="30" height="17" visible="0">
+ <layer id="2" name="terrain" width="30" height="17">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -64,7 +67,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <layer id="4" name="decoration" width="30" height="17" visible="0">
+ <layer id="4" name="decoration" width="30" height="17">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -86,7 +89,7 @@
 </data>
  </layer>
  <objectgroup id="5" name="objects">
-  <object id="1" name="player" type="PlayerStart" x="32" y="384" width="64" height="64"/>
+  <object id="1" name="player" type="PlayerStart" x="31.9565" y="384" width="64" height="64"/>
   <object id="2" name="playerExit" type="ExitPortal" x="465" y="389" width="128" height="128"/>
   <object id="3" name="templateboss" type="EnemySpawn" x="832" y="320" width="96" height="128"/>
   <object id="4" name="merchant" type="Merchant" x="382.395" y="448.355" width="68.5" height="62.5"/>

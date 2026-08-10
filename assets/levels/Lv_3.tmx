@@ -89,7 +89,7 @@
 </data>
  </layer>
  <objectgroup id="4" name="objects">
-  <object id="1" name="player" type="PlayerStart" x="24.9163" y="379.749" width="68.5" height="62.5"/>
+  <object id="1" name="player" type="PlayerStart" x="24.9217" y="385" width="68.5" height="62.5"/>
   <object id="2" name="playerExit" type="ExitPortal" x="464" y="389" width="128" height="128"/>
   <object id="3" name="miniboss" type="EnemySpawn" x="832.92" y="315.666" width="96" height="128"/>
   <object id="4" name="merchant" type="Merchant" x="379.313" y="449.188" width="68.5" height="62.5"/>

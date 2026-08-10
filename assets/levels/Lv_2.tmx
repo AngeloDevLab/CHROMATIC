@@ -141,7 +141,7 @@
 </data>
  </layer>
  <objectgroup id="4" name="object">
-  <object id="1" name="player" type="PlayerStart" x="60.75" y="797.75" width="68.5" height="62.5"/>
+  <object id="1" name="player" type="PlayerStart" x="60.7722" y="801" width="68.5" height="62.5"/>
   <object id="2" name="sentinel" type="EnemySpawn" x="831.75" y="288.833" width="63.5" height="62"/>
   <object id="3" name="sentinel" type="EnemySpawn" x="1344.92" y="768.667" width="63.5" height="62"/>
   <object id="4" name="shooter" type="EnemySpawn" x="2368.25" y="575" width="63.5" height="62"/>

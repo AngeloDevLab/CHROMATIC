@@ -25,7 +25,7 @@
          "name":"background",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":30,
          "x":0,
          "y":0
@@ -53,7 +53,7 @@
          "name":"terrain",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":30,
          "x":0,
          "y":0
@@ -109,7 +109,7 @@
          "name":"decoration",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":30,
          "x":0,
          "y":0
@@ -128,7 +128,7 @@
                  "type":"PlayerStart",
                  "visible":true,
                  "width":64,
-                 "x":32,
+                 "x":31.956521739,
                  "y":384
                 }, 
                 {

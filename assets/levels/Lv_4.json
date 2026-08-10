@@ -252,7 +252,7 @@
          "name":"decoration",
          "opacity":1,
          "type":"tilelayer",
-         "visible":false,
+         "visible":true,
          "width":60,
          "x":0,
          "y":0
@@ -271,8 +271,8 @@
                  "type":"PlayerStart",
                  "visible":true,
                  "width":68.5,
-                 "x":30.75,
-                 "y":286.083
+                 "x":30.923913043,
+                 "y":288
                 }, 
                 {
                  "height":128,
@@ -367,12 +367,12 @@
                  "type":"EnemySpawn",
                  "visible":true,
                  "width":63.5,
-                 "x":1056.91666666667,
+                 "x":1056.92,
                  "y":769
                 }],
          "opacity":1,
          "type":"objectgroup",
-         "visible":false,
+         "visible":true,
          "x":0,
          "y":0
         }],

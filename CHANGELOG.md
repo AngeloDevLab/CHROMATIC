@@ -4,6 +4,13 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.16.5] - 2026-08-10
+
+### Fixed
+- Worldmap node selection: click-outside-to-deselect was effectively non-functional - the deselect listener was bound to the `<canvas>` element, but a full-viewport overlay div (`.worldmap-nodes`) sat on top of it and inadvertently intercepted every click first, due to a CSS specificity quirk (`#ui-overlay *`'s ID selector beating `.worldmap-nodes`'s class selector for `pointer-events`). Fixed by moving the listener to `document` instead (`WorldmapState.js`), relying on the node buttons'/info card's own `stopPropagation()` to distinguish "inside" clicks from real outside ones. Also added an explicit X close button on the node info card, so a selection can be cleared without hunting for empty map space to click on.
+- Player spawning slightly above the visible terrain surface (a `PlayerStart` marker placed a pixel or two too high in Tiled) triggered the ground-contact landing VFX/SFX right at level start, since `PlayerMovement.js` reads that as "was airborne, just landed" on the very first physics tick. Went through every level's `PlayerStart` placement in Tiled and confirmed pixel-perfect ground alignment in-browser; no code change.
+- Lvl 5: a missing tile in the `walls` collision layer let the player glitch sideways through the floor and fall to their death in the gap below. Fixed in Tiled; no code change.
+
 ## [0.16.4] - 2026-08-09
 
 ### Changed

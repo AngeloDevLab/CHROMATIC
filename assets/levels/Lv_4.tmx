@@ -226,7 +226,7 @@
 </data>
  </layer>
  <objectgroup id="4" name="objects">
-  <object id="1" name="player" type="PlayerStart" x="30.75" y="286.083" width="68.5" height="62.5"/>
+  <object id="1" name="player" type="PlayerStart" x="30.9239" y="288" width="68.5" height="62.5"/>
   <object id="2" name="playerExit" type="ExitPortal" x="1231" y="485" width="128" height="128"/>
   <object id="4" name="sentinel" type="EnemySpawn" x="569.25" y="1021" width="63.5" height="62"/>
   <object id="5" name="sentinel" type="EnemySpawn" x="1359.27" y="545.614" width="63.5" height="62"/>
