@@ -14,7 +14,7 @@ const SECTIONS = [
     },
     {
         title: 'Combat',
-        text: 'Attack by clicking. Up close you swing your sword in melee; against an enemy too far away to reach, you throw it instead - the game switches automatically based on distance, there is no separate button for it.',
+        text: 'Attack by clicking. Up close you swing your sword in melee; against an enemy too far away to reach, you throw it instead - the game switches automatically based on distance, there is no separate button for it. Throwing deals half of melee\'s damage and has a short cooldown before you can throw again, so it\'s the safer option, not a spammable one. Simply touching an enemy also hurts both of you, so getting in close for melee always carries some risk.',
     },
     {
         title: 'Levels',

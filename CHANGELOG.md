@@ -4,6 +4,12 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.16.7] - 2026-08-10
+
+### Changed
+- Accessibility pass: no UI text under 16px anywhere (`style.css`) - previously a range of smaller sizes (10-14px) were used for the in-level HUD numbers (HP/Shield/Token), Settings rows, Merchant shop cards, Worldmap info card, chapter/cutscene-skip buttons, damage numbers/status messages, and the Dev Panel. Font-size is now 16px (or `calc(16px * var(--hud-scale))` where the element already scaled with boss-fight buffer size) across the board; icon/layout sizes around the now-bigger HUD numbers left as-is pending a visual check.
+- How to Play's Combat section expanded with the two mechanics it previously left out: the thrown attack deals half of melee's damage and has a cooldown before it can fire again, and touching an enemy directly damages both sides, not just the enemy (`HowToPlayPanel.js`, `docs/GDD/07_ui-hud.md` 8.1 updated to match).
+
 ## [0.16.6] - 2026-08-10
 
 ### Fixed

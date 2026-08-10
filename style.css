@@ -220,7 +220,7 @@ body {
 }
 
 .panel-body h4 {
-  font-size: calc(15px * var(--hud-scale));
+  font-size: calc(16px * var(--hud-scale));
   letter-spacing: 0.5px;
   margin-top: calc(10px * var(--hud-scale));
   color: rgba(242, 242, 242, 0.75);
@@ -280,7 +280,7 @@ body {
 }
 
 .difficulty-description {
-  font-size: calc(13px * var(--hud-scale));
+  font-size: calc(16px * var(--hud-scale));
   opacity: 0.75;
   line-height: 1.4;
 }
@@ -295,7 +295,7 @@ body {
   justify-content: space-between;
   gap: calc(12px * var(--hud-scale));
   margin: calc(10px * var(--hud-scale)) 0;
-  font-size: calc(14px * var(--hud-scale));
+  font-size: calc(16px * var(--hud-scale));
 }
 
 .settings-row input[type="range"] {
@@ -335,7 +335,7 @@ body {
   bottom: 16px;
   right: 16px;
   font-family: 'Jersey 10', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   color: #f2f2f2;
   background: rgba(0, 0, 0, 0.35);
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -358,7 +358,7 @@ body {
   display: inline-block;
   margin-bottom: calc(12px * var(--hud-scale));
   font-family: 'Jersey 10', sans-serif;
-  font-size: calc(14px * var(--hud-scale));
+  font-size: calc(16px * var(--hud-scale));
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: calc(4px * var(--hud-scale));
@@ -402,7 +402,7 @@ body {
 }
 
 .merchant-shop-option-desc {
-  font-size: calc(13px * var(--hud-scale));
+  font-size: calc(16px * var(--hud-scale));
   opacity: 0.75;
   line-height: 1.4;
   margin-top: calc(2px * var(--hud-scale));
@@ -422,7 +422,7 @@ body {
   display: flex;
   align-items: center;
   gap: calc(4px * var(--hud-scale));
-  font-size: calc(13px * var(--hud-scale));
+  font-size: calc(16px * var(--hud-scale));
   opacity: 0.75;
 }
 
@@ -441,7 +441,7 @@ body {
 .merchant-shop-buy {
   flex-shrink: 0;
   font-family: 'Jersey 10', sans-serif;
-  font-size: calc(14px * var(--hud-scale));
+  font-size: calc(16px * var(--hud-scale));
   background: rgba(108, 255, 138, 0.12);
   border: 1px solid rgba(108, 255, 138, 0.5);
   border-radius: calc(4px * var(--hud-scale));
@@ -482,7 +482,7 @@ body {
 
 .how-to-play-section p {
   margin: 0;
-  font-size: calc(14px * var(--hud-scale));
+  font-size: calc(16px * var(--hud-scale));
   line-height: 1.4;
   opacity: 0.85;
 }
@@ -502,7 +502,7 @@ body {
 
 .chapter-button {
   font-family: 'Jersey 10', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 1px;
   color: #f2f2f2;
   background: rgba(255, 255, 255, 0.08);
@@ -606,7 +606,7 @@ body {
   padding: 10px 14px;
   color: #f2f2f2;
   font-family: 'Jersey 10', sans-serif;
-  font-size: 14px;
+  font-size: 16px;
   pointer-events: auto;
 }
 
@@ -666,7 +666,7 @@ body {
 .hud-value {
   position: absolute;
   font-family: 'Jersey 10', monospace;
-  font-size: calc(10px * var(--hud-scale));
+  font-size: calc(16px * var(--hud-scale));
   color: rgba(242, 242, 242, 0.85);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   pointer-events: none;
@@ -682,7 +682,7 @@ body {
   align-items: center;
   gap: 3px;
   font-family: 'Jersey 10', monospace;
-  font-size: calc(10px * var(--hud-scale));
+  font-size: calc(16px * var(--hud-scale));
   color: rgba(242, 242, 242, 0.85);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
   pointer-events: none;
@@ -727,7 +727,7 @@ body {
   position: absolute;
   transform: translate(-50%, -100%);
   font-family: 'Jersey 10', monospace;
-  font-size: 14px;
+  font-size: 16px;
   color: #ff5c5c;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
   pointer-events: none;
@@ -738,7 +738,7 @@ body {
   position: absolute;
   transform: translate(-50%, -100%);
   font-family: 'Jersey 10', monospace;
-  font-size: 14px;
+  font-size: 16px;
   color: #3fc6e0;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
   pointer-events: none;
@@ -816,9 +816,9 @@ body {
 }
 
 /* BossState.js's HP value readout ("150/150"), right below the canvas bar -
-   16px base (bigger than .hud-value's 10px player numbers) since this reads
-   as the sole focus of a boss encounter; --hud-scale (see :root above) keeps
-   it that same size on screen regardless of the arena's buffer size. */
+   same 16px base as .hud-value's player numbers; --hud-scale (see :root
+   above) keeps it that same size on screen regardless of the arena's
+   buffer size. */
 .boss-hp-label {
   position: absolute;
   transform: translate(-50%, 0);
@@ -874,7 +874,7 @@ body {
 }
 
 .dev-panel-label {
-  font-size: 12px;
+  font-size: 16px;
   color: rgba(242, 242, 242, 0.7);
 }
 
@@ -887,7 +887,7 @@ body {
   width: 24px;
   height: 24px;
   font-family: 'Jersey 10', sans-serif;
-  font-size: 13px;
+  font-size: 16px;
   color: #f2f2f2;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -910,14 +910,14 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 16px;
   cursor: pointer;
 }
 
 /* DevPanel's dev/test-only Give Token button (_wireGiveTokenButton()). */
 .dev-panel-action {
   font-family: 'Jersey 10', sans-serif;
-  font-size: 13px;
+  font-size: 16px;
   color: #f2f2f2;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -936,7 +936,7 @@ body {
    toggle-back - reads as a one-way purchase rather than a settings switch. */
 .dev-panel-ability {
   font-family: 'Jersey 10', sans-serif;
-  font-size: 13px;
+  font-size: 16px;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 4px;

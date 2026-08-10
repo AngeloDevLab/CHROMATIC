@@ -23,7 +23,7 @@ Four sections, each a heading plus a couple of sentences:
 |---|---|---|
 | 1 | The Color Trail | The core mechanic: moving permanently reclaims the ground you walk over |
 | 2 | Movement | A/D or arrow keys to move, Space/W/up arrow to jump, S/down arrow to drop through a one-way platform while standing on it |
-| 3 | Combat | Click to attack; melee up close, thrown automatically at range - the game switches based on distance, no separate button |
+| 3 | Combat | Click to attack; melee up close, thrown automatically at range - the game switches based on distance, no separate button. Thrown deals half of melee's damage and has a short cooldown. Touching an enemy directly damages both sides |
 | 4 | Levels | Levels vary: Combat, Secret Rooms, Gimmicks, and Boss fights |
 
 Explicitly out of scope: per-level trigger popups placed in Tiled levels, and preview animations/art of any kind (sprite loops, GIFs, recorded clips - all considered at various points). Dropped in favor of plain written sections - simpler to build and maintain, at the cost of not teaching anything contextually in the moment it's first needed.
