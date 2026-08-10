@@ -4,6 +4,11 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.16.6] - 2026-08-10
+
+### Fixed
+- Enemy projectile hitbox (`ShooterProjectile.js`) read as oversized in playtesting - it used the full 64x64 sprite frame as its collision box, but `shooter-projectile.png`'s actual spinning-dot art only fills a fraction of that frame, the rest is transparent spin clearance. Shrunk the hitbox to 28x28 (`HITBOX_SIZE`), decoupled from the still-64x64 render size, same width/height-vs-sprite split `Player.js`/`Enemy.js` already use.
+
 ## [0.16.5] - 2026-08-10
 
 ### Fixed

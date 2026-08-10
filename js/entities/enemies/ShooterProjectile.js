@@ -11,6 +11,15 @@ const FRAME_COUNT = 8;
 const FPS = 16;
 
 /**
+ * Collision hitbox, deliberately smaller than FRAME_SIZE - the sprite's
+ * actual dot only fills a fraction of its 64x64 frame (the rest is
+ * transparent spin clearance), so using the full frame as the hitbox read
+ * as oversized in playtesting. Render size stays FRAME_SIZE; only the
+ * hitbox shrinks, same width/height-vs-sprite split as Player.js/Enemy.js.
+ */
+const HITBOX_SIZE = 28;
+
+/**
  * Paired with Shooter.js's own shot-cooldown so individual shots read as
  * dodgeable rather than a fast, dense stream.
  */
@@ -40,7 +49,7 @@ export class ShooterProjectile extends Entity {
      * @param {number} damage - Damage dealt on hit.
      */
     constructor(spawnCenterX, spawnCenterY, direction, sprite, damage) {
-        super(spawnCenterX - FRAME_SIZE / 2, spawnCenterY - FRAME_SIZE / 2, FRAME_SIZE, FRAME_SIZE);
+        super(spawnCenterX - HITBOX_SIZE / 2, spawnCenterY - HITBOX_SIZE / 2, HITBOX_SIZE, HITBOX_SIZE);
         this.direction = direction;
         this.vx = direction * SPEED;
         this.damage = damage;
@@ -95,13 +104,16 @@ export class ShooterProjectile extends Entity {
     render(ctx) {
         if (this.dead) return;
 
+        const renderX = this.centerX - FRAME_SIZE / 2;
+        const renderY = this.centerY - FRAME_SIZE / 2;
+
         ctx.save();
         if (this.direction === -1) {
-            ctx.translate(this.x + this.width, this.y);
+            ctx.translate(renderX + FRAME_SIZE, renderY);
             ctx.scale(-1, 1);
-            this.spin.draw(ctx, 0, 0, this.width, this.height);
+            this.spin.draw(ctx, 0, 0, FRAME_SIZE, FRAME_SIZE);
         } else {
-            this.spin.draw(ctx, this.x, this.y, this.width, this.height);
+            this.spin.draw(ctx, renderX, renderY, FRAME_SIZE, FRAME_SIZE);
         }
         ctx.restore();
     }
