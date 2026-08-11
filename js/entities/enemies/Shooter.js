@@ -142,16 +142,29 @@ export class Shooter extends Enemy {
             return;
         }
 
-        if (!this._shotFired && shootAnim.currentFrame >= SHOT_IMPACT_FRAME) {
-            this._shotFired = true;
-            const spawnCenterX = this.facing === 1 ? this.x + this.width : this.x;
-            this.pendingProjectile = new ShooterProjectile(spawnCenterX, this.centerY, this.facing, this.projectileSprite, SHOOTER_PROJECTILE_DAMAGE);
-        }
+        this._trySpawnProjectile(shootAnim);
+        this._tryEndShot(shootAnim);
+    }
 
-        if (shootAnim.finished) {
-            this.shooting = false;
-            this.shootCooldownTimer = this.shotCooldownSeconds;
-        }
+    /**
+     * Fires the pending projectile once, at the animation's impact frame.
+     * @param {SpriteAnimation} shootAnim
+     */
+    _trySpawnProjectile(shootAnim) {
+        if (this._shotFired || shootAnim.currentFrame < SHOT_IMPACT_FRAME) return;
+        this._shotFired = true;
+        const spawnCenterX = this.facing === 1 ? this.x + this.width : this.x;
+        this.pendingProjectile = new ShooterProjectile(spawnCenterX, this.centerY, this.facing, this.projectileSprite, SHOOTER_PROJECTILE_DAMAGE);
+    }
+
+    /**
+     * Ends the shot and starts the cooldown once the animation finishes.
+     * @param {SpriteAnimation} shootAnim
+     */
+    _tryEndShot(shootAnim) {
+        if (!shootAnim.finished) return;
+        this.shooting = false;
+        this.shootCooldownTimer = this.shotCooldownSeconds;
     }
 
     /**

@@ -30,12 +30,7 @@ export function createInteractPrompt(game, text) {
     const touch = isTouchCapable();
     if (touch) {
         el.classList.add('tappable');
-        const button = buildTouchButtonElement('btn-icon-interact', 'interact-prompt-icon');
-        button.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-            game.input.triggerPress('interact');
-        });
-        el.appendChild(button);
+        el.appendChild(_buildTouchButton(game));
     }
 
     const label = document.createElement('div');
@@ -45,6 +40,22 @@ export function createInteractPrompt(game, text) {
 
     game.overlay.appendChild(el);
     return el;
+}
+
+/**
+ * The tappable icon button shown instead of the desktop "[E]" hint - taps
+ * through to the same edge-triggered interact press a physical E key
+ * produces (see the class-level comment above).
+ * @param {Game} game
+ * @returns {HTMLElement}
+ */
+function _buildTouchButton(game) {
+    const button = buildTouchButtonElement('btn-icon-interact', 'interact-prompt-icon');
+    button.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        game.input.triggerPress('interact');
+    });
+    return button;
 }
 
 /**

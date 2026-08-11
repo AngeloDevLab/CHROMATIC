@@ -84,19 +84,41 @@ export class LevelSessionRenderer {
      * @param {CanvasRenderingContext2D} ctx
      */
     _renderHitboxes(ctx) {
-        const session = this.session;
         ctx.save();
         ctx.lineWidth = 1;
+        this._renderPlayerHitbox(ctx);
+        this._renderEnemyHitboxes(ctx);
+        this._renderProjectileHitboxes(ctx);
+        ctx.restore();
+    }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx
+     */
+    _renderPlayerHitbox(ctx) {
+        const player = this.session.player;
         ctx.strokeStyle = '#5cff8a';
-        ctx.strokeRect(session.player.x, session.player.y, session.player.width, session.player.height);
+        ctx.strokeRect(player.x, player.y, player.width, player.height);
+    }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx
+     */
+    _renderEnemyHitboxes(ctx) {
         ctx.strokeStyle = '#ffe75c';
-        for (const enemy of session.enemyRoster.enemies) {
+        for (const enemy of this.session.enemyRoster.enemies) {
             if (enemy.dead || enemy.buried) continue;
             ctx.strokeRect(enemy.x, enemy.y, enemy.width, enemy.height);
         }
+    }
 
+    /**
+     * Player and enemy projectiles share one color - both pools are
+     * combat-relevant the same way, unlike the player/enemy split above.
+     * @param {CanvasRenderingContext2D} ctx
+     */
+    _renderProjectileHitboxes(ctx) {
+        const session = this.session;
         ctx.strokeStyle = '#5cc9ff';
         for (const projectile of session.combat.projectiles) {
             ctx.strokeRect(projectile.x, projectile.y, projectile.width, projectile.height);
@@ -104,7 +126,5 @@ export class LevelSessionRenderer {
         for (const projectile of session.combat.enemyProjectiles) {
             ctx.strokeRect(projectile.x, projectile.y, projectile.width, projectile.height);
         }
-
-        ctx.restore();
     }
 }

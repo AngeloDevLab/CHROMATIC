@@ -109,14 +109,25 @@ export class MenuState extends State {
      * @param {number} groundSurfaceY - World-space Y of the visible ground surface.
      */
     _buildActors(groundSurfaceY) {
-        const groundY = groundSurfaceY - 64;
+        this._buildPlayerActor(groundSurfaceY - 64);
+        this._buildEnemyActor(groundSurfaceY);
+    }
 
+    /**
+     * @param {number} groundY - World-space Y of the player's feet.
+     */
+    _buildPlayerActor(groundY) {
         const animations = {
             idle: new SpriteAnimation(this.game.assets.getImage('guardian-idle'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 9, 8),
             running: new SpriteAnimation(this.game.assets.getImage('guardian-running'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 12, 14),
         };
         this.player = new Player(0, groundY, animations);
+    }
 
+    /**
+     * @param {number} groundSurfaceY - World-space Y of the visible ground surface.
+     */
+    _buildEnemyActor(groundSurfaceY) {
         const patrollerSprite = this.game.assets.getImage('enemy-patroller-walking-idle');
         this.enemy = new Enemy(0, groundSurfaceY - ENEMY_FRAME_SIZE, patrollerSprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE);
         this.enemy.setAnimations({

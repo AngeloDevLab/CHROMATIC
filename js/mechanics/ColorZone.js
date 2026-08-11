@@ -154,6 +154,18 @@ export class ColorZone {
      * @param {number} y
      */
     _updateFade(dt, x, y) {
+        this._ageStamps(dt, x, y);
+        this._repaintFade(x, y);
+    }
+
+    /**
+     * Adds a new stamp every stampIntervalSeconds and drops ones that have
+     * fully faded.
+     * @param {number} dt
+     * @param {number} x
+     * @param {number} y
+     */
+    _ageStamps(dt, x, y) {
         this._timeSinceLastStamp += dt;
         if (this._timeSinceLastStamp >= this.stampIntervalSeconds) {
             this._stamps.push({ x, y, age: 0 });
@@ -162,14 +174,21 @@ export class ColorZone {
 
         for (const stamp of this._stamps) stamp.age += dt;
         this._stamps = this._stamps.filter((stamp) => stamp.age < this.fadeDurationSeconds);
+    }
 
+    /**
+     * Rebuilds the overlay from the grey template plus every live stamp,
+     * then punches the leading edge at (x, y) so it tracks every frame.
+     * @param {number} x
+     * @param {number} y
+     */
+    _repaintFade(x, y) {
         this.overlayCtx.clearRect(0, 0, this.width, this.height);
         this.overlayCtx.drawImage(this.greyTemplateCanvas, 0, 0);
         for (const stamp of this._stamps) {
             const strength = 1 - stamp.age / this.fadeDurationSeconds;
             this._punch(this.overlayCtx, stamp.x, stamp.y, strength);
         }
-
         this._punch(this.overlayCtx, x, y, 1);
     }
 

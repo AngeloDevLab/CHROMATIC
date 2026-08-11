@@ -153,21 +153,23 @@ export class WorldmapState extends State {
     _buildChapterBar() {
         this.chapterBar = document.createElement('div');
         this.chapterBar.className = 'chapter-bar';
-
-        for (const chapter of CHAPTERS) {
-            const button = document.createElement('button');
-            button.className = 'chapter-button';
-            button.textContent = chapter.label;
-
-            if (!chapter.available) {
-                button.disabled = true;
-                button.title = 'Coming Soon';
-            }
-
-            this.chapterBar.appendChild(button);
-        }
-
+        for (const chapter of CHAPTERS) this.chapterBar.appendChild(this._buildChapterButton(chapter));
         this.game.overlay.appendChild(this.chapterBar);
+    }
+
+    /**
+     * @param {{label: string, available: boolean}} chapter
+     * @returns {HTMLButtonElement}
+     */
+    _buildChapterButton(chapter) {
+        const button = document.createElement('button');
+        button.className = 'chapter-button';
+        button.textContent = chapter.label;
+        if (!chapter.available) {
+            button.disabled = true;
+            button.title = 'Coming Soon';
+        }
+        return button;
     }
 
     /**
@@ -177,19 +179,23 @@ export class WorldmapState extends State {
         this.nodeContainer = document.createElement('div');
         this.nodeContainer.className = 'worldmap-nodes';
         this.game.overlay.appendChild(this.nodeContainer);
-
-        this.nodeElements = PROLOGUE_NODES.map((_, index) => {
-            const el = document.createElement('button');
-            el.className = 'worldmap-node';
-            el.addEventListener('click', (event) => {
-                event.stopPropagation();
-                this._selectNode(index);
-            });
-            this.nodeContainer.appendChild(el);
-            return el;
-        });
-
+        this.nodeElements = PROLOGUE_NODES.map((_, index) => this._buildNodeButton(index));
         this._layoutNodes();
+    }
+
+    /**
+     * @param {number} index - Index into PROLOGUE_NODES, selected on click.
+     * @returns {HTMLButtonElement}
+     */
+    _buildNodeButton(index) {
+        const el = document.createElement('button');
+        el.className = 'worldmap-node';
+        el.addEventListener('click', (event) => {
+            event.stopPropagation();
+            this._selectNode(index);
+        });
+        this.nodeContainer.appendChild(el);
+        return el;
     }
 
     /**

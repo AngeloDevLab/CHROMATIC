@@ -111,6 +111,10 @@ export class SecretDoorInteractable {
         if (inRange && interactPressed) this._trigger();
     }
 
+    /**
+     * Spends the Prisma cost to open the door, or shows a status message if
+     * the player can't afford it.
+     */
     _trigger() {
         if (this.player.consumeShield(SECRET_DOOR_PRISMA_COST)) {
             this._secretDoor.trigger();

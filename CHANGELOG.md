@@ -4,6 +4,11 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.17.4] - 2026-08-12
+
+### Changed
+- Code-style cleanup pass against `CLAUDE.md`'s ~14-line function-length convention: split 9 functions that had grown past the soft limit into smaller named helpers with real seams, not line-count-chasing (`Shooter._updateShooting()`, `Combat.resolveEnemyProjectileHits()`, `ColorZone._updateFade()`, `BossState.enter()`, `WorldmapState._buildChapterBar()`/`_buildNodes()`, `MenuState._buildActors()`, `LevelSessionRenderer._renderHitboxes()`, `InteractPrompt.createInteractPrompt()`). Added the one real missing JSDoc block found in the same pass (`SecretDoorInteractable._trigger()`). Audited via a one-off heuristic script (not checked in) covering all 79 JS files; the remaining ~48 over-limit functions were reviewed and left as-is - data literals, atomic save/transform/draw/restore canvas ops, dispatch tables, and order-critical pipelines where splitting would only relocate the same complexity behind extra indirection.
+
 ## [0.17.3] - 2026-08-11
 
 ### Added

@@ -39,16 +39,21 @@ export class BossState extends State {
         this.game.resizeBuffer(arena.pixelWidth, arena.pixelHeight);
 
         this.session = new LevelSession(this.game, params);
+        this.bossNameEl = this._buildHiddenLabel('boss-name-label');
+        this.bossHpValueEl = this._buildHiddenLabel('boss-hp-label');
+    }
 
-        this.bossNameEl = document.createElement('div');
-        this.bossNameEl.className = 'boss-name-label';
-        this.bossNameEl.hidden = true;
-        this.game.overlay.appendChild(this.bossNameEl);
-
-        this.bossHpValueEl = document.createElement('div');
-        this.bossHpValueEl.className = 'boss-hp-label';
-        this.bossHpValueEl.hidden = true;
-        this.game.overlay.appendChild(this.bossHpValueEl);
+    /**
+     * A hidden-until-boss-visible HUD label, appended to the overlay.
+     * @param {string} className
+     * @returns {HTMLDivElement}
+     */
+    _buildHiddenLabel(className) {
+        const el = document.createElement('div');
+        el.className = className;
+        el.hidden = true;
+        this.game.overlay.appendChild(el);
+        return el;
     }
 
     /**

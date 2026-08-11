@@ -243,18 +243,27 @@ export function resolveEnemyProjectileHits(projectiles, player, difficulty) {
     if (player.dead) return hits;
 
     const multiplier = DIFFICULTY_DAMAGE_MULTIPLIERS[difficulty] ?? DIFFICULTY_DAMAGE_MULTIPLIERS.normal;
-
     for (const projectile of projectiles) {
-        if (projectile.dead) continue;
-        if (!rectsOverlap(projectile, player)) continue;
-
-        const amount = projectile.damage * multiplier;
-        player.takeDamage(amount);
-        player.applyKnockback(projectile.direction * PLAYER_KNOCKBACK_SPEED);
-        hits.push({ amount });
-        projectile.dead = true;
+        const hit = _resolveEnemyProjectileHit(projectile, player, multiplier);
+        if (hit) hits.push(hit);
     }
     return hits;
+}
+
+/**
+ * @param {ShooterProjectile} projectile
+ * @param {Player} player
+ * @param {number} multiplier - Difficulty damage multiplier.
+ * @returns {{amount:number}|null} The hit, if this projectile actually landed this frame.
+ */
+function _resolveEnemyProjectileHit(projectile, player, multiplier) {
+    if (projectile.dead || !rectsOverlap(projectile, player)) return null;
+
+    const amount = projectile.damage * multiplier;
+    player.takeDamage(amount);
+    player.applyKnockback(projectile.direction * PLAYER_KNOCKBACK_SPEED);
+    projectile.dead = true;
+    return { amount };
 }
 
 /**
