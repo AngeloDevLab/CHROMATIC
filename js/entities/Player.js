@@ -89,6 +89,7 @@ export class Player extends Entity {
         this.coyoteTimer = 0;
         this.jumpBufferTimer = 0;
         this.knockbackTimer = 0;
+        this.afkTimer = 0;
     }
 
     /** @see consumeAttackImpact, PlayerMovement.js's _startAttack */

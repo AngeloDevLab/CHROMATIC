@@ -32,6 +32,8 @@ Purely visual feature - no combat bonus for the player and no malus for enemies 
 
 Build status: only Double Jump and Dash exist in code so far (the guaranteed first two Merchant options, see 4.4). Wall Jump/Slide+Attack/Air Attack are designed but not yet implemented.
 
+**AFK / idle-sleep animation:** if the Guardian stands still (grounded, not attacking) for 15 seconds with no input, it plays a one-shot enter-AFK animation followed by a looping sleep animation, reverting instantly to normal Idle the moment any input resumes - no separate wake-up animation (`entities/PlayerMovement.js`).
+
 ## 4.3 Combat System
 
 The combat system is based on automatic distance calculation. On both Desktop and Mobile, an attack automatically targets the nearest enemy - Desktop's mouse click doesn't aim, it just triggers the attack the same way Mobile's Attack Button does. In both cases the game automatically decides the attack mode (melee vs. ranged) based on distance. Both modes are available from the start (already in the Prologue) - the dynamic melee/ranged decision is part of the Core Loop from minute one, see [01_core-gameplay-loop.md](01_core-gameplay-loop.md).

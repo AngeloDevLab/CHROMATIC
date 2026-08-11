@@ -48,6 +48,7 @@ export class InputHandler {
     _initState() {
         this.actions = { left: false, right: false, jump: false, drop: false };
         this._presses = { attack: false, jump: false, drop: false, pause: false, interact: false };
+        this._active = false;
     }
 
     /**
@@ -101,6 +102,7 @@ export class InputHandler {
      * @param {KeyboardEvent} e - The browser keydown event.
      */
     _onKeyDown(e) {
+        this._active = true;
         if (e.code === 'KeyP') {
             this._presses.pause = true;
             return;
@@ -129,6 +131,7 @@ export class InputHandler {
      * Registers an edge-triggered attack press.
      */
     _onMouseDown() {
+        this._active = true;
         this._presses.attack = true;
     }
 
@@ -197,6 +200,7 @@ export class InputHandler {
      * @param {'left'|'right'|'jump'|'drop'} action
      */
     pressAction(action) {
+        this._active = true;
         if ((action === 'jump' || action === 'drop') && !this.actions[action]) this._presses[action] = true;
         this.actions[action] = true;
     }
@@ -213,6 +217,20 @@ export class InputHandler {
      * @param {'attack'|'pause'|'interact'} name
      */
     triggerPress(name) {
+        this._active = true;
         this._presses[name] = true;
+    }
+
+    /**
+     * Peek-and-clear activity flag, set by any key/mouse/touch input since
+     * the last call - Player.js's AFK-timeout check (PlayerMovement.js)
+     * uses this alongside isDown() so a one-shot press (attack click, P/E)
+     * resets the timer even when it isn't a held movement action.
+     * @returns {boolean} Whether any input happened since the last check.
+     */
+    consumeActivity() {
+        if (!this._active) return false;
+        this._active = false;
+        return true;
     }
 }

@@ -71,6 +71,8 @@ export class LoadingState extends State {
                 'guardian-running': 'assets/images/character/running.png',
                 'guardian-jump': 'assets/images/character/jump.png',
                 'guardian-attack': 'assets/images/character/attack.png',
+                'guardian-afk-enter': 'assets/images/character/enter-afk.png',
+                'guardian-afk': 'assets/images/character/afk.png',
                 'guardian-dead-ghost': 'assets/images/character/dead-ghost.png',
                 'guardian-dead': 'assets/images/character/dead.png',
                 'thrown-sword': 'assets/images/character/thrown_sword.png',

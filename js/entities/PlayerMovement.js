@@ -22,6 +22,13 @@ const ACCELERATION = 1800;
 const DECELERATION = 2600;
 
 /**
+ * How long the player can stand idle (grounded, not attacking, no
+ * horizontal velocity) before the AFK enter/loop animation takes over -
+ * reset by any input, see _updateAfkTimer().
+ */
+const AFK_TRIGGER_SECONDS = 15;
+
+/**
  * Drop-Through-Platform (03_mechanics.md 4.2, replaces the
  * originally-planned Duck): just enough to push the player past the
  * one-way collision's "already below this surface" threshold before
@@ -77,7 +84,25 @@ export class PlayerMovement {
         if (player._wasGrounded === false && player.grounded) player.pendingVfx.push('landing');
         player._wasGrounded = player.grounded;
         if (player.attacking && player.animations.attack.finished) player.attacking = false;
+        this._updateAfkTimer(dt);
         this._updateAnimationState();
+    }
+
+    /**
+     * Only accrues while otherwise idle (grounded, not attacking, standing
+     * still) - any held movement key or one-shot press (attack/pause/
+     * interact/touch) resets it, so genuine idling is the only way in.
+     * @param {number} dt
+     */
+    _updateAfkTimer(dt) {
+        const player = this.player;
+        const standingStill = player.grounded && !player.attacking && player.vx === 0;
+        const inputActive = player.input.isDown('left') || player.input.isDown('right')
+            || player.input.isDown('jump') || player.input.isDown('drop')
+            || player.input.consumeActivity();
+
+        if (!standingStill || inputActive) player.afkTimer = 0;
+        else player.afkTimer += dt;
     }
 
     /**
@@ -232,7 +257,7 @@ export class PlayerMovement {
         } else if (!player.grounded) {
             nextAnimation = 'jump';
         } else if (player.vx === 0) {
-            nextAnimation = 'idle';
+            nextAnimation = this._resolveIdleAnimation();
         } else {
             nextAnimation = 'running';
         }
@@ -241,5 +266,21 @@ export class PlayerMovement {
             player.currentAnimation = nextAnimation;
             player.animations[player.currentAnimation]?.reset();
         }
+    }
+
+    /**
+     * Idle sub-state machine: idle -> afkEnter (one-shot) -> afk (loops)
+     * once afkTimer crosses the threshold, collapsing straight back to idle
+     * the instant input resumes (afkTimer resets to 0 the same frame in
+     * _updateAfkTimer(), no separate wake-up animation).
+     * @returns {'idle'|'afkEnter'|'afk'}
+     */
+    _resolveIdleAnimation() {
+        const player = this.player;
+        if (player.afkTimer < AFK_TRIGGER_SECONDS) return 'idle';
+        if (player.currentAnimation === 'afkEnter') {
+            return player.animations.afkEnter.finished ? 'afk' : 'afkEnter';
+        }
+        return player.currentAnimation === 'afk' ? 'afk' : 'afkEnter';
     }
 }

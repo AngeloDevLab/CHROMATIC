@@ -4,6 +4,11 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.17.0] - 2026-08-11
+
+### Added
+- AFK/idle-sleep animation (`docs/GDD/03_mechanics.md` 4.2): after 15 seconds standing still, grounded, and not attacking, the Guardian plays a one-shot enter-AFK animation (`entities/CharacterAnimations.js`'s `afkEnter`) followed by a looping sleep animation (`afk`), reverting instantly back to normal idle on the next input rather than playing a wake-up transition. New `InputHandler.consumeActivity()` (peek-and-clear flag set by any key/mouse/touch input) feeds `PlayerMovement.js`'s new `_updateAfkTimer()`/`_resolveIdleAnimation()`. `afkEnter`/`afk` are a smaller 64x64 sheet than the other Guardian poses (96x96); `PlayerRenderer.js` extended its existing attack-only "scale from the pose's own detected bounds" path to cover both, with `afk` sharing `afkEnter`'s bounds specifically (rather than its own) to avoid a size pop at the enter-to-loop handoff, plus a small vertical alignment nudge that eases in 1px per `afkEnter` frame instead of applying all at once. Closes the "AFK/idle animation" `TODO.md` item (a reference-project-template checklist item, previously left as an open design question).
+
 ## [0.16.7] - 2026-08-10
 
 ### Changed

@@ -1,5 +1,22 @@
 const TARGET_VISIBLE_HEIGHT = 64;
 
+/**
+ * Poses whose sheet doesn't share idle's own padding-to-character ratio -
+ * see _renderDimensions() - mapped to the animation whose detected bounds
+ * should drive their render scale. attack scales off itself; afk shares
+ * afkEnter's bounds rather than its own, since afk.png's own padding ratio
+ * differs slightly and would otherwise pop the character's size right as
+ * the loop takes over from the one-shot enter.
+ */
+const OWN_BOUNDS_SOURCE = { attack: 'attack', afkEnter: 'afkEnter', afk: 'afkEnter' };
+
+/**
+ * Max AFK art-alignment nudge, in pixels - ramped up 1px per afkEnter
+ * frame (see _afkYOffset()) rather than applied all at once, so settling
+ * into the pose reads as a gradual sink instead of a sudden pop.
+ */
+const AFK_Y_OFFSET = 5;
+
 // Player's sprite-drawing pipeline, composed onto Player rather than mixed
 // into its movement/health state - reads position/size/facing/animation off
 // the player reference passed in and owns nothing else.
@@ -80,29 +97,43 @@ export class PlayerRenderer {
         const anim = this.player.animations[this.player.currentAnimation];
         if (!anim) return;
 
-        const isAttacking = this.player.currentAnimation === 'attack';
-        const { width: renderWidth, height: renderHeight } = this._renderDimensions(anim, isAttacking);
+        const boundsKey = OWN_BOUNDS_SOURCE[this.player.currentAnimation];
+        const boundsAnim = boundsKey ? this.player.animations[boundsKey] : null;
+        const { width: renderWidth, height: renderHeight } = this._renderDimensions(anim, boundsAnim);
         const drawX = this._drawX(renderWidth);
-        const drawY = isAttacking ? this._drawY(anim, renderHeight) : this._drawY();
+        const drawY = (boundsAnim ? this._drawY(boundsAnim, renderHeight) : this._drawY()) + this._afkYOffset();
 
         this._drawSprite(ctx, anim, drawX, drawY, renderWidth, renderHeight, this.player.healthState.flashAmount);
     }
 
     /**
+     * Ramps from 0 to AFK_Y_OFFSET 1px per afkEnter frame as it plays, then
+     * holds at the max once afkEnter finishes and afk's loop takes over -
+     * afkEnter's own currentFrame drives it either way, since afkEnter
+     * itself no longer advances once finished.
+     * @returns {number}
+     */
+    _afkYOffset() {
+        const name = this.player.currentAnimation;
+        if (name !== 'afkEnter' && name !== 'afk') return 0;
+        return Math.min(this.player.animations.afkEnter.currentFrame, AFK_Y_OFFSET);
+    }
+
+    /**
      * Idle/running/jump/dead share idle's own render size (see _drawY's
      * default params) so switching between those poses never jitters
-     * vertically. Attack is a distinct one-shot pose that can use a
-     * differently-sized/padded sheet without throwing that off - scaled from
-     * its own bounds by height only, then width follows the frame's own
-     * aspect ratio (a non-square frame would otherwise stretch).
+     * vertically. OWN_BOUNDS_SOURCE poses use a differently-padded sheet
+     * without throwing that off - scaled from boundsAnim's bounds by height
+     * only, then width follows the *drawn* frame's own aspect ratio (a
+     * non-square frame would otherwise stretch).
      * @param {SpriteAnimation} anim
-     * @param {boolean} isAttacking
+     * @param {?SpriteAnimation} boundsAnim
      * @returns {{width:number, height:number}}
      */
-    _renderDimensions(anim, isAttacking) {
-        if (!isAttacking) return { width: this.renderSize, height: this.renderSize };
+    _renderDimensions(anim, boundsAnim) {
+        if (!boundsAnim) return { width: this.renderSize, height: this.renderSize };
 
-        const height = TARGET_VISIBLE_HEIGHT / (anim.groundLineRatio - anim.topRatio);
+        const height = TARGET_VISIBLE_HEIGHT / (boundsAnim.groundLineRatio - boundsAnim.topRatio);
         const width = height * (anim.frameWidth / anim.frameHeight);
         return { width, height };
     }
