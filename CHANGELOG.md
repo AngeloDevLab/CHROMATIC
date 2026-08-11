@@ -4,6 +4,14 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.17.1] - 2026-08-11
+
+### Added
+- Loading screen progress percentage (`LoadingState.js`): `AssetLoader.loadManifest()`/`SoundManager.loadManifest()` now take an optional `onItemLoaded` callback, fired once per finished asset, driving a `Loading... X%` label instead of a static message. Counted by asset count, not bytes, so it can still appear to stall briefly near the end while the largest OST files finish.
+
+### Changed
+- Loading time (playtested at roughly 180s of blocking load under a Slow 4G throttle): OST tracks re-encoded at a lower bitrate (31MB -> ~20MB total across the 9 files, no code change) and the loading screen no longer blocks on all 9 upfront - only `ost-00` (the first menu track) and SFX load before the menu appears, `ost-01`..`ost-08` load in the background afterward (new `LoadingState._loadBackgroundMusic()`), since `MusicPlaylist.js`'s sequential rotation doesn't need them for minutes anyway and `SoundManager.playMusic()` already no-ops quietly on a not-yet-loaded track. Cuts the blocking payload from ~30MB to ~16MB. Images/tilesets/level JSON still load eagerly; the remaining per-level lazy-load split stays tracked in `TODO.md`.
+
 ## [0.17.0] - 2026-08-11
 
 ### Added

@@ -39,12 +39,14 @@ export class AssetLoader {
     /**
      * Loads every image/JSON entry in a manifest in parallel.
      * @param {{images?: Object<string,string>, json?: Object<string,string>}} manifest - Key-to-path maps per asset type.
+     * @param {() => void} [onItemLoaded] - Called once per entry as it finishes, for progress display.
      * @returns {Promise<void>} Resolves once every entry has loaded.
      */
-    async loadManifest(manifest) {
+    async loadManifest(manifest, onItemLoaded) {
+        const track = (promise) => promise.then((result) => { onItemLoaded?.(); return result; });
         const tasks = [
-            ...Object.entries(manifest.images ?? {}).map(([key, src]) => this.loadImage(key, src)),
-            ...Object.entries(manifest.json ?? {}).map(([key, src]) => this.loadJSON(key, src)),
+            ...Object.entries(manifest.images ?? {}).map(([key, src]) => track(this.loadImage(key, src))),
+            ...Object.entries(manifest.json ?? {}).map(([key, src]) => track(this.loadJSON(key, src))),
         ];
         await Promise.all(tasks);
     }

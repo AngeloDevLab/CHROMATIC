@@ -59,10 +59,14 @@ export class SoundManager {
     /**
      * Loads every entry in a manifest in parallel.
      * @param {Object<string,string>} manifest - Key-to-path map of audio files.
+     * @param {() => void} [onItemLoaded] - Called once per entry as it settles, for progress display.
      * @returns {Promise<void>} Resolves once every entry has settled.
      */
-    async loadManifest(manifest) {
-        await Promise.all(Object.entries(manifest).map(([key, src]) => this.load(key, src)));
+    async loadManifest(manifest, onItemLoaded) {
+        await Promise.all(Object.entries(manifest).map(async ([key, src]) => {
+            await this.load(key, src);
+            onItemLoaded?.();
+        }));
     }
 
     /**

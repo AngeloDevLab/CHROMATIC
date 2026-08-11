@@ -7,9 +7,10 @@ export class LoadingState extends State {
     enter() {
         this.label = document.createElement('div');
         this.label.className = 'loading-label';
-        this.label.textContent = 'Loading...';
+        this.label.textContent = 'Loading... 0%';
         this.game.overlay.appendChild(this.label);
 
+        this._progress = { done: 0, total: 0 };
         this._load();
     }
 
@@ -27,6 +28,17 @@ export class LoadingState extends State {
             this.label.textContent = `Failed to load: ${error.message}. Reload the page to try again.`;
             this.label.classList.add('error');
         }
+    }
+
+    /**
+     * Per-asset progress display, counted by entry (not by byte) - the OST
+     * tracks dominate actual transfer time, so the percentage can still
+     * appear to stall near the end while the last one or two finish.
+     */
+    _onAssetLoaded() {
+        this._progress.done++;
+        const percent = Math.round((this._progress.done / this._progress.total) * 100);
+        this.label.textContent = `Loading... ${percent}%`;
     }
 
     /**
@@ -65,7 +77,7 @@ export class LoadingState extends State {
      * Loads every image/level JSON the Prologue can reference.
      */
     async _loadManifest() {
-        await this.game.assets.loadManifest({
+        const manifest = {
             images: {
                 'guardian-idle': 'assets/images/character/idle.png',
                 'guardian-running': 'assets/images/character/running.png',
@@ -159,28 +171,25 @@ export class LoadingState extends State {
                 // Credits, no separate file to keep in sync by hand.
                 'credits': 'assets/credits.json',
             },
-        });
+        };
+        this._progress.total += Object.keys(manifest.images).length + Object.keys(manifest.json).length;
+        await this.game.assets.loadManifest(manifest, () => this._onAssetLoaded());
     }
 
     /**
-     * Loads the ambient OST rotation, the boss track, and one-shot SFX.
-     * 'ost-00'..'ost-07' are the generic playlist (see main.js's
-     * MusicPlaylist); 'ost-08' ("The Iron Sentinel") is reserved for boss
-     * encounters and deliberately left out of that rotation. SFX keys match
-     * their trigger 1:1 (PlayerFx.js) - more get added here as files exist,
-     * SoundManager.load() already tolerates a missing/broken file on its own.
+     * Loads the first OST track and every SFX blocking the loading screen,
+     * then kicks off the rest of the OST rotation in the background (not
+     * awaited) once that's done. 'ost-01'..'ost-08' aren't needed until
+     * MusicPlaylist.js's rotation actually reaches them, minutes into
+     * playback - background loading finishes long before that even on a
+     * slow connection, and SoundManager.playMusic() already no-ops quietly
+     * if a track somehow isn't ready yet. SFX keys match their trigger 1:1
+     * (PlayerFx.js) - more get added here as files exist, SoundManager.load()
+     * already tolerates a missing/broken file on its own.
      */
     async _loadSounds() {
-        await this.game.sound.loadManifest({
+        const manifest = {
             'ost-00': 'assets/sounds/ost/00_The_Color_Returns.mp3',
-            'ost-01': 'assets/sounds/ost/01_Whispers_of_the_Dawn.mp3',
-            'ost-02': 'assets/sounds/ost/02_The_Road_to_Dawn.mp3',
-            'ost-03': 'assets/sounds/ost/03_The_First_Dawn.mp3',
-            'ost-04': 'assets/sounds/ost/04_Faded_Kingdom.mp3',
-            'ost-05': 'assets/sounds/ost/05_Echoes_of_the_Forgotten.mp3',
-            'ost-06': 'assets/sounds/ost/06_Whispers_in_the_Hollows.mp3',
-            'ost-07': 'assets/sounds/ost/07_The_Hollow_Between.mp3',
-            'ost-08': 'assets/sounds/ost/08_The_Iron_Sentinel.mp3',
             'jump': 'assets/sounds/sfx/jump.wav',
             'footsteps': 'assets/sounds/sfx/footsteps.wav',
             'swoosh': 'assets/sounds/sfx/swoosh.wav',
@@ -195,6 +204,27 @@ export class LoadingState extends State {
             'secret-door': 'assets/sounds/sfx/laser-door.wav',
             'power-up': 'assets/sounds/sfx/power-up.mp3',
             'boss-beam': 'assets/sounds/sfx/boss-beam.wav',
+        };
+        this._progress.total += Object.keys(manifest).length;
+        await this.game.sound.loadManifest(manifest, () => this._onAssetLoaded());
+        this._loadBackgroundMusic();
+    }
+
+    /**
+     * Fire-and-forget: not part of `_progress`/the `Promise.all` in
+     * `_load()`, so it never blocks `_waitForContinue()` - keeps running
+     * after the player is already in the menu.
+     */
+    _loadBackgroundMusic() {
+        this.game.sound.loadManifest({
+            'ost-01': 'assets/sounds/ost/01_Whispers_of_the_Dawn.mp3',
+            'ost-02': 'assets/sounds/ost/02_The_Road_to_Dawn.mp3',
+            'ost-03': 'assets/sounds/ost/03_The_First_Dawn.mp3',
+            'ost-04': 'assets/sounds/ost/04_Faded_Kingdom.mp3',
+            'ost-05': 'assets/sounds/ost/05_Echoes_of_the_Forgotten.mp3',
+            'ost-06': 'assets/sounds/ost/06_Whispers_in_the_Hollows.mp3',
+            'ost-07': 'assets/sounds/ost/07_The_Hollow_Between.mp3',
+            'ost-08': 'assets/sounds/ost/08_The_Iron_Sentinel.mp3',
         });
     }
 
