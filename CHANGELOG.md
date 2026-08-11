@@ -4,6 +4,11 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.17.3] - 2026-08-11
+
+### Added
+- Keyboard alternative for Attack: F, alongside the existing mouse click, for players whose hand stays on the arrow keys instead of the mouse (`InputHandler.js`). Considered Ctrl first, rejected it since Ctrl+W/A/S/D collide with browser tab/page shortcuts (close tab, select all, save, bookmark); Shift was the next idea, rejected too since mashing it 5x triggers Windows' Sticky Keys prompt. `SettingsPanel.js`'s Controls list, `HowToPlayPanel.js`'s Combat section, and `docs/GDD/03_mechanics.md` 4.3 updated to mention it.
+
 ## [0.17.2] - 2026-08-11
 
 ### Added

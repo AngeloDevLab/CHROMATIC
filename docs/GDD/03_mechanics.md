@@ -36,7 +36,7 @@ Build status: only Double Jump and Dash exist in code so far (the guaranteed fir
 
 ## 4.3 Combat System
 
-The combat system is based on automatic distance calculation. On both Desktop and Mobile, an attack automatically targets the nearest enemy - Desktop's mouse click doesn't aim, it just triggers the attack the same way Mobile's Attack Button does. In both cases the game automatically decides the attack mode (melee vs. ranged) based on distance. Both modes are available from the start (already in the Prologue) - the dynamic melee/ranged decision is part of the Core Loop from minute one, see [01_core-gameplay-loop.md](01_core-gameplay-loop.md).
+The combat system is based on automatic distance calculation. On both Desktop and Mobile, an attack automatically targets the nearest enemy - Desktop's mouse click (or the F key, a keyboard alternative for players whose hand stays on the arrow keys) doesn't aim, it just triggers the attack the same way Mobile's Attack Button does. In both cases the game automatically decides the attack mode (melee vs. ranged) based on distance. Both modes are available from the start (already in the Prologue) - the dynamic melee/ranged decision is part of the Core Loop from minute one, see [01_core-gameplay-loop.md](01_core-gameplay-loop.md).
 
 | Mode | Condition | Action |
 |---|---|---|

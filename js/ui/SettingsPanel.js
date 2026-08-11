@@ -82,7 +82,7 @@ const CONTROLS = [
     { label: 'Run', keys: 'A / D or Left/Right Arrow' },
     { label: 'Jump', keys: 'W / Space / Up Arrow' },
     { label: 'Drop Through Platform', keys: 'S or Down Arrow' },
-    { label: 'Attack', keys: 'Mouse Click' },
+    { label: 'Attack', keys: 'Mouse Click or F' },
     { label: 'Interact', keys: 'E' },
     { label: 'Pause', keys: 'P' },
 ];

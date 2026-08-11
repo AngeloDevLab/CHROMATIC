@@ -98,7 +98,8 @@ export class InputHandler {
      * bound to KeyP, not Escape: the Fullscreen API reserves Escape as an
      * unoverridable "exit fullscreen" key, so pausing via Escape would also
      * unpredictably drop fullscreen (Panel.js's own Escape-to-dismiss
-     * handling for sub-panels is separate and unaffected).
+     * handling for sub-panels is separate and unaffected). Attack's keyboard
+     * alternative to a mouse click is F.
      * @param {KeyboardEvent} e - The browser keydown event.
      */
     _onKeyDown(e) {
@@ -109,6 +110,10 @@ export class InputHandler {
         }
         if (e.code === 'KeyE') {
             this._presses.interact = true;
+            return;
+        }
+        if (e.code === 'KeyF') {
+            if (!e.repeat) this._presses.attack = true;
             return;
         }
 
