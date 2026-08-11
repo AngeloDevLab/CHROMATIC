@@ -4,6 +4,11 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.17.2] - 2026-08-11
+
+### Added
+- Page background behind the game canvas/letterboxing (`html`/`body` in `style.css`): a solid dark fill (`#111318`, matching the loading screen's own canvas clear color) plus a small repeating pixel-art "ground" wave strip along the bottom, drawn as an inline SVG data URI - no new asset file.
+
 ## [0.17.1] - 2026-08-11
 
 ### Added

@@ -17,139 +17,143 @@
 }
 
 :root {
-  --game-width: 640;
-  --game-height: 360;
-  /* Game.resizeBuffer() overrides this per current buffer size (see
+    --game-width: 640;
+    --game-height: 360;
+    /* Game.resizeBuffer() overrides this per current buffer size (see
      Game.hudScale's own comment) - screen-fixed HUD text/icons read it via
      calc() below so they stay a constant on-screen size regardless of
      BossState's arena-sized buffer. Untouched (stays 1) outside a boss fight. */
-  --hud-scale: 1;
+    --hud-scale: 1;
 }
 
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-html, body {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: #000;
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #111318;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='160' viewBox='0 0 240 160'%3E%3Cpath d='M0,30 L20,30 L20,25 L40,25 L40,20 L60,20 L60,15 L80,15 L80,10 L100,10 L140,10 L140,15 L160,15 L160,20 L180,20 L180,25 L200,25 L200,30 L220,30 L240,30 L240,160 L0,160 Z' fill='%231a1c20'/%3E%3C/svg%3E");
+    background-repeat: repeat-x;
+    background-position: bottom;
 }
 
 body {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #viewport {
-  position: relative;
-  /* width/height set in JS to the largest whole-number multiple of 640x360 that fits the window */
+    position: relative;
+    /* width/height set in JS to the largest whole-number multiple of 640x360 that fits the window */
 }
 
 #game-canvas {
-  display: block;
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+    display: block;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 #ui-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: calc(var(--game-width) * 1px);
-  height: calc(var(--game-height) * 1px);
-  transform-origin: top left;
-  pointer-events: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(var(--game-width) * 1px);
+    height: calc(var(--game-height) * 1px);
+    transform-origin: top left;
+    pointer-events: none;
 }
 
 #ui-overlay * {
-  pointer-events: auto;
+    pointer-events: auto;
 }
 
 .loading-label {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: 'Jersey 10', monospace;
-  font-size: 20px;
-  color: #e5e5e5;
-  pointer-events: none;
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Jersey 10', monospace;
+    font-size: 20px;
+    color: #e5e5e5;
+    pointer-events: none;
 }
 
 .loading-label.error {
-  color: #ff5c5c;
+    color: #ff5c5c;
 }
 
 .menu-title {
-  position: absolute;
-  top: 40px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: 'Jersey 10', serif;
-  font-size: 56px;
-  letter-spacing: 4px;
-  background: linear-gradient(90deg, #ff5c5c, #ffb35c, #ffe75c, #6cff8a, #5cc9ff, #b45cff, #ff5cc7);
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
-  pointer-events: none;
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Jersey 10', serif;
+    font-size: 56px;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, #ff5c5c, #ffb35c, #ffe75c, #6cff8a, #5cc9ff, #b45cff, #ff5cc7);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.4));
+    pointer-events: none;
 }
 
 .menu-buttons {
-  position: absolute;
-  top: 105px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+    position: absolute;
+    top: 105px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
 }
 
 .menu-button {
-  width: 150px;
-  font-family: 'Jersey 10', sans-serif;
-  font-size: 16px;
-  letter-spacing: 1px;
-  color: #f2f2f2;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 4px;
-  padding: 3px 0;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+    width: 150px;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1px;
+    color: #f2f2f2;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    padding: 3px 0;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .menu-button:hover,
 .menu-button:focus-visible {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.6);
 }
 
 .menu-button:disabled {
-  color: rgba(242, 242, 242, 0.35);
-  border-color: rgba(255, 255, 255, 0.1);
-  cursor: not-allowed;
+    color: rgba(242, 242, 242, 0.35);
+    border-color: rgba(255, 255, 255, 0.1);
+    cursor: not-allowed;
 }
 
 .panel-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* width/padding/border-radius read --hud-scale (see :root above) so Pause/
@@ -157,87 +161,87 @@ body {
    boss fight's bigger buffer as everywhere else - stays 1 (no-op) outside
    BossState, so this only ever actually scales up mid-boss-fight. */
 .panel {
-  position: relative;
-  width: calc(420px * var(--hud-scale));
-  max-width: calc(100% - 40px);
-  max-height: calc(100% - 40px);
-  overflow-y: auto;
-  background: #1a1c20;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: calc(8px * var(--hud-scale));
-  padding: calc(20px * var(--hud-scale)) calc(24px * var(--hud-scale));
-  color: #f2f2f2;
-  font-family: 'Jersey 10', sans-serif;
+    position: relative;
+    width: calc(420px * var(--hud-scale));
+    max-width: calc(100% - 40px);
+    max-height: calc(100% - 40px);
+    overflow-y: auto;
+    background: #1a1c20;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: calc(8px * var(--hud-scale));
+    padding: calc(20px * var(--hud-scale)) calc(24px * var(--hud-scale));
+    color: #f2f2f2;
+    font-family: 'Jersey 10', sans-serif;
 }
 
 .panel-title {
-  font-size: calc(26px * var(--hud-scale));
-  letter-spacing: 2px;
-  margin-bottom: calc(12px * var(--hud-scale));
+    font-size: calc(26px * var(--hud-scale));
+    letter-spacing: 2px;
+    margin-bottom: calc(12px * var(--hud-scale));
 }
 
 /* MerchantDialogue.js passes an empty title (its own layout puts the name
    next to the portrait instead, see .merchant-name below) - without this,
    the empty <h2> would still keep panel-title's margin-bottom as blank space. */
 .panel-title:empty {
-  display: none;
+    display: none;
 }
 
 /* MerchantDialogue.js's portrait/name/text layout, in place of Panel's
    generic title bar. */
 .merchant-dialogue {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
 }
 
 .merchant-portrait {
-  width: calc(48px * var(--hud-scale));
-  height: calc(48px * var(--hud-scale));
-  flex-shrink: 0;
-  image-rendering: pixelated;
+    width: calc(48px * var(--hud-scale));
+    height: calc(48px * var(--hud-scale));
+    flex-shrink: 0;
+    image-rendering: pixelated;
 }
 
 .merchant-name {
-  font-size: calc(18px * var(--hud-scale));
-  letter-spacing: 1px;
-  margin-bottom: calc(4px * var(--hud-scale));
+    font-size: calc(18px * var(--hud-scale));
+    letter-spacing: 1px;
+    margin-bottom: calc(4px * var(--hud-scale));
 }
 
 .panel-body {
-  font-size: calc(16px * var(--hud-scale));
-  line-height: 1.5;
+    font-size: calc(16px * var(--hud-scale));
+    line-height: 1.5;
 }
 
 .panel-body h3 {
-  font-size: calc(18px * var(--hud-scale));
-  letter-spacing: 1px;
-  margin-top: calc(16px * var(--hud-scale));
+    font-size: calc(18px * var(--hud-scale));
+    letter-spacing: 1px;
+    margin-top: calc(16px * var(--hud-scale));
 }
 
 .panel-body h3:first-child {
-  margin-top: 0;
+    margin-top: 0;
 }
 
 .panel-body h4 {
-  font-size: calc(16px * var(--hud-scale));
-  letter-spacing: 0.5px;
-  margin-top: calc(10px * var(--hud-scale));
-  color: rgba(242, 242, 242, 0.75);
+    font-size: calc(16px * var(--hud-scale));
+    letter-spacing: 0.5px;
+    margin-top: calc(10px * var(--hud-scale));
+    color: rgba(242, 242, 242, 0.75);
 }
 
 /* MenuState.js's Legal Notice/Privacy Policy - marks a still-unfilled
    placeholder field ([First name Last name], etc.) in a color that can't be
    missed by accident before this ever goes live. */
 .legal-placeholder {
-  color: #ff8a3f;
-  font-weight: bold;
+    color: #ff8a3f;
+    font-weight: bold;
 }
 
 .difficulty-options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 /* Panel.openChoices()'s per-button markup - shared by the actual difficulty
@@ -245,44 +249,44 @@ body {
    method's own JSDoc), so scaling this via --hud-scale also covers Pause/
    Game Over appearing mid-boss-fight, not just the difficulty panel itself. */
 .difficulty-option {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: calc(4px * var(--hud-scale));
-  width: 100%;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: calc(6px * var(--hud-scale));
-  padding: calc(10px * var(--hud-scale)) calc(14px * var(--hud-scale));
-  color: #f2f2f2;
-  font-family: 'Jersey 10', sans-serif;
-  /* Buttons don't inherit font-size from their parent by default (UA
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: calc(4px * var(--hud-scale));
+    width: 100%;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: calc(6px * var(--hud-scale));
+    padding: calc(10px * var(--hud-scale)) calc(14px * var(--hud-scale));
+    color: #f2f2f2;
+    font-family: 'Jersey 10', sans-serif;
+    /* Buttons don't inherit font-size from their parent by default (UA
      stylesheet), so without this Pause/Game Over's Resume/Retry/Main Menu
      text (plain-text choices, see openChoices()) fell back to the browser's
      own default button size instead of anything the game actually chose -
      .difficulty-label overrides this for the richer label+description
      choices (the real difficulty picker) that use it. */
-  font-size: calc(16px * var(--hud-scale));
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+    font-size: calc(16px * var(--hud-scale));
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .difficulty-option:hover,
 .difficulty-option:focus-visible {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.5);
 }
 
 .difficulty-label {
-  font-size: calc(20px * var(--hud-scale));
-  letter-spacing: 1px;
+    font-size: calc(20px * var(--hud-scale));
+    letter-spacing: 1px;
 }
 
 .difficulty-description {
-  font-size: calc(16px * var(--hud-scale));
-  opacity: 0.75;
-  line-height: 1.4;
+    font-size: calc(16px * var(--hud-scale));
+    opacity: 0.75;
+    line-height: 1.4;
 }
 
 /* --hud-scale reasoning (see :root above) - .panel/.panel-body/.panel-title
@@ -290,85 +294,85 @@ body {
    cramped relative to the rest of the (correctly scaled) panel during a boss
    fight's bigger buffer. */
 .settings-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: calc(12px * var(--hud-scale));
-  margin: calc(10px * var(--hud-scale)) 0;
-  font-size: calc(16px * var(--hud-scale));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(12px * var(--hud-scale));
+    margin: calc(10px * var(--hud-scale)) 0;
+    font-size: calc(16px * var(--hud-scale));
 }
 
 .settings-row input[type="range"] {
-  flex: 1;
-  max-width: calc(180px * var(--hud-scale));
-  accent-color: #f2f2f2;
+    flex: 1;
+    max-width: calc(180px * var(--hud-scale));
+    accent-color: #f2f2f2;
 }
 
 .cutscene-text {
-  position: absolute;
-  bottom: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 560px;
-  max-width: calc(100% - 40px);
-  text-align: center;
-  font-family: 'Jacquard 24', serif;
-  font-size: 22px;
-  color: #f2f2f2;
-  -webkit-text-stroke: 3px rgba(0, 0, 0, 0.9);
-  paint-order: stroke fill;
-  text-shadow:
-    -2px -2px 0 rgba(0, 0, 0, 0.9),
-     2px -2px 0 rgba(0, 0, 0, 0.9),
-    -2px  2px 0 rgba(0, 0, 0, 0.9),
-     2px  2px 0 rgba(0, 0, 0, 0.9),
-    -2px  0   0 rgba(0, 0, 0, 0.9),
-     2px  0   0 rgba(0, 0, 0, 0.9),
-     0   -2px 0 rgba(0, 0, 0, 0.9),
-     0    2px 0 rgba(0, 0, 0, 0.9),
-     0 2px 6px rgba(0, 0, 0, 0.8);
-  pointer-events: none;
+    position: absolute;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 560px;
+    max-width: calc(100% - 40px);
+    text-align: center;
+    font-family: 'Jacquard 24', serif;
+    font-size: 22px;
+    color: #f2f2f2;
+    -webkit-text-stroke: 3px rgba(0, 0, 0, 0.9);
+    paint-order: stroke fill;
+    text-shadow:
+        -2px -2px 0 rgba(0, 0, 0, 0.9),
+        2px -2px 0 rgba(0, 0, 0, 0.9),
+        -2px 2px 0 rgba(0, 0, 0, 0.9),
+        2px 2px 0 rgba(0, 0, 0, 0.9),
+        -2px 0 0 rgba(0, 0, 0, 0.9),
+        2px 0 0 rgba(0, 0, 0, 0.9),
+        0 -2px 0 rgba(0, 0, 0, 0.9),
+        0 2px 0 rgba(0, 0, 0, 0.9),
+        0 2px 6px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
 }
 
 .cutscene-skip-button {
-  position: absolute;
-  bottom: 16px;
-  right: 16px;
-  font-family: 'Jersey 10', sans-serif;
-  font-size: 16px;
-  color: #f2f2f2;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 4px;
-  padding: 4px 10px;
-  cursor: pointer;
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 16px;
+    color: #f2f2f2;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
 }
 
 .cutscene-skip-button:hover {
-  background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .panel-body p {
-  opacity: 0.8;
+    opacity: 0.8;
 }
 
 /* Info panel's entry point into HowToPlayPanel.js - same pill shape as
    .merchant-shop-buy, neutral color since it isn't a purchase action. */
 .panel-link {
-  display: inline-block;
-  margin-bottom: calc(12px * var(--hud-scale));
-  font-family: 'Jersey 10', sans-serif;
-  font-size: calc(16px * var(--hud-scale));
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: calc(4px * var(--hud-scale));
-  padding: calc(4px * var(--hud-scale)) calc(10px * var(--hud-scale));
-  color: #f2f2f2;
-  cursor: pointer;
+    display: inline-block;
+    margin-bottom: calc(12px * var(--hud-scale));
+    font-family: 'Jersey 10', sans-serif;
+    font-size: calc(16px * var(--hud-scale));
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: calc(4px * var(--hud-scale));
+    padding: calc(4px * var(--hud-scale)) calc(10px * var(--hud-scale));
+    color: #f2f2f2;
+    cursor: pointer;
 }
 
 .panel-link:hover {
-  background: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.18);
 }
 
 /* MerchantDialogue.js's shop grid (_buildShopSectionHTML()) - card shape
@@ -376,287 +380,287 @@ body {
    style. No separate Token-count readout - each option shows its own cost
    instead (see .merchant-shop-cost below). */
 .merchant-shop {
-  margin-top: calc(14px * var(--hud-scale));
+    margin-top: calc(14px * var(--hud-scale));
 }
 
 .merchant-shop-options {
-  display: flex;
-  flex-direction: column;
-  gap: calc(10px * var(--hud-scale));
+    display: flex;
+    flex-direction: column;
+    gap: calc(10px * var(--hud-scale));
 }
 
 .merchant-shop-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: calc(12px * var(--hud-scale));
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: calc(6px * var(--hud-scale));
-  padding: calc(10px * var(--hud-scale)) calc(14px * var(--hud-scale));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(12px * var(--hud-scale));
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: calc(6px * var(--hud-scale));
+    padding: calc(10px * var(--hud-scale)) calc(14px * var(--hud-scale));
 }
 
 .merchant-shop-option-title {
-  font-size: calc(18px * var(--hud-scale));
-  letter-spacing: 1px;
+    font-size: calc(18px * var(--hud-scale));
+    letter-spacing: 1px;
 }
 
 .merchant-shop-option-desc {
-  font-size: calc(16px * var(--hud-scale));
-  opacity: 0.75;
-  line-height: 1.4;
-  margin-top: calc(2px * var(--hud-scale));
+    font-size: calc(16px * var(--hud-scale));
+    opacity: 0.75;
+    line-height: 1.4;
+    margin-top: calc(2px * var(--hud-scale));
 }
 
 /* Cost + Unlock button, stacked and centered to the right of the title/desc
    column - the ::before token icon replaces a "Tokens" text label. */
 .merchant-shop-option-action {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: calc(4px * var(--hud-scale));
-  flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(4px * var(--hud-scale));
+    flex-shrink: 0;
 }
 
 .merchant-shop-cost {
-  display: flex;
-  align-items: center;
-  gap: calc(4px * var(--hud-scale));
-  font-size: calc(16px * var(--hud-scale));
-  opacity: 0.75;
+    display: flex;
+    align-items: center;
+    gap: calc(4px * var(--hud-scale));
+    font-size: calc(16px * var(--hud-scale));
+    opacity: 0.75;
 }
 
 .merchant-shop-cost::before {
-  content: '';
-  width: calc(14px * var(--hud-scale));
-  height: calc(14px * var(--hud-scale));
-  background-image: url('assets/images/objects/token.png');
-  background-size: contain;
-  background-repeat: no-repeat;
+    content: '';
+    width: calc(14px * var(--hud-scale));
+    height: calc(14px * var(--hud-scale));
+    background-image: url('assets/images/objects/token.png');
+    background-size: contain;
+    background-repeat: no-repeat;
 }
 
 /* Buyable/unaffordable/unlocked - same red/green purchase-state language as
    DevPanel's .dev-panel-ability, plus an amber "can't afford it yet" middle
    state DevPanel never needed since it grants abilities for free. */
 .merchant-shop-buy {
-  flex-shrink: 0;
-  font-family: 'Jersey 10', sans-serif;
-  font-size: calc(16px * var(--hud-scale));
-  background: rgba(108, 255, 138, 0.12);
-  border: 1px solid rgba(108, 255, 138, 0.5);
-  border-radius: calc(4px * var(--hud-scale));
-  padding: calc(4px * var(--hud-scale)) calc(10px * var(--hud-scale));
-  color: #6cff8a;
-  cursor: pointer;
+    flex-shrink: 0;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: calc(16px * var(--hud-scale));
+    background: rgba(108, 255, 138, 0.12);
+    border: 1px solid rgba(108, 255, 138, 0.5);
+    border-radius: calc(4px * var(--hud-scale));
+    padding: calc(4px * var(--hud-scale)) calc(10px * var(--hud-scale));
+    color: #6cff8a;
+    cursor: pointer;
 }
 
 .merchant-shop-buy:hover:not(:disabled) {
-  background: rgba(108, 255, 138, 0.25);
+    background: rgba(108, 255, 138, 0.25);
 }
 
 .merchant-shop-option.unaffordable .merchant-shop-buy {
-  color: #ffb35c;
-  border-color: rgba(255, 179, 92, 0.4);
-  background: rgba(255, 179, 92, 0.08);
-  cursor: not-allowed;
+    color: #ffb35c;
+    border-color: rgba(255, 179, 92, 0.4);
+    background: rgba(255, 179, 92, 0.08);
+    cursor: not-allowed;
 }
 
 .merchant-shop-option.unlocked .merchant-shop-buy {
-  color: rgba(242, 242, 242, 0.5);
-  border-color: rgba(255, 255, 255, 0.15);
-  background: transparent;
-  cursor: default;
+    color: rgba(242, 242, 242, 0.5);
+    border-color: rgba(255, 255, 255, 0.15);
+    background: transparent;
+    cursor: default;
 }
 
 /* HowToPlayPanel.js's written sections - heading + paragraph, no preview
    art, so a plain stacked block list is enough (no row/flex needed). */
 .how-to-play-section {
-  margin-bottom: calc(14px * var(--hud-scale));
+    margin-bottom: calc(14px * var(--hud-scale));
 }
 
 .how-to-play-section h4 {
-  font-size: calc(16px * var(--hud-scale));
-  letter-spacing: 1px;
-  margin-bottom: calc(4px * var(--hud-scale));
+    font-size: calc(16px * var(--hud-scale));
+    letter-spacing: 1px;
+    margin-bottom: calc(4px * var(--hud-scale));
 }
 
 .how-to-play-section p {
-  margin: 0;
-  font-size: calc(16px * var(--hud-scale));
-  line-height: 1.4;
-  opacity: 0.85;
+    margin: 0;
+    font-size: calc(16px * var(--hud-scale));
+    line-height: 1.4;
+    opacity: 0.85;
 }
 
 .chapter-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 10;
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  padding: 10px 0;
-  background: rgba(0, 0, 0, 0.4);
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 0;
+    background: rgba(0, 0, 0, 0.4);
 }
 
 .chapter-button {
-  font-family: 'Jersey 10', sans-serif;
-  font-size: 16px;
-  letter-spacing: 1px;
-  color: #f2f2f2;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 4px;
-  padding: 4px 10px;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 16px;
+    letter-spacing: 1px;
+    color: #f2f2f2;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .chapter-button:hover:not(:disabled),
 .chapter-button:focus-visible:not(:disabled) {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.6);
 }
 
 .chapter-button:disabled {
-  color: rgba(242, 242, 242, 0.35);
-  border-color: rgba(255, 255, 255, 0.1);
-  cursor: not-allowed;
+    color: rgba(242, 242, 242, 0.35);
+    border-color: rgba(255, 255, 255, 0.1);
+    cursor: not-allowed;
 }
 
 /* WorldmapState's own back-to-menu button - reuses .chapter-button's look,
    this class only repositions it to the top-left corner instead of the bar. */
 .worldmap-back-button {
-  position: absolute;
-  top: 14px;
-  left: 14px;
-  z-index: 11;
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    z-index: 11;
 }
 
 .worldmap-nodes {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
 }
 
 .worldmap-node {
-  position: absolute;
-  width: 64px;
-  height: 64px;
-  padding: 0;
-  border: none;
-  background-color: transparent;
-  background-image: url('assets/icons/wm_btn_default.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  cursor: pointer;
-  pointer-events: auto;
+    position: absolute;
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    border: none;
+    background-color: transparent;
+    background-image: url('assets/icons/wm_btn_default.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+    pointer-events: auto;
 }
 
 .worldmap-node:disabled {
-  cursor: not-allowed;
+    cursor: not-allowed;
 }
 
 /* Shared status overlay on top of the default badge above - locked/completed
    are mutually exclusive (a completed level was necessarily unlocked), so one
    slot covers both instead of swapping the base badge image itself. */
 .worldmap-node::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-size: contain;
-  background-repeat: no-repeat;
-  opacity: 0;
-  pointer-events: none;
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .worldmap-node.locked::before {
-  background-image: url('assets/icons/wm_btn_locked.png');
-  opacity: 1;
+    background-image: url('assets/icons/wm_btn_locked.png');
+    opacity: 1;
 }
 
 .worldmap-node.completed::before {
-  background-image: url('assets/icons/wm_btn_completed.png');
-  opacity: 1;
+    background-image: url('assets/icons/wm_btn_completed.png');
+    opacity: 1;
 }
 
 .worldmap-node::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url('assets/icons/wm_btn_selected.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  opacity: 0;
-  pointer-events: none;
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url('assets/icons/wm_btn_selected.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .worldmap-node.selected::after {
-  opacity: 1;
+    opacity: 1;
 }
 
 .worldmap-info-card {
-  position: absolute;
-  min-width: 150px;
-  background: rgba(0, 0, 0, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 6px;
-  padding: 10px 14px;
-  color: #f2f2f2;
-  font-family: 'Jersey 10', sans-serif;
-  font-size: 16px;
-  pointer-events: auto;
+    position: absolute;
+    min-width: 150px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: #f2f2f2;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 16px;
+    pointer-events: auto;
 }
 
 .worldmap-info-close {
-  position: absolute;
-  top: 4px;
-  right: 6px;
-  width: 18px;
-  height: 18px;
-  line-height: 16px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: #f2f2f2;
-  opacity: 0.6;
-  font-size: 16px;
-  cursor: pointer;
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    width: 18px;
+    height: 18px;
+    line-height: 16px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #f2f2f2;
+    opacity: 0.6;
+    font-size: 16px;
+    cursor: pointer;
 }
 
 .worldmap-info-close:hover {
-  opacity: 1;
+    opacity: 1;
 }
 
 .worldmap-info-title {
-  font-size: 18px;
-  letter-spacing: 1px;
-  margin-bottom: 4px;
+    font-size: 18px;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
 }
 
 .worldmap-info-type,
 .worldmap-info-secrets {
-  opacity: 0.8;
-  margin-bottom: 2px;
+    opacity: 0.8;
+    margin-bottom: 2px;
 }
 
 .worldmap-info-start {
-  width: 100%;
-  margin-top: 8px;
-  font-family: 'Jersey 10', sans-serif;
-  font-size: 16px;
-  color: #f2f2f2;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  padding: 4px 0;
-  cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 16px;
+    color: #f2f2f2;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    padding: 4px 0;
+    cursor: pointer;
 }
 
 .worldmap-info-start:hover {
-  background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.2);
 }
 
 /* font-size reads --hud-scale (see :root above) so this stays the same
@@ -664,12 +668,12 @@ body {
    normal level, instead of shrinking along with everything else sized in
    fixed buffer-pixels. */
 .hud-value {
-  position: absolute;
-  font-family: 'Jersey 10', monospace;
-  font-size: calc(16px * var(--hud-scale));
-  color: rgba(242, 242, 242, 0.85);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  pointer-events: none;
+    position: absolute;
+    font-family: 'Jersey 10', monospace;
+    font-size: calc(16px * var(--hud-scale));
+    color: rgba(242, 242, 242, 0.85);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
 }
 
 /* LevelSession's Token counter, positioned just below the HP/Shield bars
@@ -677,72 +681,72 @@ body {
    this stays a single positioned element, same shape as .hud-value.
    Same --hud-scale reasoning as .hud-value above. */
 .hud-token {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  font-family: 'Jersey 10', monospace;
-  font-size: calc(16px * var(--hud-scale));
-  color: rgba(242, 242, 242, 0.85);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  pointer-events: none;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-family: 'Jersey 10', monospace;
+    font-size: calc(16px * var(--hud-scale));
+    color: rgba(242, 242, 242, 0.85);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
 }
 
 .hud-token::before {
-  content: '';
-  width: calc(16px * var(--hud-scale));
-  height: calc(16px * var(--hud-scale));
-  background-image: url('assets/images/objects/token.png');
-  background-size: contain;
-  background-repeat: no-repeat;
+    content: '';
+    width: calc(16px * var(--hud-scale));
+    height: calc(16px * var(--hud-scale));
+    background-image: url('assets/images/objects/token.png');
+    background-size: contain;
+    background-repeat: no-repeat;
 }
 
 /* WorldmapState's own Token counter - same icon+count shape as .hud-token
    above, just repositioned/rescaled for this screen's top-right corner. */
 .worldmap-token-counter {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  z-index: 11;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-family: 'Jersey 10', sans-serif;
-  font-size: 16px;
-  color: #f2f2f2;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  pointer-events: none;
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 11;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 16px;
+    color: #f2f2f2;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
 }
 
 .worldmap-token-counter::before {
-  content: '';
-  width: 28px;
-  height: 28px;
-  background-image: url('assets/images/objects/token.png');
-  background-size: contain;
-  background-repeat: no-repeat;
+    content: '';
+    width: 28px;
+    height: 28px;
+    background-image: url('assets/images/objects/token.png');
+    background-size: contain;
+    background-repeat: no-repeat;
 }
 
 .damage-number {
-  position: absolute;
-  transform: translate(-50%, -100%);
-  font-family: 'Jersey 10', monospace;
-  font-size: 16px;
-  color: #ff5c5c;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
-  pointer-events: none;
-  white-space: nowrap;
+    position: absolute;
+    transform: translate(-50%, -100%);
+    font-family: 'Jersey 10', monospace;
+    font-size: 16px;
+    color: #ff5c5c;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    white-space: nowrap;
 }
 
 .status-message {
-  position: absolute;
-  transform: translate(-50%, -100%);
-  font-family: 'Jersey 10', monospace;
-  font-size: 16px;
-  color: #3fc6e0;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
-  pointer-events: none;
-  white-space: nowrap;
+    position: absolute;
+    transform: translate(-50%, -100%);
+    font-family: 'Jersey 10', monospace;
+    font-size: 16px;
+    color: #3fc6e0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    white-space: nowrap;
 }
 
 /* [E] Talk/Exit Level prompts (Interactables.js) - position already tracks
@@ -750,14 +754,14 @@ body {
    only font-size reads --hud-scale (see :root above) so the text itself
    stays readable at the same on-screen size during a boss fight. */
 .interact-prompt {
-  position: absolute;
-  transform: translate(-50%, -100%);
-  font-family: 'Jersey 10', monospace;
-  font-size: calc(16px * var(--hud-scale));
-  color: #f2f2f2;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
-  pointer-events: none;
-  white-space: nowrap;
+    position: absolute;
+    transform: translate(-50%, -100%);
+    font-family: 'Jersey 10', monospace;
+    font-size: calc(16px * var(--hud-scale));
+    color: #f2f2f2;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    white-space: nowrap;
 }
 
 /* Interactables.js's _createInteractPrompt() adds this on a touch device -
@@ -766,10 +770,10 @@ body {
    the same text label desktop gets, centered as a group instead of the
    plain floating text above. */
 .interact-prompt.tappable {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: calc(4px * var(--hud-scale));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(4px * var(--hud-scale));
 }
 
 /* .tappable's own display:flex above is an author rule, so it beats the
@@ -779,7 +783,7 @@ body {
    specificity (3 selectors) than .interact-prompt.tappable's 2, wins
    unconditionally instead of depending on source order. */
 .interact-prompt.tappable[hidden] {
-  display: none;
+    display: none;
 }
 
 /* Overrides .touch-button's fixed-corner absolute positioning (higher
@@ -787,10 +791,10 @@ body {
    order) - here it just sits in the flex column above, smaller than the
    main D-Pad/action buttons since it's a secondary contextual prompt. */
 .interact-prompt .touch-button {
-  position: relative;
-  width: calc(40px * var(--hud-scale));
-  height: calc(40px * var(--hud-scale));
-  pointer-events: auto;
+    position: relative;
+    width: calc(40px * var(--hud-scale));
+    height: calc(40px * var(--hud-scale));
+    pointer-events: auto;
 }
 
 /* BossState.js's top-center HP bar label - screen-fixed like .hud-value,
@@ -798,21 +802,21 @@ body {
    buffer width (varies per boss arena), not a fixed position. font-size
    reads --hud-scale (see :root above), same reasoning as .hud-value. */
 .boss-name-label {
-  position: absolute;
-  transform: translate(-50%, 0);
-  font-family: 'Jersey 10', monospace;
-  font-size: calc(16px * var(--hud-scale));
-  color: #f2f2f2;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
-  pointer-events: none;
-  white-space: nowrap;
+    position: absolute;
+    transform: translate(-50%, 0);
+    font-family: 'Jersey 10', monospace;
+    font-size: calc(16px * var(--hud-scale));
+    color: #f2f2f2;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    white-space: nowrap;
 }
 
 /* HUD.js's renderBossBar() shifts the bar's own fill to the same color once
    boss.enraged (Boss.js) - Phase 2's only visible tell besides the moveset
    itself ticking faster. */
 .boss-name-label.enraged {
-  color: #ff8a3f;
+    color: #ff8a3f;
 }
 
 /* BossState.js's HP value readout ("150/150"), right below the canvas bar -
@@ -820,144 +824,144 @@ body {
    above) keeps it that same size on screen regardless of the arena's
    buffer size. */
 .boss-hp-label {
-  position: absolute;
-  transform: translate(-50%, 0);
-  font-family: 'Jersey 10', monospace;
-  font-size: calc(16px * var(--hud-scale));
-  color: rgba(242, 242, 242, 0.85);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-  pointer-events: none;
-  white-space: nowrap;
+    position: absolute;
+    transform: translate(-50%, 0);
+    font-family: 'Jersey 10', monospace;
+    font-size: calc(16px * var(--hud-scale));
+    color: rgba(242, 242, 242, 0.85);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    white-space: nowrap;
 }
 
 .panel-close {
-  position: absolute;
-  top: calc(10px * var(--hud-scale));
-  right: calc(12px * var(--hud-scale));
-  background: none;
-  border: none;
-  color: #f2f2f2;
-  font-size: calc(20px * var(--hud-scale));
-  cursor: pointer;
-  line-height: 1;
+    position: absolute;
+    top: calc(10px * var(--hud-scale));
+    right: calc(12px * var(--hud-scale));
+    background: none;
+    border: none;
+    color: #f2f2f2;
+    font-size: calc(20px * var(--hud-scale));
+    cursor: pointer;
+    line-height: 1;
 }
 
 /* Dev Panel (js/ui/DevPanel.js) - fixed outside #ui-overlay, deliberately
    unscaled so it stays readable at any window/game scale. Toggled with the
    physical key above Tab/left of 1 (Backquote). */
 .dev-panel {
-  position: fixed;
-  top: 12px;
-  left: 12px;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
-  background: rgba(0, 0, 0, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 6px;
-  font-family: 'Jersey 10', monospace;
-  color: #f2f2f2;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    font-family: 'Jersey 10', monospace;
+    color: #f2f2f2;
 }
 
 .dev-panel-title {
-  font-size: 16px;
-  letter-spacing: 1px;
-  color: #ffe75c;
+    font-size: 16px;
+    letter-spacing: 1px;
+    color: #ffe75c;
 }
 
 .dev-panel-section {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .dev-panel-label {
-  font-size: 16px;
-  color: rgba(242, 242, 242, 0.7);
+    font-size: 16px;
+    color: rgba(242, 242, 242, 0.7);
 }
 
 .dev-panel-levels {
-  display: flex;
-  gap: 4px;
+    display: flex;
+    gap: 4px;
 }
 
 .dev-panel-level {
-  width: 24px;
-  height: 24px;
-  font-family: 'Jersey 10', sans-serif;
-  font-size: 16px;
-  color: #f2f2f2;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 4px;
-  cursor: pointer;
+    width: 24px;
+    height: 24px;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 16px;
+    color: #f2f2f2;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .dev-panel-level:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.6);
 }
 
 .dev-panel-level:disabled {
-  color: rgba(242, 242, 242, 0.35);
-  border-color: rgba(255, 255, 255, 0.1);
-  cursor: not-allowed;
+    color: rgba(242, 242, 242, 0.35);
+    border-color: rgba(255, 255, 255, 0.1);
+    cursor: not-allowed;
 }
 
 .dev-panel-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 16px;
-  cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 16px;
+    cursor: pointer;
 }
 
 /* DevPanel's dev/test-only Give Token button (_wireGiveTokenButton()). */
 .dev-panel-action {
-  font-family: 'Jersey 10', sans-serif;
-  font-size: 16px;
-  color: #f2f2f2;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 4px;
-  padding: 3px 8px;
-  cursor: pointer;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 16px;
+    color: #f2f2f2;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    padding: 3px 8px;
+    cursor: pointer;
 }
 
 .dev-panel-action:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.6);
 }
 
 /* DevPanel's dev/test-only ability unlock buttons (_wireAbilityButtons()) -
    red/.locked until clicked, green/.unlocked (and disabled) after, no
    toggle-back - reads as a one-way purchase rather than a settings switch. */
 .dev-panel-ability {
-  font-family: 'Jersey 10', sans-serif;
-  font-size: 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 4px;
-  padding: 3px 8px;
-  cursor: pointer;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 4px;
+    padding: 3px 8px;
+    cursor: pointer;
 }
 
 .dev-panel-ability.locked {
-  color: #ff8a8a;
-  border-color: rgba(255, 92, 92, 0.4);
+    color: #ff8a8a;
+    border-color: rgba(255, 92, 92, 0.4);
 }
 
 .dev-panel-ability.locked:hover {
-  background: rgba(255, 92, 92, 0.15);
-  border-color: rgba(255, 92, 92, 0.7);
+    background: rgba(255, 92, 92, 0.15);
+    border-color: rgba(255, 92, 92, 0.7);
 }
 
 .dev-panel-ability.unlocked {
-  color: #6cff8a;
-  border-color: rgba(108, 255, 138, 0.4);
-  cursor: default;
+    color: #6cff8a;
+    border-color: rgba(108, 255, 138, 0.4);
+    cursor: default;
 }
 
 /* TouchControls.js's virtual buttons - each is a plate (.touch-button-bg,
@@ -966,34 +970,34 @@ body {
    image so the opacity only ever touches the plate. Positions/layout below
    are still first-guess, needs a look on a real device. */
 .touch-button {
-  position: absolute;
-  width: calc(48px * var(--hud-scale));
-  height: calc(48px * var(--hud-scale));
-  border: none;
-  background: none;
-  padding: 0;
-  cursor: pointer;
-  touch-action: none;
+    position: absolute;
+    width: calc(48px * var(--hud-scale));
+    height: calc(48px * var(--hud-scale));
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    touch-action: none;
 }
 
 .touch-button-bg,
 .touch-button-icon {
-  position: absolute;
-  inset: 0;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  image-rendering: pixelated;
-  pointer-events: none;
+    position: absolute;
+    inset: 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    image-rendering: pixelated;
+    pointer-events: none;
 }
 
 .touch-button-bg {
-  background-image: url('assets/icons/btn-default.png');
-  opacity: 0.55;
+    background-image: url('assets/icons/btn-default.png');
+    opacity: 0.55;
 }
 
 .touch-button.pressed .touch-button-bg {
-  background-image: url('assets/icons/btn-pressed.png');
+    background-image: url('assets/icons/btn-pressed.png');
 }
 
 /* Mouse-only hover feedback (the Pause button is the one .touch-button
@@ -1001,63 +1005,97 @@ body {
    devices that actually support a real, non-sticky hover so a touchscreen's
    post-tap "stuck hover" never fights the .pressed class above. */
 @media (hover: hover) and (pointer: fine) {
-  .touch-button:hover .touch-button-bg {
-    background-image: url('assets/icons/btn-pressed.png');
-  }
+    .touch-button:hover .touch-button-bg {
+        background-image: url('assets/icons/btn-pressed.png');
+    }
 }
 
 .touch-button-icon {
-  background-image: var(--touch-icon);
+    background-image: var(--touch-icon);
 }
 
 /* Left thumb: pure horizontal movement, no vertical D-Pad arms. Right
    thumb: Jump/Attack/Drop step diagonally from top-right to bottom-left
    (a natural thumb arc) rather than stacked directly above/below - session
    decision after a first D-Pad-style layout read as awkward on a real device. */
-.touch-left { left: calc(16px * var(--hud-scale)); bottom: calc(36px * var(--hud-scale)); }
-.touch-right { left: calc(100px * var(--hud-scale)); bottom: calc(36px * var(--hud-scale)); }
-.touch-jump { right: calc(16px * var(--hud-scale)); bottom: calc(140px * var(--hud-scale)); }
-.touch-attack { right: calc(56px * var(--hud-scale)); bottom: calc(80px * var(--hud-scale)); }
-.touch-drop { right: calc(96px * var(--hud-scale)); bottom: calc(20px * var(--hud-scale)); }
-.touch-pause { top: calc(12px * var(--hud-scale)); right: calc(12px * var(--hud-scale)); }
+.touch-left {
+    left: calc(16px * var(--hud-scale));
+    bottom: calc(36px * var(--hud-scale));
+}
+
+.touch-right {
+    left: calc(100px * var(--hud-scale));
+    bottom: calc(36px * var(--hud-scale));
+}
+
+.touch-jump {
+    right: calc(16px * var(--hud-scale));
+    bottom: calc(140px * var(--hud-scale));
+}
+
+.touch-attack {
+    right: calc(56px * var(--hud-scale));
+    bottom: calc(80px * var(--hud-scale));
+}
+
+.touch-drop {
+    right: calc(96px * var(--hud-scale));
+    bottom: calc(20px * var(--hud-scale));
+}
+
+.touch-pause {
+    top: calc(12px * var(--hud-scale));
+    right: calc(12px * var(--hud-scale));
+}
 
 /* LandscapeGate.js - fixed outside #ui-overlay like .dev-panel, has to
    cover the whole physical screen rather than the scaled game viewport.
    Hidden by default, .visible toggled on portrait orientation. */
 .landscape-gate {
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-  background: #0a0a0f;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background: #0a0a0f;
 }
 
 .landscape-gate.visible {
-  display: flex;
+    display: flex;
 }
 
 .landscape-gate-icon {
-  width: 96px;
-  height: 96px;
-  background-image: url('assets/icons/turn-device.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-  animation: landscape-gate-rotate-hint 2.4s ease-in-out infinite;
+    width: 96px;
+    height: 96px;
+    background-image: url('assets/icons/turn-device.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    animation: landscape-gate-rotate-hint 2.4s ease-in-out infinite;
 }
 
 .landscape-gate-text {
-  font-family: 'Jersey 10', monospace;
-  font-size: 20px;
-  color: #e5e5e5;
+    font-family: 'Jersey 10', monospace;
+    font-size: 20px;
+    color: #e5e5e5;
 }
 
 @keyframes landscape-gate-rotate-hint {
-  0%, 15% { transform: rotate(0deg); }
-  50%, 65% { transform: rotate(-90deg); }
-  100% { transform: rotate(0deg); }
+
+    0%,
+    15% {
+        transform: rotate(0deg);
+    }
+
+    50%,
+    65% {
+        transform: rotate(-90deg);
+    }
+
+    100% {
+        transform: rotate(0deg);
+    }
 }
