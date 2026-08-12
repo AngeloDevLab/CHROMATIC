@@ -16,7 +16,7 @@ const KEY_MAP = {
 // Fullscreen API reserves Escape as an unoverridable "exit fullscreen" key.
 export class InputHandler {
     /**
-     * @param {HTMLCanvasElement} canvas - Canvas to scope mouse/context-menu handling to.
+     * @param {HTMLCanvasElement} canvas - Canvas to scope mouse handling to; its parent (#viewport) scopes context-menu handling.
      */
     constructor(canvas) {
         this._initState();
@@ -48,13 +48,13 @@ export class InputHandler {
     }
 
     /**
-     * @param {HTMLCanvasElement} canvas - Canvas to scope mouse/context-menu handling to.
+     * @param {HTMLCanvasElement} canvas - Canvas to scope mouse handling to; its parent (#viewport) scopes context-menu handling.
      */
     _registerListeners(canvas) {
         window.addEventListener('keydown', this._onKeyDown);
         window.addEventListener('keyup', this._onKeyUp);
         canvas.addEventListener('mousedown', this._onMouseDown);
-        document.addEventListener('contextmenu', this._onContextMenu);
+        canvas.parentElement.addEventListener('contextmenu', this._onContextMenu);
         window.addEventListener('blur', this._releaseAllActions);
         document.addEventListener('visibilitychange', this._onVisibilityChange);
     }

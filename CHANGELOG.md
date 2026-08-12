@@ -4,6 +4,11 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.18.1] - 2026-08-13
+
+### Fixed
+- 0.18.0's context-menu fix scoped the suppression to the whole `document`, which also blocked right-clicking anywhere on the page to open the browser's own DevTools - narrowed to `#viewport` (the wrapper around the canvas and `#ui-overlay` in `index.html`) instead, so touch-control buttons still get the fix without the page's DevTools access outside the game area breaking (`InputHandler.js`).
+
 ## [0.18.0] - 2026-08-12
 
 ### Added
