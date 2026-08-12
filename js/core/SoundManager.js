@@ -1,10 +1,8 @@
 export class SoundManager {
     /**
      * Web Audio GainNode hierarchy: Master -> Music/SFX/Ambience. Each bus's
-     * gain is the player-facing volume control (the Settings panel writes
-     * here); music additionally layers a per-track gain on top of the bus so
-     * playMusic() can crossfade between tracks (e.g. level loop -> boss
-     * track) without touching the bus volume itself.
+     * gain is the player-facing volume control; music additionally layers a
+     * per-track gain on top for crossfading.
      */
     constructor() {
         this.context = new (window.AudioContext || window.webkitAudioContext)();
@@ -41,8 +39,7 @@ export class SoundManager {
 
     /**
      * Fetches and decodes an audio file, storing it under a key for
-     * playback. Missing/corrupt files are logged and skipped rather than
-     * thrown, so one broken asset can't take down the rest of the game's audio.
+     * playback. Missing/corrupt files are logged and skipped rather than thrown.
      * @param {string} key - Identifier used by playMusic()/playSfx().
      * @param {string} src - URL/path to the audio file.
      */
@@ -70,9 +67,7 @@ export class SoundManager {
     }
 
     /**
-     * Resumes the AudioContext. Browsers create it suspended until a user
-     * gesture; call this from the same gesture handler LoadingState uses
-     * to apply the fullscreen preference.
+     * Resumes the AudioContext. Browsers create it suspended until a user gesture.
      */
     resume() {
         if (this.context.state === 'suspended') this.context.resume();
@@ -93,9 +88,7 @@ export class SoundManager {
 
     /**
      * Crossfades from whatever's currently playing on the Music bus into a
-     * new track (e.g. ambient playlist entry -> boss track). Non-looping
-     * tracks (loop: false) fire onEnded when they finish, which is how
-     * MusicPlaylist chains one track into the next.
+     * new track. Non-looping tracks (loop: false) fire onEnded when they finish.
      * @param {string} key - Key a track was loaded under.
      * @param {object} [options]
      * @param {number} [options.fadeSeconds=1] - Crossfade duration, in seconds.
@@ -110,9 +103,7 @@ export class SoundManager {
     }
 
     /**
-     * Fades out and stops whatever's currently playing on the Music bus,
-     * without starting a replacement (e.g. before a boss track that gets
-     * played through the SFX-style one-off path instead).
+     * Fades out and stops whatever's currently playing on the Music bus, without starting a replacement.
      * @param {number} [fadeSeconds=1] - Fade-out duration, in seconds.
      */
     stopMusic(fadeSeconds = 1) {
@@ -156,9 +147,8 @@ export class SoundManager {
     }
 
     /**
-     * Sets a bus's overall volume (player-facing, persisted via Settings).
-     * Silently remembered but not applied to Master while muted, so
-     * unmuting later restores exactly this value.
+     * Sets a bus's overall volume. While muted, changes to Master are
+     * remembered but not applied.
      * @param {'master'|'music'|'sfx'|'ambience'} bus - Which bus to adjust.
      * @param {number} value - Slider position, 0 (silent) to 1 (full volume).
      */
@@ -179,12 +169,8 @@ export class SoundManager {
     }
 
     /**
-     * Converts a slider position (linear, 0-1) into actual gain. Human
-     * hearing perceives loudness roughly logarithmically, so a raw linear
-     * gain makes the upper half of the slider sound almost uniformly loud
-     * and squeezes all the useful range into the bottom quarter. Squaring
-     * the value tapers it closer to perceived loudness (e.g. a 50% slider
-     * position becomes 25% actual gain).
+     * Converts a linear slider position (0-1) into actual gain, squared to
+     * taper it closer to perceived loudness.
      * @param {number} sliderValue - Slider position, 0 to 1.
      * @returns {number} Actual linear gain to apply to a GainNode.
      */

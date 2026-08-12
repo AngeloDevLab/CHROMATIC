@@ -38,9 +38,7 @@ export class DeathSequence {
 
     /**
      * @param {number} dt - Elapsed time in seconds.
-     * @returns {boolean} True exactly once, the frame the fade-out
-     *   completes - GameState opens the Game Over panel on that edge
-     *   instead of every frame after.
+     * @returns {boolean} True exactly once, the frame the fade-out completes.
      */
     update(dt) {
         this.elapsed += dt;

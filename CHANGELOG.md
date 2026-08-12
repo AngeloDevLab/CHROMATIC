@@ -4,6 +4,23 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.18.0] - 2026-08-12
+
+### Added
+- Health/Shield icons on the in-level HUD (`assets/icons/health-icon.png`/`shield-icon.png`), clipping into the left edge of each bar so the two stay identifiable at a glance instead of relying on bar position alone (`HUD.js`, `LevelSessionSetup.js`, `style.css`).
+- How to Play: new "Health & Prisma" section explaining the two resource bars (Prisma absorbs hits and regenerates over time; only overflow damage reaches Health) - `HowToPlayPanel.js`, `docs/GDD/07_ui-hud.md` 8.1 updated to match.
+
+### Fixed
+- iOS Safari's long-press callout menu (copy/share sheet) wasn't suppressed anywhere outside the canvas's own `contextmenu` handler - added `-webkit-touch-callout: none`/`user-select: none` globally (`style.css`).
+- Context-menu suppression was scoped only to the canvas, so right-clicking/long-pressing a touch-control button (which lives in `#ui-overlay`, outside the canvas) still opened the browser's menu - moved the listener to `document` (`InputHandler.js`).
+- `LandscapeGate` only checked touch capability once at construction, so toggling DevTools' device-mode emulation after the page had already loaded was silently never picked up (worked fine on a real device, and after a hard reload) - now re-checks on every resize/orientationchange instead.
+- Every `<button>` in the game showed the browser's default focus outline and mobile tap-highlight flash on click (`style.css`'s new global `button { outline: none; -webkit-tap-highlight-color: transparent; }` - existing `:hover`/`:focus-visible` styles still provide the intended feedback).
+- Unrevealed (grey) world was rendered too close to true black to read on an OLED display - `greyBrightness` raised from 0.15 to 0.3 (`LevelSessionSetup.js`, `MenuState.js`, `WorldmapState.js`).
+
+### Changed
+- Full JSDoc/comment pass across all 79 JS files following external code-review feedback that JSDoc blocks were reading as complete prose explanations instead of short "what" statements: trimmed per-function JSDoc down to a factual description plus `@param`/`@returns`, relocating genuinely load-bearing "why" context (hidden invariants, workarounds) into each file's existing top-of-file comment block instead of repeating it near individual functions, and cutting anything that didn't clear that bar rather than just shortening it.
+- Follow-up function-length pass (~14-line convention) on functions that either grew past the limit during the above or were flagged separately: `Wraith._updateState()`'s switch-case split into one method per state, `ColorZone.darken()`/`_punch()` deduplicated via a shared `_buildPunchGradient()`, `Level.drawLayer()`, `SpriteAnimation.update()`, `Collision._resolveRising()`, `Combat._resolveEnemyContact()`/`resolveEnemyProjectileHits()`, `LevelSession._updateWorld()`, `LevelSessionRenderer._renderWorld()`, `LevelSessionSetup.initInteractablesAndHud()`, `Player.update()`, `PlayerMovement.update()`/`_updateHorizontalVelocity()`/`_updateAnimationState()`, `Boss._renderBossFrame()`, `Charger._updateChargeMovement()`, `InputHandler._onKeyDown()`, and the constructors/`updatePrompt()` methods of `PortalInteractable`/`SecretDoorInteractable`/`InteractPrompt`.
+
 ## [0.17.4] - 2026-08-12
 
 ### Changed

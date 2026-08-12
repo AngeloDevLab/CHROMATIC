@@ -3,21 +3,17 @@ import { Panel } from '../ui/Panel.js';
 import { buildSettingsBody, wireSettingsPanel } from '../ui/SettingsPanel.js';
 import { HowToPlayPanel } from '../ui/HowToPlayPanel.js';
 
-// Pushed on top of whatever's currently running (GameState/BossState, see
-// StateMachine.js's push()/pop()) rather than replacing it - the state
-// underneath keeps its own entities/timers exactly as they were and keeps
-// rendering its last frame behind this panel, only this state's update()
-// runs while it's current. The top-level Paused choices stay
-// non-dismissible (no backdrop/×/Panel-Escape) - Escape here always means
-// "unpause", handled explicitly below via pop() instead of Panel's own
-// window-level Escape listener (see Panel.open()'s closeOnEscape doc for
-// why that avoids a double-reaction). Settings (_openSettings()) reuses the
-// same Panel instance and the same content/wiring as MenuState's own
-// Settings (SettingsPanel.js) - dismissible via ×/backdrop back to the
-// Paused choices (onClose), but closeOnEscape: false too, so Escape still
-// only ever means "fully unpause" via update() below, never "go back one
-// level" - one Escape behavior for the whole state, no race between Panel's
-// own listener and this state's.
+// Pushed on top of whatever's currently running (GameState/BossState)
+// rather than replacing it - the state underneath keeps its own
+// entities/timers exactly as they were and keeps rendering its last frame
+// behind this panel; only this state's update() runs while it's current.
+//
+// The top-level Paused choices stay non-dismissible - Escape here always
+// means "unpause", handled explicitly via pop() below instead of Panel's
+// own window-level Escape listener (see Panel.open()'s closeOnEscape doc).
+// Settings (_openSettings()) reuses the same closeOnEscape: false, so
+// Escape always means "fully unpause", never "go back one level" - one
+// Escape behavior for the whole state, no race with Panel's own listener.
 export class PauseState extends State {
     /**
      * Opens the Panel with the initial Paused choices.
@@ -55,10 +51,9 @@ export class PauseState extends State {
     }
 
     /**
-     * silent: this exits regardless of whether Settings or the Paused
-     * choices are currently showing - Settings' own onClose (Panel.js) is
-     * only meant for a normal ×/backdrop dismiss back to the choices, not
-     * for the whole state tearing down (see Panel.close()'s comment).
+     * silent: true so exit doesn't trigger Settings' own onClose, which is
+     * only meant for a normal dismiss back to the Paused choices, not a
+     * full teardown.
      */
     exit() {
         this.panel.close({ silent: true });

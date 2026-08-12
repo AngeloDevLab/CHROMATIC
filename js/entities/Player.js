@@ -6,9 +6,8 @@ import { DoubleJumpAbility } from './DoubleJumpAbility.js';
 import { DashAbility } from './DashAbility.js';
 
 /**
- * Sprite frames carry transparent padding around the character, so the
- * collision hitbox is intentionally narrower than the full render size -
- * matches the previous 32x64 footprint (10_technical-architecture.md 11.7.2).
+ * Collision hitbox, intentionally narrower than the full render size due to
+ * sprite padding (10_technical-architecture.md 11.7.2).
  */
 const HITBOX_WIDTH = 32;
 const HITBOX_HEIGHT = 64;
@@ -20,9 +19,8 @@ const HITBOX_HEIGHT = 64;
 const ATTACK_IMPACT_FRAME = 4;
 
 /**
- * How long a knockback push overrides normal horizontal control - without
- * this the accel/decel movement code would immediately pull vx back toward
- * whatever's held, making the hit invisible.
+ * How long a knockback push overrides normal horizontal control; without it,
+ * the accel/decel movement code would immediately pull vx back.
  */
 const KNOCKBACK_LOCK_SECONDS = 0.15;
 
@@ -32,12 +30,13 @@ const KNOCKBACK_LOCK_SECONDS = 0.15;
 // keyboard play, see enableControl()/PlayerMovement.js's update()).
 // Health/Shield/buff bookkeeping, the sprite-drawing pipeline, and the real
 // keyboard-movement logic live on composed sub-objects (PlayerHealth.js/
-// PlayerRenderer.js/PlayerMovement.js) instead of here - most of the getters
-// below are thin delegates so external callers can keep reading
-// player.health/shield/dead/godmode/visualTopY directly. grounded/attacking/
-// coyoteTimer/etc. stay as plain fields on Player itself rather than moving
-// onto PlayerMovement, since PlayerFx.js/DashAbility.js already read/write
-// player.grounded/player.attacking/player.pendingVfx directly.
+// PlayerRenderer.js/PlayerMovement.js); most getters below are thin
+// delegates onto those.
+//
+// pendingVfx is a mailbox (same pattern as Wraith.js's pendingProjectile),
+// drained every frame by LevelSession's _drainPlayerVfx(). _wasGrounded
+// tracks the previous frame's grounded state and starts `null` rather than
+// `false`, so the level's first resolve() doesn't read as a landing.
 export class Player extends Entity {
     /**
      * @param {number} x
@@ -60,12 +59,7 @@ export class Player extends Entity {
     }
 
     /**
-     * pendingVfx mailbox (same pattern as Wraith.js's pendingProjectile) -
-     * drained every frame by LevelSession's _drainPlayerVfx(). _wasGrounded
-     * tracks the previous frame's grounded state so PlayerMovement.js's
-     * update() can detect the airborne->grounded edge for the landing effect - starts
-     * `null` (unknown) rather than `false`, so the level's very first
-     * resolve() (spawning already on the ground) doesn't read as a landing.
+     * Initializes the pendingVfx mailbox and landing-edge tracking state.
      */
     _initVfxState() {
         this.pendingVfx = [];
@@ -127,11 +121,9 @@ export class Player extends Entity {
     }
 
     /**
-     * Called by the real Merchant shop (Interactables.js's _buyAbility()) on
-     * a successful purchase, and by js/ui/DevPanel.js's Double Jump/Dash
-     * buttons for free as a testing shortcut. One-way, like a real purchase
-     * (no re-lock) - idempotent, so LevelSession can call this every frame
-     * off Game.abilities without tracking what's already applied.
+     * Called by the Merchant shop on a successful purchase, and by
+     * DevPanel.js's ability buttons as a free testing shortcut. One-way (no
+     * re-lock) and idempotent.
      * @param {'doubleJump'|'dash'} id
      */
     unlockAbility(id) {
@@ -145,8 +137,8 @@ export class Player extends Entity {
     }
 
     /**
-     * Plays the one-shot fall animation instead of instantly cutting to
-     * GameState's ghost-rise - deathAnimationFinished gates when that's allowed to start.
+     * Plays the one-shot fall animation; deathAnimationFinished gates when
+     * GameState's ghost-rise is allowed to start.
      */
     _enterDeathAnimation() {
         if (this.animations.dead) {
@@ -172,8 +164,7 @@ export class Player extends Entity {
     }
 
     /**
-     * Getting hit shoves the player back briefly instead of damage just
-     * being a number - see Combat.js callers.
+     * Applies a brief knockback push (see Combat.js callers).
      * @param {number} vx
      */
     applyKnockback(vx) {
@@ -228,9 +219,7 @@ export class Player extends Entity {
     }
 
     /**
-     * Real keyboard-driven movement (Run/Jump/Drop Through Platform), used by
-     * GameState. jumpSpeed 379 (up from 360) gives ~10px of extra apex
-     * margin over the fixed-timestep fix (Game.js), for level geometry close to the old ceiling.
+     * Real keyboard-driven movement (Run/Jump/Drop Through Platform), used by GameState.
      * @param {InputHandler} input
      * @param {Collision} collision
      * @param {{moveSpeed?:number, jumpSpeed?:number, gravity?:number}} [options]
@@ -256,7 +245,14 @@ export class Player extends Entity {
         }
 
         this.healthState.tickInvincibility(dt);
+        this._updateMovementMode(dt);
+        this.animations[this.currentAnimation]?.update(dt);
+    }
 
+    /**
+     * @param {number} dt
+     */
+    _updateMovementMode(dt) {
         if (this.autopilot) {
             this._updateAutopilot();
             super.update(dt);
@@ -265,8 +261,6 @@ export class Player extends Entity {
         } else if (this.freeRun) {
             super.update(dt);
         }
-
-        this.animations[this.currentAnimation]?.update(dt);
     }
 
     /**

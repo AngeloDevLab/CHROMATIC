@@ -16,38 +16,25 @@ import {
 } from './WraithConstants.js';
 
 // Wraith of the Shifting Sands (Lvl 3 Miniboss) - also the shared base
-// moveset WraithTemplateboss.js (Lvl 6, Wraith of the Grey City) extends
+// moveset WraithTemplateboss.js (Lvl 6, Wraith of the Grey City) extends,
 // per 05_enemies-bosses.md 6.3.1.
 //
 // State machine, one state per sprite clip (see LoadingState.js's
-// 'boss-wraith-*' keys) - each clip has its own drawn end pose rather than
-// looping back to a neutral frame:
-//   idle (loop, at ground level) -> toFiring (rises the arena's full height
-//   to the top edge, one-shot) -> firing (static pose at the top, beam
-//   starts here) -> toVulnerable (glides back down to ground level while
-//   STILL firing - the beam tracks the wraith's position the whole way down,
-//   see _activeBeam/WraithBeam.track(), only expiring once it lands) ->
-//   vulnerable (static pose at ground level, double damage window) ->
-//   toIdle (no vertical movement - same ground level as vulnerable, just a
-//   pose morph, one-shot) -> walking (horizontal glide to the arena's other
-//   fixed side, idle animation looping, facing = travel direction) -> idle
-//   (arrived, faces the player, counts down to the next attack), repeat.
-// Idle and vulnerable deliberately share the same height - the wraith is
-// grounded except for the trip up top to fire.
-// Phase 2 (Boss.js's `enraged`, HP <= 50%) doesn't add a new state, just
-// shortens the three hold timers (via `timeScale`) and speeds up the walk
-// (via its own dedicated value) - matches the GDD's "same moveset repeats
-// faster, no new attack type".
+// 'boss-wraith-*' keys):
+//   idle (loop, ground level) -> toFiring (rises to the top edge) ->
+//   firing (static pose at the top, beam starts) -> toVulnerable (glides
+//   back down while still firing) -> vulnerable (static pose at ground
+//   level, double damage window) -> toIdle (pose morph, no movement) ->
+//   walking (glide to the arena's other fixed side) -> idle (repeat).
+//
+// Phase 2 (Boss.js's `enraged`, HP <= 50%) shortens the three hold timers
+// (via `timeScale`) and speeds up the walk (via its own dedicated value).
 export class Wraith extends Boss {
     /**
      * @param {number} x - World X spawn position.
      * @param {number} y - World Y spawn position (Tiled's EnemySpawn row).
      * @param {Collision} collision - Level collision, for ground/wall scans.
      * @param {Player} player - Tracked to face/aim at.
-     * signatureHitDamage is an instance property, not just the module
-     * const, so WraithTemplateboss.js can overwrite it post-super() the
-     * same way it overwrites hp/maxHp/contactDamage/name - 05_enemies-bosses.md
-     * 6.5's Templateboss row uses a different "Signature Hit Damage" than the Miniboss.
      */
     constructor(x, y, collision, player) {
         super(x, y, null, WRAITH_WIDTH, WRAITH_HEIGHT);
@@ -74,7 +61,6 @@ export class Wraith extends Boss {
         this.currentAnimation = 'idle';
         this._stateTimer = ATTACK_INTERVAL_SECONDS;
         this.y = this._groundY;
-
         this._transitionFromY = this._groundY;
         this._transitionToY = this._groundY;
         this._transitionElapsed = 0;
@@ -82,17 +68,7 @@ export class Wraith extends Boss {
     }
 
     /**
-     * LevelSession's mailbox for a newly-fired beam - same pattern as
-     * Shooter.js's pendingProjectile, drained into its own enemyProjectiles
-     * pool right after enemy.update() every frame. `_activeBeam` is a
-     * separate, own reference to that same beam (LevelSession clears the
-     * mailbox the instant it drains it) - needed so update() can keep
-     * calling track() on it for as long as the wraith is still firing/
-     * descending, cleared once it lands (_enterVulnerable()) or the instant
-     * Combat.js kills it on a hit. `pendingRoomDarken` is LevelSession's
-     * mailbox for "desaturate the whole boss room except around the
-     * player" (session decision) - Wraith doesn't touch ColorZone.js
-     * directly.
+     * Resets the beam/room-darken mailbox.
      */
     _initBeamMailbox() {
         this.pendingProjectile = null;
@@ -126,13 +102,7 @@ export class Wraith extends Boss {
     }
 
     /**
-     * "Während er feuert geht er wieder runter" - the beam keeps following
-     * the wraith's own position for as long as it's still alive, regardless
-     * of which state is currently active. Passes both coordinates
-     * unconditionally (WraithBeam.track()'s own job to decide which one its
-     * axis actually cares about) - harmless no-op for a horizontal beam
-     * whose source X is fixed at fire time, but what makes
-     * WraithTemplateboss's vertical sweep track its own moving column.
+     * Keeps the active beam following the wraith's position, if it's still alive.
      */
     _trackActiveBeam() {
         if (this._activeBeam && !this._activeBeam.dead) {
@@ -141,18 +111,7 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Faces the player ("dreht sich um Richtung Spieler") whenever it's not
-     * actively committed to firing (toFiring/firing/toVulnerable - the beam
-     * is live and tracking during all three, see _trackActiveBeam()) or
-     * mid-walk (facing there is travel direction instead, set once in
-     * _enterWalking() - a walking mob faces where it's going, not where the
-     * player is). Deliberately not scoped to just 'idle' - the player
-     * naturally crosses to the wraith's other side during vulnerable/toIdle
-     * too (running over to melee it), so facing needs to keep turning
-     * through those states as well. 'firingSweep' (WraithTemplateboss only,
-     * never entered by this base class) counts as traveling too - it's a
-     * crossing like 'walking', so facing is the crossing direction, not
-     * the player.
+     * Turns to face the player, except while committed to firing or traveling.
      */
     _updateFacing() {
         const committed = this.state === 'toFiring' || this.state === 'firing' || this.state === 'toVulnerable';
@@ -163,48 +122,74 @@ export class Wraith extends Boss {
     }
 
     /**
-     * The state machine dispatch itself - kept as one table rather than
-     * split per-state, since jumping between seven near-trivial methods
-     * would read worse than the cycle laid out in one place (see the class
-     * comment above for the full idle->...->idle sequence this drives).
-     * `default` is an extension point only - this base class never enters
-     * any other state; WraithTemplateboss.js's 'firingSweep' lands there.
+     * State machine dispatch (see the class comment above for the full
+     * sequence). `default` is reachable only via subclasses;
+     * WraithTemplateboss.js's 'firingSweep' lands there.
      * @param {number} dt
      * @param {SpriteAnimation} [anim] - The currently playing clip, if animations are wired up.
      */
     _updateState(dt, anim) {
         switch (this.state) {
-            case 'idle':
-                this._stateTimer -= dt;
-                if (this._stateTimer <= 0) this._enterTransition('toFiring', this._groundY, this._topY);
-                break;
-            case 'toFiring':
-                this._updateTransitionMove(dt);
-                if (anim?.finished) this._onRiseComplete();
-                break;
-            case 'firing':
-                this._stateTimer -= dt;
-                if (this._stateTimer <= 0) this._enterTransition('toVulnerable', this._topY, this._groundY);
-                break;
-            case 'toVulnerable':
-                this._updateTransitionMove(dt);
-                if (anim?.finished) this._enterVulnerable();
-                break;
-            case 'vulnerable':
-                this._stateTimer -= dt;
-                if (this._stateTimer <= 0) this._enterTransition('toIdle', this._groundY, this._groundY);
-                break;
-            case 'toIdle':
-                this._updateTransitionMove(dt);
-                if (anim?.finished) this._enterWalking();
-                break;
-            case 'walking':
-                this._updateWalk(dt);
-                break;
-            default:
-                this._updateCustomState(dt, anim);
-                break;
+            case 'idle': this._updateIdleState(dt); break;
+            case 'toFiring': this._updateToFiringState(dt, anim); break;
+            case 'firing': this._updateFiringState(dt); break;
+            case 'toVulnerable': this._updateToVulnerableState(dt, anim); break;
+            case 'vulnerable': this._updateVulnerableState(dt); break;
+            case 'toIdle': this._updateToIdleState(dt, anim); break;
+            case 'walking': this._updateWalk(dt); break;
+            default: this._updateCustomState(dt, anim); break;
         }
+    }
+
+    /**
+     * @param {number} dt
+     */
+    _updateIdleState(dt) {
+        this._stateTimer -= dt;
+        if (this._stateTimer <= 0) this._enterTransition('toFiring', this._groundY, this._topY);
+    }
+
+    /**
+     * @param {number} dt
+     * @param {SpriteAnimation} [anim]
+     */
+    _updateToFiringState(dt, anim) {
+        this._updateTransitionMove(dt);
+        if (anim?.finished) this._onRiseComplete();
+    }
+
+    /**
+     * @param {number} dt
+     */
+    _updateFiringState(dt) {
+        this._stateTimer -= dt;
+        if (this._stateTimer <= 0) this._enterTransition('toVulnerable', this._topY, this._groundY);
+    }
+
+    /**
+     * @param {number} dt
+     * @param {SpriteAnimation} [anim]
+     */
+    _updateToVulnerableState(dt, anim) {
+        this._updateTransitionMove(dt);
+        if (anim?.finished) this._enterVulnerable();
+    }
+
+    /**
+     * @param {number} dt
+     */
+    _updateVulnerableState(dt) {
+        this._stateTimer -= dt;
+        if (this._stateTimer <= 0) this._enterTransition('toIdle', this._groundY, this._groundY);
+    }
+
+    /**
+     * @param {number} dt
+     * @param {SpriteAnimation} [anim]
+     */
+    _updateToIdleState(dt, anim) {
+        this._updateTransitionMove(dt);
+        if (anim?.finished) this._enterWalking();
     }
 
     /**
@@ -214,21 +199,15 @@ export class Wraith extends Boss {
     _updateCustomState(dt, anim) {}
 
     /**
-     * Reached the top of toFiring's rise - the Miniboss always fires
-     * horizontally; WraithTemplateboss.js overrides this to roll an axis
-     * first (05_enemies-bosses.md 6.3.1's "either/or... never both at once").
+     * Reached the top of toFiring's rise - fires horizontally.
+     * WraithTemplateboss.js overrides this to roll an axis first.
      */
     _onRiseComplete() {
         this._enterFiring('horizontal');
     }
 
     /**
-     * Grounded except for the trip up top to fire (session decision) -
-     * never affected by contact/melee/ranged knockback, unlike the regular
-     * roster. Functionally already inert (nothing in this class ever
-     * applies `vx` to position), but overridden explicitly so that stays
-     * true on purpose rather than by accident if Boss.js ever grows real
-     * vx-based movement.
+     * No-op - the wraith is never affected by knockback.
      */
     applyKnockback() {}
 
@@ -241,13 +220,7 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Shared entry for all three one-shot glides - `telegraphing` (Boss.js's
-     * placeholder tint, harmless once real art is wired) only lights up for
-     * toFiring, the actual "no instant/unreactable hits" windup. Clears
-     * `vulnerable` here already for toIdle, not left for _enterIdle() - the
-     * window should end the moment it starts getting up, not linger through
-     * the pose morph and the entire walk back (often several seconds) still
-     * reading as double damage.
+     * Shared entry for all three one-shot glides (toFiring/toVulnerable/toIdle).
      * @param {'toFiring'|'toVulnerable'|'toIdle'} state
      * @param {number} fromY
      * @param {number} toY
@@ -265,11 +238,9 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Linear glide over the clip's own playback duration, not a separate
-     * speed constant - so the position always finishes exactly as the
-     * animation does, regardless of how the FPS constants get tuned. A
-     * no-op when fromY === toY (toIdle - see the class comment above), the
-     * interpolation just holds steady while the pose morphs.
+     * Linear glide over the clip's own playback duration rather than a
+     * fixed speed constant. A no-op when fromY === toY (toIdle), holding
+     * position steady while the pose morphs.
      * @param {number} dt
      */
     _updateTransitionMove(dt) {
@@ -279,12 +250,7 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Beam starts firing the instant the rise finishes and the firing pose
-     * is reached, then keeps firing all the way through the toVulnerable
-     * descent (update()'s _trackActiveBeam(), see the class comment above)
-     * until it lands. Also kicks off the room-darken (see
-     * _initBeamMailbox()'s pendingRoomDarken) at the same instant firing
-     * starts.
+     * Fires the beam and kicks off the room-darken.
      * @param {'horizontal'|'vertical'} [axis='horizontal'] - Only 'horizontal' is reachable from this base class; WraithTemplateboss.js's _onRiseComplete() is the only caller that ever passes 'vertical'.
      */
     _enterFiring(axis = 'horizontal') {
@@ -302,11 +268,8 @@ export class Wraith extends Boss {
     }
 
     /**
-     * "Unten angekommen sollte er dann angreifbar werden" - landing cuts
-     * the beam off explicitly (it has no self-expiry of its own, see
-     * WraithBeam.js) rather than leaving it to fizzle out on its own later.
-     * Boss.takeDamage() reads `this.vulnerable` directly - this is the only
-     * place that flips it on (see _enterIdle() below for off).
+     * Ends the active beam and enters the vulnerable state. The only place
+     * that sets `vulnerable = true` (Boss.takeDamage() reads it directly).
      */
     _enterVulnerable() {
         if (this._activeBeam) {
@@ -321,11 +284,8 @@ export class Wraith extends Boss {
     }
 
     /**
-     * "Seitenwechsel" - heads for whichever of the two fixed anchors it's
-     * not currently on. Faces the walk direction (not the player - see
-     * _updateFacing()'s `committed` check), same as a regular walking mob.
-     * Reuses the idle animation on loop instead of a dedicated walk clip
-     * (session decision - no such asset exists).
+     * Heads for whichever of the two fixed anchors it isn't currently on,
+     * facing the walk direction. Reuses the idle animation (no dedicated walk clip).
      */
     _enterWalking() {
         this.state = 'walking';
@@ -336,8 +296,7 @@ export class Wraith extends Boss {
 
     /**
      * X-interpolation toward _walkTargetX, shared by 'walking' and (via
-     * WraithTemplateboss.js's _updateCustomState()) 'firingSweep' - only
-     * what happens on arrival differs between the two, see _onArrived().
+     * WraithTemplateboss.js) 'firingSweep' - only arrival behavior differs, see _onArrived().
      * @param {number} dt
      */
     _updateWalk(dt) {
@@ -363,9 +322,7 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Arrived at the target side - back to the regular idle/attack cycle,
-     * vulnerability window fully closed (see _enterTransition()'s own note
-     * on why it's actually cleared earlier, at toIdle).
+     * Arrived at the target side - resumes the regular idle/attack cycle.
      */
     _enterIdle() {
         this.y = this._groundY;

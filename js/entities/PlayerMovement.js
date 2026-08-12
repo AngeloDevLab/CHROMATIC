@@ -1,8 +1,6 @@
 /**
  * Coyote time: how long after walking off a ledge a jump still counts as
- * grounded. Jump buffering: how long an early jump press still fires once
- * grounded. Both mask the single-frame window a rigid grounded-check would
- * otherwise need, which reads as unresponsive on a keyboard.
+ * grounded. Jump buffering: how long an early jump press still fires once grounded.
  */
 const COYOTE_TIME_SECONDS = 0.1;
 const JUMP_BUFFER_SECONDS = 0.12;
@@ -16,7 +14,7 @@ const SHORT_HOP_VY_FRACTION = 0.45;
 
 /**
  * Movement feel: ramps vx toward the target speed instead of snapping
- * instantly. Deceleration is faster than acceleration so stopping still reads as responsive.
+ * instantly. Deceleration is faster than acceleration.
  */
 const ACCELERATION = 1800;
 const DECELERATION = 2600;
@@ -50,13 +48,13 @@ function moveToward(current, target, maxDelta) {
 }
 
 // Player's real keyboard-driven movement (Run/Jump/Drop Through Platform/
-// Attack-locks-movement), composed onto Player as this.movement rather than
-// mixed into its mode-dispatch/health/render state - same shape as
-// PlayerRenderer.js: holds a `player` reference and reads/writes that
-// instance's own fields directly (grounded/attacking/coyoteTimer/etc. stay
-// on Player itself, e.g. PlayerFx.js/DashAbility.js already read/write
-// player.grounded/player.attacking directly) rather than owning a second,
-// parallel copy of that state.
+// Attack-locks-movement), composed onto Player as this.movement - holds a
+// `player` reference and reads/writes that instance's own fields directly.
+//
+// Jump sequencing: _tryGroundJump() runs before _tryDoubleJump() each frame,
+// so the two never both fire on the same frame. Walking off a ledge without
+// jumping lets the next mid-air press fire as the "double" jump even
+// without a first one - intentional, the usual one-bonus-airborne-jump convention.
 export class PlayerMovement {
     /**
      * @param {Player} player
@@ -74,24 +72,38 @@ export class PlayerMovement {
         this._handleAttackInput();
 
         const groundedAttack = player.attacking && player.grounded;
-        this._updateJumpTimers(dt);
-        player.dash.update(dt, player);
-        this._updateHorizontalVelocity(dt, groundedAttack);
-        this._applyGravityAndJump(dt);
-        this._updateDropThrough();
-
-        player.grounded = player.collision.resolve(player, dt);
-        if (player._wasGrounded === false && player.grounded) player.pendingVfx.push('landing');
-        player._wasGrounded = player.grounded;
-        if (player.attacking && player.animations.attack.finished) player.attacking = false;
+        this._updatePhysics(dt, groundedAttack);
+        this._resolveCollision(dt);
         this._updateAfkTimer(dt);
         this._updateAnimationState();
     }
 
     /**
+     * @param {number} dt
+     * @param {boolean} groundedAttack
+     */
+    _updatePhysics(dt, groundedAttack) {
+        this._updateJumpTimers(dt);
+        this.player.dash.update(dt, this.player);
+        this._updateHorizontalVelocity(dt, groundedAttack);
+        this._applyGravityAndJump(dt);
+        this._updateDropThrough();
+    }
+
+    /**
+     * @param {number} dt
+     */
+    _resolveCollision(dt) {
+        const player = this.player;
+        player.grounded = player.collision.resolve(player, dt);
+        if (player._wasGrounded === false && player.grounded) player.pendingVfx.push('landing');
+        player._wasGrounded = player.grounded;
+        if (player.attacking && player.animations.attack.finished) player.attacking = false;
+    }
+
+    /**
      * Only accrues while otherwise idle (grounded, not attacking, standing
-     * still) - any held movement key or one-shot press (attack/pause/
-     * interact/touch) resets it, so genuine idling is the only way in.
+     * still); any held movement key or one-shot press (attack/pause/interact/touch) resets it.
      * @param {number} dt
      */
     _updateAfkTimer(dt) {
@@ -106,9 +118,7 @@ export class PlayerMovement {
     }
 
     /**
-     * Always drains the click flag, even mid-swing or mid-air - otherwise a
-     * click arriving while unable to act would queue up and fire late once
-     * allowed, instead of simply being missed.
+     * Always drains the click flag, even mid-swing or mid-air.
      */
     _handleAttackInput() {
         const player = this.player;
@@ -120,10 +130,8 @@ export class PlayerMovement {
 
     /**
      * Coyote time: player.grounded still reflects last frame's collision
-     * result here (this frame's own resolve() happens later), so walking off
-     * a ledge doesn't instantly close the jump window. Jump buffering: a
-     * press is queued for JUMP_BUFFER_SECONDS so a tap slightly before
-     * landing still fires once grounded.
+     * result here (this frame's own resolve() happens later). Jump
+     * buffering: a press is queued for JUMP_BUFFER_SECONDS.
      * @param {number} dt
      */
     _updateJumpTimers(dt) {
@@ -136,10 +144,8 @@ export class PlayerMovement {
     }
 
     /**
-     * Attack only roots the player while grounded - airborne, physics keep
-     * running normally instead of freezing horizontal movement mid-air. A
-     * knockback push, or an active Dash burst (DashAbility.js's _trigger()
-     * sets vx/facing once, this just holds them for its duration), overrides
+     * Attack only roots the player while grounded; airborne, physics keep
+     * running normally. A knockback push or an active Dash burst overrides
      * this entirely until it expires.
      * @param {number} dt
      * @param {boolean} groundedAttack
@@ -150,20 +156,27 @@ export class PlayerMovement {
         const inKnockback = player.knockbackTimer > 0;
         const inDash = player.dash.timer > 0;
 
-        const left = !groundedAttack && player.input.isDown('left');
-        const right = !groundedAttack && player.input.isDown('right');
-        let targetVx = 0;
-        if (!inKnockback && !inDash && !groundedAttack) {
-            if (left && !right) {
-                targetVx = -player.moveSpeed;
-                player.facing = -1;
-            } else if (right && !left) {
-                targetVx = player.moveSpeed;
-                player.facing = 1;
-            }
-        }
+        const targetVx = (!inKnockback && !inDash && !groundedAttack) ? this._resolveTargetVx() : 0;
         const accelRate = targetVx === 0 ? DECELERATION : ACCELERATION;
         player.vx = (inKnockback || inDash) ? player.vx : (groundedAttack ? 0 : moveToward(player.vx, targetVx, accelRate * dt));
+    }
+
+    /**
+     * @returns {number} Target horizontal speed from held movement keys.
+     */
+    _resolveTargetVx() {
+        const player = this.player;
+        const left = player.input.isDown('left');
+        const right = player.input.isDown('right');
+        if (left && !right) {
+            player.facing = -1;
+            return -player.moveSpeed;
+        }
+        if (right && !left) {
+            player.facing = 1;
+            return player.moveSpeed;
+        }
+        return 0;
     }
 
     /**
@@ -194,16 +207,7 @@ export class PlayerMovement {
     }
 
     /**
-     * Only reached once _tryGroundJump() has already failed this frame, so
-     * this never fires within the same frame as a normal/coyote-time jump.
-     * Reuses jumpBufferTimer as the "a jump press is pending" signal
-     * (already fed by consumeJumpPress() in _updateJumpTimers()) rather than
-     * a separate raw press check - consuming it here also stops the same
-     * buffered press from replaying as a bogus extra jump the instant the
-     * player lands. Note: walking off a ledge without jumping (coyote
-     * expires with doubleJump.used still false) means the next mid-air jump
-     * press fires as the "double" jump even without a first one - intentional,
-     * the usual "one bonus airborne jump per grounded cycle" genre convention.
+     * Fires the double jump if unlocked, unused, and a jump press is buffered.
      * @returns {boolean} Whether it fired.
      */
     _tryDoubleJump() {
@@ -218,10 +222,7 @@ export class PlayerMovement {
 
     /**
      * Only if there's a real floor below to land on (Collision.hasFloorBelow,
-     * not a pit) and the current platform isn't tagged no-drop
-     * (Collision.isNoDropBelow - an intended solid path). The resolve() call
-     * right after immediately overwrites `grounded` with this frame's real
-     * result, so the nudge is the only thing that actually matters here.
+     * not a pit) and the current platform isn't tagged no-drop (Collision.isNoDropBelow).
      */
     _updateDropThrough() {
         const player = this.player;
@@ -246,26 +247,26 @@ export class PlayerMovement {
 
     /**
      * Airborne takes priority over running/idle regardless of horizontal
-     * input. Switching animations resets it, so a jump never starts mid-way
-     * through whatever frame idle/running happened to be on.
+     * input. Switching animations resets it.
      */
     _updateAnimationState() {
         const player = this.player;
-        let nextAnimation;
-        if (player.attacking) {
-            nextAnimation = 'attack';
-        } else if (!player.grounded) {
-            nextAnimation = 'jump';
-        } else if (player.vx === 0) {
-            nextAnimation = this._resolveIdleAnimation();
-        } else {
-            nextAnimation = 'running';
-        }
-
+        const nextAnimation = this._resolveNextAnimation();
         if (nextAnimation !== player.currentAnimation) {
             player.currentAnimation = nextAnimation;
             player.animations[player.currentAnimation]?.reset();
         }
+    }
+
+    /**
+     * @returns {string}
+     */
+    _resolveNextAnimation() {
+        const player = this.player;
+        if (player.attacking) return 'attack';
+        if (!player.grounded) return 'jump';
+        if (player.vx === 0) return this._resolveIdleAnimation();
+        return 'running';
     }
 
     /**

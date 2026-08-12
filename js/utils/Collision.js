@@ -1,24 +1,25 @@
+/**
+ * Resolves entity movement against a level's tile layers, axis-by-axis (X
+ * then Y) so diagonal movement into a corner isn't blocked by both axes at
+ * once. Three optional layers stack: the primary layer supports `oneWay`
+ * mode (only blocks when landed on from above, e.g. stacked walkable
+ * floors); an optional wall layer is always fully solid in every direction
+ * for real walls/ledges; an optional no-drop layer marks specific one-way
+ * platforms as exempt from Player.js's Drop-Through-Platform ability.
+ * hasFloorBelow() can't treat "any solid tile below" as a floor: this
+ * tileset's platforms are visually several tiles thick (dirt continues
+ * below the walkable surface), so it first skips the current platform's
+ * own contiguous solid mass before scanning the gap below for a genuine
+ * next floor.
+ */
 export class Collision {
     /**
      * @param {Level} level - Level whose tile layers to collide against.
      * @param {string} [layerName='Terrain/Collision'] - Primary collision layer name.
      * @param {object} [options]
-     * @param {boolean} [options.oneWay=false] - The primary layer only blocks when the
-     *   entity falls onto it from above (previous frame's bottom edge was at/above the
-     *   tile's surface) - jumping into it from below, or moving into it sideways, passes
-     *   straight through. Matches a level built from several stacked walkable floors
-     *   rather than solid walls (no separate "Platforms" layer needed).
-     * @param {string|null} [options.wallLayerName=null] - Optional second layer that's
-     *   always fully solid in every direction regardless of `oneWay` - the terrain
-     *   tileset also includes vertical wall/ledge faces that should block sideways
-     *   movement, which the one-way primary layer deliberately never does. Tolerates a
-     *   level that doesn't have this layer yet, same as the primary one - opt-in per
-     *   level as it gets painted in Tiled.
-     * @param {string|null} [options.noDropLayerName=null] - Optional third layer marking
-     *   specific one-way platforms as exempt from Player.js's Drop-Through-Platform
-     *   ability (see isNoDropBelow()) - still a normal landable-from-above one-way floor
-     *   otherwise. Needed once a level relies on specific platforms staying put (Lvl 4/5's
-     *   gimmick/secret layouts).
+     * @param {boolean} [options.oneWay=false] - Whether the primary layer only blocks from above.
+     * @param {string|null} [options.wallLayerName=null] - Optional always-solid wall layer.
+     * @param {string|null} [options.noDropLayerName=null] - Optional drop-exempt platform layer.
      */
     constructor(level, layerName = 'Terrain/Collision', { oneWay = false, wallLayerName = null, noDropLayerName = null } = {}) {
         this.level = level;
@@ -39,11 +40,10 @@ export class Collision {
     }
 
     /**
-     * Wall-layer-only check (Boss.js/WraithBeam.js) - deliberately excludes
-     * the one-way terrain layer isSolidAt() also checks, since a boss beam
-     * should only be blocked by real walls (05_enemies-bosses.md 6.3.1's
-     * "vertical wall segments... block the beam"), not by a horizontal
-     * platform it's flying past at the same height.
+     * Wall-layer-only check (Boss.js/WraithBeam.js) - deliberately excludes the
+     * one-way terrain layer isSolidAt() also checks, so a boss beam is only
+     * blocked by real walls (05_enemies-bosses.md 6.3.1), not by a platform it's
+     * flying past at the same height.
      * @param {number} pxX - World X, pixels.
      * @param {number} pxY - World Y, pixels.
      * @returns {boolean} Whether the wall layer is solid here.
@@ -87,10 +87,9 @@ export class Collision {
     }
 
     /**
-     * Keeps the entity inside the level's pixel width regardless of
-     * `oneWay` - one-way terrain deliberately never blocks sideways
-     * movement (see _resolveX()), so without this the player could walk
-     * straight past the level's left/right edge into the void.
+     * Keeps the entity inside the level's pixel width regardless of `oneWay` -
+     * one-way terrain never blocks sideways movement, so without this the
+     * player could walk straight past the level edge into the void.
      * @param {Entity} entity - Entity to clamp.
      */
     _clampToLevelX(entity) {
@@ -124,9 +123,8 @@ export class Collision {
     }
 
     /**
-     * The one-way primary layer never blocks horizontally (its whole point
-     * is to only catch a fall from above) - the wall layer, if configured,
-     * always does, regardless of `oneWay`.
+     * The one-way primary layer never blocks horizontally - only the wall
+     * layer, if configured, always does, regardless of `oneWay`.
      * @param {number} pxX - World X, pixels.
      * @param {number} yTop - Top of the entity's vertical span.
      * @param {number} yBottom - Bottom of the entity's vertical span.
@@ -192,8 +190,7 @@ export class Collision {
 
     /**
      * Rising (vy<0): the wall layer, if configured, always blocks. The
-     * one-way primary layer never blocks upward movement at all (jumping
-     * up through a platform is exactly what one-way floors are for).
+     * one-way primary layer never blocks upward movement.
      * @param {Entity} entity - Entity whose Y movement to resolve.
      * @returns {boolean} Always false - rising never counts as "standing on ground".
      */
@@ -201,18 +198,25 @@ export class Collision {
         const tileSize = this.level.tileSize;
 
         if (this.wallLayerName && this._rowSolid(this.wallLayerName, entity.y, entity.x, entity.x + entity.width)) {
-            entity.y = (Math.floor(entity.y / tileSize) + 1) * tileSize;
-            entity.vy = 0;
+            this._snapBelowTile(entity, tileSize);
             return false;
         }
 
         if (this.oneWay) return false;
 
         if (this._rowSolid(this.layerName, entity.y, entity.x, entity.x + entity.width)) {
-            entity.y = (Math.floor(entity.y / tileSize) + 1) * tileSize;
-            entity.vy = 0;
+            this._snapBelowTile(entity, tileSize);
         }
         return false;
+    }
+
+    /**
+     * @param {Entity} entity
+     * @param {number} tileSize
+     */
+    _snapBelowTile(entity, tileSize) {
+        entity.y = (Math.floor(entity.y / tileSize) + 1) * tileSize;
+        entity.vy = 0;
     }
 
     /**
@@ -246,15 +250,8 @@ export class Collision {
     }
 
     /**
-     * Drop-Through-Platform (Player.js, replaces the originally-planned
-     * Duck - 03_mechanics.md 4.2) safety check: is there an actual floor to
-     * land on below the entity's *current* platform, or would dropping
-     * through just walk it into the kill-plane/pit below? Not a naive "any
-     * solid tile below" scan - this tileset's platforms are visually
-     * several tiles thick (dirt continues below the walkable surface), so
-     * this first skips past the current platform's own contiguous solid
-     * mass, then keeps scanning the gap below that for a genuine next
-     * floor before the level ends.
+     * Checks whether a real floor exists below the entity's current
+     * platform, for the Drop-Through-Platform ability (Player.js).
      * @param {Entity} entity - Entity considering a drop.
      * @returns {boolean} Whether a real floor exists below the current platform.
      */

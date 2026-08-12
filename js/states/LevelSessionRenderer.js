@@ -31,18 +31,32 @@ export class LevelSessionRenderer {
      * Everything drawn in world (camera-translated) space, back-to-front:
      * buried enemies -> the baked level canvas -> the color mechanic ->
      * interactables/enemies/projectiles -> the player (or its death ghost).
-     * Buried enemies (Sentinel.js, not yet triggered) draw before the
-     * terrain layer so it occludes them instead of floating in front of it.
+     * Buried enemies draw before the terrain layer so it occludes them.
      * @param {CanvasRenderingContext2D} ctx
      */
     _renderWorld(ctx) {
+        this._renderBackground(ctx);
+        this._renderEntities(ctx);
+        this._renderPlayerOrGhost(ctx);
+    }
+
+    /**
+     * @param {CanvasRenderingContext2D} ctx
+     */
+    _renderBackground(ctx) {
         const session = this.session;
         for (const enemy of session.enemyRoster.enemies) {
             if (enemy.buried) enemy.render(ctx);
         }
         ctx.drawImage(session.levelCanvas, 0, 0);
         this._renderColorZone(ctx);
+    }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx
+     */
+    _renderEntities(ctx) {
+        const session = this.session;
         session.interactables.render(ctx);
         for (const enemy of session.enemyRoster.enemies) {
             if (enemy.buried) continue;
@@ -51,7 +65,13 @@ export class LevelSessionRenderer {
         }
         session.combat.render(ctx);
         session.playerFx.render(ctx);
+    }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx
+     */
+    _renderPlayerOrGhost(ctx) {
+        const session = this.session;
         if (session.deathSequence.active) {
             session.deathSequence.render(ctx);
         } else {
@@ -60,8 +80,7 @@ export class LevelSessionRenderer {
     }
 
     /**
-     * No liveGlow while dead - that would keep punching a hole open right
-     * at the death spot every frame, fighting the full-darken effect.
+     * No liveGlow while dead, to avoid punching a hole at the death spot every frame during the full-darken effect.
      * @param {CanvasRenderingContext2D} ctx
      */
     _renderColorZone(ctx) {
@@ -78,9 +97,7 @@ export class LevelSessionRenderer {
     }
 
     /**
-     * Dev Panel toggle - draws each combat-relevant entity's actual
-     * Collision/Combat box, not its usually-larger sprite frame, so hit
-     * reads line up with what's on screen.
+     * Dev Panel toggle - draws each combat-relevant entity's actual Collision/Combat box, not its usually-larger sprite frame.
      * @param {CanvasRenderingContext2D} ctx
      */
     _renderHitboxes(ctx) {
@@ -113,8 +130,7 @@ export class LevelSessionRenderer {
     }
 
     /**
-     * Player and enemy projectiles share one color - both pools are
-     * combat-relevant the same way, unlike the player/enemy split above.
+     * Player and enemy projectiles share one color.
      * @param {CanvasRenderingContext2D} ctx
      */
     _renderProjectileHitboxes(ctx) {

@@ -1,60 +1,39 @@
 import { Enemy, HIT_FLASH_SECONDS } from './Enemy.js';
 
 /**
- * 05_enemies-bosses.md 6.2.1: "hitting the weak spot during its window
- * deals bonus damage" - applies to any Boss/Templateboss subclass that
- * sets `vulnerable`, not just Wraith.js (the only one that exists yet).
+ * 05_enemies-bosses.md 6.2.1: hitting the weak spot during its vulnerable window deals bonus damage.
  */
 const VULNERABLE_DAMAGE_MULTIPLIER = 2;
 
 /**
- * 05_enemies-bosses.md 6.2.1: "same moveset repeats faster" once a boss
- * drops to half HP or below - shared threshold/scale so a future
- * Templateboss enrages the same way without re-deriving this. 0.65 (35%
- * faster) read as barely noticeable in playtesting; 0.5 (twice the cycle
- * speed) is the value that actually reads as a real phase change.
+ * 05_enemies-bosses.md 6.2.1: boss attack cycle speeds up once HP drops to half or below.
  */
 const ENRAGE_HP_FRACTION = 0.5;
 const ENRAGE_TIME_SCALE = 0.5;
 
-// Entity -> Enemy -> Boss -> Templateboss (CLAUDE.md's stated hierarchy) -
-// this layer holds what every boss tier shares regardless of its own specific
-// moveset (Wraith.js today, a second boss family later): the vulnerability-
-// window damage bonus, phase/enrage timing, and non-square rendering
-// (Enemy.render() assumes a square renderSize, which doesn't fit a tall/wide
-// boss sheet like the Wraith's 128x256). No sprite/animations wired up for
-// any Boss subclass yet (session decision: build the state machine now, swap
-// in real art once the PixelLab export lands) - render() falls back to
+// Entity -> Enemy -> Boss -> Templateboss. This layer holds what every boss
+// tier shares: the vulnerability-window damage bonus, phase/enrage timing,
+// and non-square rendering for tall/wide boss sheets. No sprite/animations
+// are wired up for any Boss subclass yet - render() falls back to
 // _renderPlaceholder()'s tinted box until then.
 export class Boss extends Enemy {
     /**
-     * Landed/exposed window (05_enemies-bosses.md 6.2.1) - subclasses flip
-     * this during their own state machine (see Wraith.js), takeDamage()
-     * just reacts to it.
+     * Landed/exposed window (05_enemies-bosses.md 6.2.1), flipped by subclasses during their own state machine.
      */
     vulnerable = false;
 
     /**
-     * Windup telegraph (05_enemies-bosses.md 6.3.1's "short visible
-     * windup") - separate from `vulnerable` since they're different beats
-     * of the same attack; only used by _renderPlaceholder() until real
-     * animations exist.
+     * Windup telegraph (05_enemies-bosses.md 6.3.1). Only used by _renderPlaceholder() until real animations exist.
      */
     telegraphing = false;
 
     /**
-     * Display name for BossState.js's top-center HP bar label (e.g.
-     * 05_enemies-bosses.md's "Wraith of the Shifting Sands") - subclasses
-     * set this themselves after calling super(), null here is only a
-     * fallback for a Boss subclass that hasn't set one yet.
+     * Display name for BossState.js's top-center HP bar label. Set by subclasses after calling super().
      */
     name = null;
 
     /**
-     * Tokens dropped on death (Interactables.js's onBossDefeated()) -
-     * 05_enemies-bosses.md 6.2's Miniboss row (1), the default here since
-     * Wraith.js never overrides it; Templateboss/Chapterboss subclasses set
-     * this to 2 themselves after calling super().
+     * Tokens dropped on death (Interactables.js's onBossDefeated()); Templateboss subclasses may override this.
      */
     tokenReward = 1;
 
@@ -70,13 +49,7 @@ export class Boss extends Enemy {
     }
 
     /**
-     * Doubles incoming damage instead of gating "can be hit at all" behind a
-     * separate flag, so melee/ranged/Combat.js need zero boss-specific code -
-     * same reasoning as Charger.js overriding applyAttackKnockback instead
-     * of Combat.js branching on enemy type. Returns Enemy.takeDamage()'s own
-     * return value (the doubled amount, or 0 if already dead) so Combat.js's
-     * damage-number popups show what actually landed, not the caller's
-     * pre-multiplier amount.
+     * Applies incoming damage, doubled while vulnerable.
      * @param {number} amount - Damage to apply.
      * @returns {number} The amount actually applied.
      */
@@ -92,9 +65,7 @@ export class Boss extends Enemy {
     }
 
     /**
-     * Multiplies onto a duration (windup/vulnerable/attack-interval - see
-     * Wraith.js) - below 1 so "faster" always means "shorter" at every call
-     * site instead of a speed value that'd need inverting.
+     * Multiplier applied to attack-cycle durations (windup/vulnerable/interval).
      * @returns {number}
      */
     get timeScale() {
@@ -122,18 +93,12 @@ export class Boss extends Enemy {
     }
 
     /**
-     * Scaled by height only, width follows the sheet's own aspect ratio -
-     * same technique as Player.js's attack pose, needed here because every
-     * Wraith frame is 128x256 (tall), not the 64x64 square Enemy.render() assumes.
+     * Scaled by height only; width follows the sheet's own aspect ratio.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {SpriteAnimation} anim - Currently playing animation.
      */
     _renderBossFrame(ctx, anim) {
-        const renderHeight = this.renderSize;
-        const renderWidth = renderHeight * (anim.frameWidth / anim.frameHeight);
-        const drawY = this.y + this.height - this.referenceAnim.groundLineRatio * renderHeight;
-        const drawX = this.x - (renderWidth - this.width) / 2;
-        const flashAmount = this.hitFlashTimer / HIT_FLASH_SECONDS;
+        const { renderWidth, renderHeight, drawX, drawY, flashAmount } = this._computeBossFrameRect(anim);
 
         ctx.save();
         if (this.facing === -1) {
@@ -147,8 +112,20 @@ export class Boss extends Enemy {
     }
 
     /**
-     * Simple colored box stands in for real art, tinted by state so the
-     * timing is still readable while testing.
+     * @param {SpriteAnimation} anim
+     * @returns {{renderWidth:number, renderHeight:number, drawX:number, drawY:number, flashAmount:number}}
+     */
+    _computeBossFrameRect(anim) {
+        const renderHeight = this.renderSize;
+        const renderWidth = renderHeight * (anim.frameWidth / anim.frameHeight);
+        const drawY = this.y + this.height - this.referenceAnim.groundLineRatio * renderHeight;
+        const drawX = this.x - (renderWidth - this.width) / 2;
+        const flashAmount = this.hitFlashTimer / HIT_FLASH_SECONDS;
+        return { renderWidth, renderHeight, drawX, drawY, flashAmount };
+    }
+
+    /**
+     * Colored box placeholder for real art, tinted by state.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     _renderPlaceholder(ctx) {

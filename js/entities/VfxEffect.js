@@ -1,16 +1,11 @@
 import { Entity } from './Entity.js';
 
-// Lightweight one-shot visual effect (player action smoke: jump/landing/dash,
-// see Player.js's pendingVfx mailbox and LevelSession.js's _drainPlayerVfx())-
-// same shape as Projectile.js/WraithBeam.js (own `dead` flag, no physics/
-// collision), but driven entirely by its own SpriteAnimation instead of
-// manual movement math, since it never moves once spawned. All three current
-// clips are ground-contact effects, so this always anchors to the
-// animation's own auto-detected ground line (SpriteAnimation's
-// groundLineRatio, from _detectOpaqueBounds()) rather than assuming the
-// artwork sits centered in its frame - same trick PlayerRenderer.js already
-// uses to align the character's feet regardless of however much transparent
-// padding a sheet carries around its frames.
+// Lightweight one-shot visual effect (player action smoke: jump/landing/
+// dash, see Player.js's pendingVfx mailbox and LevelSession.js's
+// _drainPlayerVfx()) - same shape as Projectile.js (own `dead` flag, no
+// physics/collision), driven entirely by its own SpriteAnimation. Anchors
+// to the animation's own auto-detected ground line (SpriteAnimation's
+// groundLineRatio) rather than assuming the artwork sits centered in its frame.
 export class VfxEffect extends Entity {
     /**
      * @param {number} groundX - World X to center the effect on.

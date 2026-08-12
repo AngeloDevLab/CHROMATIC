@@ -9,21 +9,14 @@ const SIZE = 128;
 const OPENS_FRAME_COUNT = 10;
 const OPENS_FPS = 12;
 
-// Marks a level's end (01_core-gameplay-loop.md "Reach the exit portal/level
-// end - back to the Worldmap"). Three real states: closed -> opening (plays
-// portal-opens.png once) -> open, driven by GameState flipping `active` once
-// every enemy is dead (_levelFullyRevealed) - never flips back off, so this
-// never needs to reverse the transition. Interact range/[E] handling lives in
-// GameState (see isOpen below), this class only tracks/renders the state.
-// greyFilterCSS is GameState's own ColorZone.greyFilterCSS, so the portal's
-// unrevealed look matches the terrain's grey treatment exactly rather than a
-// second, potentially-drifting copy of the same tint constants. Unlike
-// Player/Enemy (always full color, see ColorZone.js's own design note on why
-// a scrolling/moving thing can't participate in the terrain's reveal), the
-// portal sits at one fixed world position for the whole level, so a simple
-// one-way `revealed` flag (GameState.js flips it once the player gets close,
-// or immediately on the level's full-reveal) can track it directly without
-// needing a real per-pixel reveal mechanism.
+// Marks a level's end (01_core-gameplay-loop.md). Three states: closed ->
+// opening (plays portal-opens.png once) -> open, driven by GameState
+// flipping `active` once every enemy is dead. Interact range/[E] handling
+// lives in GameState; this class only tracks/renders the state.
+// greyFilterCSS is GameState's own ColorZone.greyFilterCSS, matching the
+// terrain's grey treatment. The portal sits at one fixed world position, so
+// a simple one-way `revealed` flag tracks its reveal instead of a real
+// per-pixel mechanism.
 export class Portal extends Entity {
     /**
      * @param {number} x - World X position.
@@ -43,10 +36,8 @@ export class Portal extends Entity {
     }
 
     /**
-     * Only true once the opening animation has fully played - GameState
-     * gates the [E] interact prompt on this rather than on `active`
-     * directly, so the player sees the full opening beat before it's
-     * actually usable.
+     * Only true once the opening animation has fully played. GameState
+     * gates the [E] interact prompt on this rather than on `active` directly.
      * @returns {boolean}
      */
     get isOpen() {

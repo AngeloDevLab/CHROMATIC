@@ -1,29 +1,23 @@
 import { isTouchCapable } from './TouchControls.js';
 
-// Blocks the whole screen with a "rotate your device" prompt whenever a
-// touch device is held in portrait - the game's internal resolution (640x360)
-// is landscape-only, and a portrait phone would otherwise just see a tiny
-// letterboxed sliver. Fixed to the document, deliberately outside
-// #ui-overlay (same reasoning as DevPanel.js) - this has to cover the whole
-// physical screen, not just the scaled game viewport. No-op on a non-touch
-// device, since a desktop window resized narrow/tall should just letterbox
-// normally, not get told to "rotate".
+// Blocks the screen with a "rotate your device" prompt when a touch device
+// is held in portrait - the internal 640x360 resolution is landscape-only.
+// Fixed to the document, outside #ui-overlay, since it must cover the whole
+// physical screen, not just the scaled game viewport. Stays hidden on
+// non-touch devices. isTouchCapable() is re-checked on every resize, not
+// just at construction, so a DevTools device-mode toggle is picked up too.
+// Listens to both 'resize' and 'orientationchange' - some mobile browsers
+// lag a frame behind the actual rotation on 'resize' alone.
 export class LandscapeGate {
     /**
-     * @param {Game} game - Unused directly, kept for constructor-shape
-     *   consistency with every other main.js-owned system.
+     * @param {Game} game - Unused directly.
      */
     constructor(game) {
         this.game = game;
         this.element = null;
         this._isPortrait = false;
-        if (!isTouchCapable()) return;
-
         this._buildElement();
         this._onOrientationChange = this._onOrientationChange.bind(this);
-        // Both, redundantly - a real device's innerWidth/innerHeight can lag
-        // a frame behind the actual rotation on 'resize' alone on some
-        // mobile browsers, 'orientationchange' fires more reliably there.
         window.addEventListener('resize', this._onOrientationChange);
         window.addEventListener('orientationchange', this._onOrientationChange);
         this._onOrientationChange();
@@ -46,14 +40,12 @@ export class LandscapeGate {
      * Shows/hides the prompt based on the current viewport aspect ratio.
      */
     _onOrientationChange() {
-        this._isPortrait = window.innerHeight > window.innerWidth;
+        this._isPortrait = isTouchCapable() && window.innerHeight > window.innerWidth;
         this.element.classList.toggle('visible', this._isPortrait);
     }
 
     /**
-     * @returns {boolean} Whether the prompt is currently covering the
-     *   screen - Game._loop() reads this to skip gameplay updates entirely
-     *   while it's up, not just visually hide them behind an opaque overlay.
+     * @returns {boolean} Whether the rotate prompt is currently covering the screen.
      */
     get isBlocking() {
         return this._isPortrait;

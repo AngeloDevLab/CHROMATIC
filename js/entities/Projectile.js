@@ -9,16 +9,13 @@ const PROJECTILE_HEIGHT = 64;
 const PROJECTILE_SPEED = 400;
 
 /**
- * Despawns after traveling this far without hitting anything, so a miss
- * doesn't just fly forever off the edge of the level.
+ * Despawns after traveling this far without hitting anything.
  */
 const MAX_TRAVEL_PX = 300;
 
 /**
- * How far each swept sub-step advances before re-checking for a solid tile -
- * small enough that a fast throw can't tunnel through a thin wall in one
- * frame (Collision.resolve()'s own X-axis check is disabled for one-way
- * levels, see GameState.js, so this can't just reuse that).
+ * How far each swept sub-step advances before re-checking for a solid tile.
+ * Collision.resolve()'s X-axis check is disabled for one-way levels, so this sweeps manually instead.
  */
 const SWEEP_STEP_PX = 4;
 
@@ -30,10 +27,8 @@ const ROTATION_PER_PX = 0.15;
 
 /**
  * Ghost-trail echoes rendered behind the blade using thrown_sword_trail.png
- * (192x24, 8 frames of 24x24 - a motion-blur circle at 8 spin phases). Echo
- * spacing/frame are derived from distance traveled rather than a timer, so
- * the trail always lines up with where the blade actually was, in sync
- * with its own ROTATION_PER_PX spin.
+ * (192x24, 8 frames of 24x24). Echo spacing/frame are derived from distance
+ * traveled rather than a timer.
  */
 const TRAIL_SOURCE_FRAME_SIZE = 24;
 const TRAIL_RENDER_SIZE = 64;
@@ -45,9 +40,7 @@ const TRAIL_ECHO_COUNT = 3;
 // gravity, thrown weapons in this game fly level rather than arcing.
 export class Projectile extends Entity {
     /**
-     * @param {number} spawnCenterX - Spawn center X, not top-left, so callers
-     *   (GameState.js) can spawn it flush with the player's own centerY/
-     *   leading edge without needing to know PROJECTILE_WIDTH themselves.
+     * @param {number} spawnCenterX - Spawn center X, not top-left.
      * @param {number} spawnCenterY - Spawn center Y.
      * @param {1|-1} direction - Travel direction.
      * @param {HTMLImageElement} sprite - Blade sprite.
@@ -66,8 +59,7 @@ export class Projectile extends Entity {
     }
 
     /**
-     * Sweeps forward in small steps, checking for a solid tile at each one,
-     * so a fast throw can't tunnel through a thin wall in a single frame.
+     * Sweeps forward in small steps, checking for a solid tile at each one.
      * @param {number} dt - Elapsed time in seconds.
      * @param {Collision} collision - Level collision to check against.
      */
@@ -145,7 +137,17 @@ export class Projectile extends Entity {
 
         const frame = Math.floor(traveledAtEcho / TRAIL_ECHO_SPACING_PX) % TRAIL_FRAME_COUNT;
         const echoX = this.centerX - this.direction * behindPx;
+        this._drawEchoFrame(ctx, i, frame, echoX, traveledAtEcho);
+    }
 
+    /**
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {number} i - Echo index, 1 (nearest) to TRAIL_ECHO_COUNT (farthest).
+     * @param {number} frame - Trail sprite frame to draw.
+     * @param {number} echoX
+     * @param {number} traveledAtEcho
+     */
+    _drawEchoFrame(ctx, i, frame, echoX, traveledAtEcho) {
         ctx.save();
         ctx.globalAlpha = 1 - i / (TRAIL_ECHO_COUNT + 1);
         ctx.translate(echoX, this.centerY);

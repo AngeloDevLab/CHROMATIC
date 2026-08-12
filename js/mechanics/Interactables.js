@@ -7,14 +7,9 @@ import { BuffTerminalInteractable } from './interactables/BuffTerminalInteractab
 // Portal/Merchant/Trapdoor/SecretDoor/BuffTerminal - every level object the
 // player interacts with via proximity/[E]. Thin orchestrator/facade only:
 // each type's actual spawn/update/prompt/render/destroy logic lives in its
-// own class under js/mechanics/interactables/, the same "several small
-// classes sharing a common shape" pattern EnemyFactory.js/Player.js's
-// composed sub-objects already use elsewhere in this codebase - a new
-// interactable type later is purely additive (one new file plus one line
-// here), not another edit to a single do-everything class. `onComplete` is a
-// callback rather than this class calling stateMachine.change('worldmap')
-// itself - finishing the level is LevelSession's own concern (levelNumber,
-// completedLevels), not this class's.
+// own class under js/mechanics/interactables/. `onComplete` is a callback
+// rather than this class calling stateMachine.change('worldmap') itself -
+// finishing the level is LevelSession's own concern.
 export class Interactables {
     /**
      * @param {Game} game - Owning Game instance.
@@ -22,10 +17,10 @@ export class Interactables {
      * @param {Player} player - For proximity/range checks.
      * @param {object} options
      * @param {string} options.greyFilterCSS - ColorZone.greyFilterCSS, shared visual treatment for unrevealed entities.
-     * @param {number} options.revealRadius - LevelSession's PLAYER_REVEAL_RADIUS, reused so "revealed" tracks the same distance as the color trail.
+     * @param {number} options.revealRadius - LevelSession's PLAYER_REVEAL_RADIUS.
      * @param {DamageNumbers} options.damageNumbers - For "not enough Prisma" status text.
      * @param {Collision} options.collision - For the boss-drop Tokens' fall onto the floor.
-     * @param {number} options.levelNumber - This level's number, to key `Game.claimedBossTokens`/`Game.claimedSecretRoomBuffs` so a boss's Token reward and a Secret Room's buff are only ever granted once per level.
+     * @param {number} options.levelNumber - This level's number, to key `Game.claimedBossTokens`/`Game.claimedSecretRoomBuffs`.
      * @param {() => void} options.onComplete - Called when the player exits through the completed level's portal.
      */
     constructor(game, level, player, { greyFilterCSS, revealRadius, damageNumbers, collision, levelNumber, onComplete }) {

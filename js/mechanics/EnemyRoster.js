@@ -26,8 +26,7 @@ export function isBossSpawnName(name) {
 
 // Spawns and per-frame bookkeeping for a level's enemy roster (regular
 // enemies + the one optional Miniboss/Templateboss) - extracted out of
-// LevelSession.js since it's a cohesive concern with its own lifecycle,
-// same motivation as Interactables.js/CombatCoordinator.js.
+// LevelSession.js, same motivation as Interactables.js/CombatCoordinator.js.
 export class EnemyRoster {
     /**
      * @param {Game} game - For assets/sound.
@@ -66,10 +65,8 @@ export class EnemyRoster {
     }
 
     /**
-     * wraith.sprite is set explicitly rather than left as the null Wraith's
-     * constructor passes to super() - Enemy.render()'s deep fallback
-     * (anim/referenceAnim missing) draws this.sprite directly, so it needs
-     * to be a real image (same reasoning applies to _spawnWraithTemplateboss() below).
+     * wraith.sprite is set explicitly, since Enemy.render()'s fallback path
+     * draws this.sprite directly when animations are missing.
      * @param {object} spawn - EnemySpawn Tiled object.
      * @returns {Wraith}
      */
@@ -95,8 +92,7 @@ export class EnemyRoster {
 
     /**
      * Drains each enemy's pendingProjectile (Shooter's shots, the boss's
-     * beam) into combat's pool, and pendingRoomDarken (Wraith.js's beam-fire
-     * room-darken beat - it has no access to ColorZone itself).
+     * beam) into combat's pool, and pendingRoomDarken (Wraith.js's beam-fire room-darken beat).
      * @param {number} dt
      * @param {CombatCoordinator} combat
      * @param {ColorZone} colorZone
@@ -140,9 +136,7 @@ export class EnemyRoster {
     /**
      * Standing in for "Boss defeated" (03_mechanics.md 4.1) since Lv_1 has
      * no boss yet: clearing every enemy triggers the same color-explosion
-     * reveal, once. Also marks the portal revealed - its own reveal isn't
-     * position-keyed, but a full-level reveal means everything around it is
-     * revealed too by the time it's even usable, so it should be.
+     * reveal, once. Also marks the portal revealed.
      * @param {ColorZone} colorZone
      * @param {Interactables} interactables
      */
@@ -156,9 +150,7 @@ export class EnemyRoster {
 
     /**
      * Drops the boss's Token the frame its death animation finishes -
-     * separate from checkLevelFullyRevealed() above since that fires on
-     * every enemy dead (including non-boss levels), this only ever cares
-     * about the one boss entity.
+     * separate from checkLevelFullyRevealed() above, which fires on every enemy dead (including non-boss levels).
      * @param {Interactables} interactables
      */
     checkBossDefeated(interactables) {

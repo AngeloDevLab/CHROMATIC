@@ -1,32 +1,17 @@
 import { Entity } from '../Entity.js';
 
 // Full-extent beam, not a slow travelling bolt (contrast
-// entities/enemies/ShooterProjectile.js). Position/extent both re-derive
-// every frame via track() below, from wherever the wraith currently is - not
-// resolved once at construction, because the wraith keeps firing while it
-// moves (Wraith.js/WraithTemplateboss.js), and a `walls` segment (05_enemies-
-// bosses.md 6.3.1's "vertical wall segments... block the beam") meant to
-// cover only part of that range needs to actually block it there, not just
-// wherever the beam happened to first fire from. update() is deliberately a
-// no-op - the owning boss drives this entirely through track().
+// entities/enemies/ShooterProjectile.js). Position/extent re-derive every
+// frame via track(), since the wraith keeps firing while it moves. update()
+// is a no-op - the owning boss drives this entirely through track().
 //
-// `axis` ('horizontal', the Miniboss's only mode, or 'vertical', the
-// Templateboss's alternative per 6.3.1) decides which coordinate sweeps and
-// which stays fixed at THICKNESS_PX - a horizontal beam's source X is fixed
-// at fire time (`direction` is left/right, `track()` only ever moves it up/
-// down as the wraith rises/descends), a vertical beam's source column
-// instead follows the live centerX every frame (WraithTemplateboss's
-// firingSweep glides sideways while firing) and always reaches straight
-// down. Both axes use the exact same wall-only check (isWallAt(), ignoring
-// the one-way `terrain` layer) - a vertical beam passes through an ordinary
-// floor exactly like a horizontal one passes a platform it's flying past,
-// only real `walls` segments stop either.
+// `axis` ('horizontal' or 'vertical') decides which coordinate sweeps and
+// which stays fixed at THICKNESS_PX. Both axes use the same wall-only check
+// (isWallAt(), ignoring the one-way `terrain` layer).
 //
 // Same x/y/width/height/damage/direction/dead/update/render shape as
-// ShooterProjectile.js otherwise, so it still plugs straight into
-// LevelSession's existing enemyProjectiles pipeline
-// (resolveEnemyProjectileHits in Combat.js, which kills it on the first
-// hit) with no changes needed there.
+// ShooterProjectile.js, so it plugs into LevelSession's existing
+// enemyProjectiles pipeline (Combat.js's resolveEnemyProjectileHits) unchanged.
 const THICKNESS_PX = 36;
 const STEP_PX = 8;
 
@@ -38,21 +23,16 @@ export class WraithBeam extends Entity {
      * @param {Collision} collision - Level collision, for the `walls` scan in _rescan().
      * @param {number} damage - Damage dealt to the player on hit (Combat.js).
      * @param {'horizontal'|'vertical'} [axis='horizontal'] - Which way the beam sweeps.
-     * _sourceX is the horizontal beam's own fixed source X - a vertical
-     * beam ignores it and instead tracks its live centerX every frame (see track()).
      */
     constructor(spawnCenterX, spawnCenterY, direction, collision, damage, axis = 'horizontal') {
         super(...WraithBeam._initialBounds(spawnCenterX, spawnCenterY, axis));
-
         this.axis = axis;
         this.direction = direction;
         this.vx = 0;
         this.damage = damage;
         this.dead = false;
-
         this._collision = collision;
         this._sourceX = spawnCenterX;
-
         this._rescan(spawnCenterX, spawnCenterY);
     }
 
@@ -79,12 +59,7 @@ export class WraithBeam extends Entity {
     }
 
     /**
-     * Re-derives x/y/width for the wraith's CURRENT height - scans fresh
-     * against `walls` every call instead of once, so a wall segment that
-     * only covers part of the arena's height actually blocks the beam once
-     * it descends to that row, rather than the reach computed way back at
-     * the top (where a wall usually isn't even present) staying locked in
-     * for the whole ensuing glide down.
+     * Re-derives the beam's x/y/width for the wraith's current height.
      * @param {number} centerY
      */
     _rescanHorizontal(centerY) {
@@ -125,12 +100,7 @@ export class WraithBeam extends Entity {
     }
 
     /**
-     * isWallAt() checked across the beam's own THICKNESS_PX cross-section
-     * (perpendicular to travel), not just the single centerline point - a
-     * wall tile only partially overlapping that cross-section still needs
-     * to register as a block, otherwise the beam's own detected reach lags
-     * a few pixels behind where its rendered/hit rectangle has already
-     * visually penetrated the wall.
+     * Checks whether a wall tile blocks the beam at the given point, across its full cross-section.
      * @param {number} x
      * @param {number} y
      * @param {'x'|'y'} crossAxis - Which coordinate the THICKNESS_PX span applies to.
@@ -149,10 +119,9 @@ export class WraithBeam extends Entity {
     }
 
     /**
-     * The owning boss calls this every frame while still firing/descending.
-     * A horizontal beam ignores centerX (its source X is fixed at fire time,
-     * matching the original behavior); a vertical beam uses it as its live
-     * moving source column.
+     * The owning boss calls this every frame while firing/descending. A
+     * horizontal beam ignores centerX (its source X is fixed at fire time);
+     * a vertical beam uses it as its live moving source column.
      * @param {number} centerX
      * @param {number} centerY
      */
@@ -161,7 +130,7 @@ export class WraithBeam extends Entity {
     }
 
     /**
-     * No-op - see the top-of-file note on why the owning boss drives this entirely through track().
+     * No-op - the owning boss drives this entirely through track() (see the top-of-file note).
      */
     update() {}
 

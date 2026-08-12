@@ -10,16 +10,14 @@ const MAX_SHIELD = 100;
 const SHIELD_REGEN_PER_SECOND = 1;
 
 /**
- * Secret Room buff amounts (02_game-structure.md 2.5) - GDD names the three
- * buff types but not their magnitude, first-guess round numbers.
+ * Secret Room buff amounts (02_game-structure.md 2.5).
  */
 const BUFF_MAX_HEALTH_BONUS = 20;
 const BUFF_SHIELD_REGEN_BONUS = 0.5;
 const BUFF_MAX_SHIELD_BONUS = 20;
 
 /**
- * Brief invincibility after any hit, so multiple/lingering enemies can't
- * stack damage every frame - independent of an enemy's own contactCooldown.
+ * Brief invincibility after any hit, independent of an enemy's own contactCooldown.
  */
 const INVINCIBILITY_SECONDS = 0.5;
 
@@ -36,8 +34,7 @@ const HIT_FLASH_SECONDS = 0.15;
 // an animation concern Player.js owns (see its _enterDeathAnimation()).
 export class PlayerHealth {
     /**
-     * shieldRegenPerSecond is an instance field, not the module constant
-     * directly, so a Secret Room's Shield Regen buff (applyBuff()) can raise it per instance.
+     * shieldRegenPerSecond is an instance field, not the module constant directly.
      */
     constructor() {
         this.maxHealth = MAX_HEALTH;
@@ -90,8 +87,7 @@ export class PlayerHealth {
     }
 
     /**
-     * Instant kill bypassing Shield/invincibility entirely - falling out of
-     * the level shouldn't be survivable just for being mid-i-frames or still having Prisma up.
+     * Instant kill bypassing Shield/invincibility entirely.
      * @returns {boolean} Whether this actually killed (false if already dead/godmode).
      */
     kill() {
@@ -121,7 +117,7 @@ export class PlayerHealth {
         this.shield = Math.min(this.maxShield, this.shield + this.shieldRegenPerSecond * dt);
     }
 
-    /** Still ticks while dead, or the killing blow's white flash would never fade. @param {number} dt */
+    /** Still ticks while dead, so the killing blow's white flash still fades. @param {number} dt */
     tickHitFlash(dt) {
         if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
     }

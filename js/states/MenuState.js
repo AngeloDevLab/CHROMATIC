@@ -35,16 +35,16 @@ const DIFFICULTIES = [
     { id: 'hard', label: 'Hard', description: 'Needs near-perfect play - many hits can be a one-shot. (+100% incoming damage)' },
 ];
 
-// Settings/Info are self-contained (no dependency on states that don't exist
-// yet) so they get real panels now. Continue jumps straight to WorldmapState
-// (game.difficulty/completedLevels/etc. are already loaded from SaveSystem by
-// then, see Game.js's loadProgress()) - MenuButtons only enables the button
-// once game.difficulty is non-null, i.e. New Game has been confirmed at
-// least once. New Game opens Difficulty selection below, which resets
-// existing progress (Game.resetProgress()) before continuing into
-// CutsceneState -> WorldmapState (08_menu-flow.md 9.2) - without that reset,
-// a persisted save would make New Game silently resume the old one instead
-// of actually restarting.
+// Continue jumps straight to WorldmapState (game.difficulty/completedLevels
+// are already loaded from SaveSystem by then, see Game.js's loadProgress())
+// - MenuButtons only enables the button once game.difficulty is non-null,
+// i.e. New Game has been confirmed at least once.
+//
+// New Game opens Difficulty selection below, which resets existing
+// progress (Game.resetProgress()) before continuing into CutsceneState ->
+// WorldmapState (08_menu-flow.md 9.2) - without that reset, a persisted
+// save would make New Game silently resume the old one instead of
+// actually restarting.
 export class MenuState extends State {
     /**
      * Builds the living-background scene and the menu overlay.
@@ -63,14 +63,9 @@ export class MenuState extends State {
     }
 
     /**
-     * Renders the shared forest parallax + level tile layers once onto a
-     * static background canvas. Cover-fit against the sky gap
-     * (0..groundSurfaceY) instead of the canvas width, so it reaches down
-     * to the ground line with no gap and no vertical stretch - the
-     * horizontal overflow this creates is center-cropped. Deliberately
-     * extended a bit past the ground line (BACKGROUND_OVERLAP_PX) so it
-     * peeks through the ground tiles' own transparent padding (grass
-     * overhang etc.) instead of cutting off in a hard, exact seam.
+     * Renders the shared parallax + level tile layers once onto a static
+     * background canvas, cover-fit against the sky gap above the ground
+     * line and extended slightly past it (BACKGROUND_OVERLAP_PX).
      * @param {number} groundSurfaceY - World-space Y of the visible ground surface.
      */
     _buildBackground(groundSurfaceY) {
@@ -78,26 +73,22 @@ export class MenuState extends State {
         this.backgroundCanvas.width = this.game.width;
         this.backgroundCanvas.height = this.game.height;
         const bgCtx = this.backgroundCanvas.getContext('2d');
-
         const parallax = this.game.assets.getImage('menu-parallax-bg');
         const parallaxHeight = groundSurfaceY + BACKGROUND_OVERLAP_PX;
         const parallaxScale = parallaxHeight / parallax.height;
         const parallaxWidth = parallax.width * parallaxScale;
         const parallaxX = (this.game.width - parallaxWidth) / 2;
         bgCtx.drawImage(parallax, 0, 0, parallax.width, parallax.height, parallaxX, 0, parallaxWidth, parallaxHeight);
-
+        
         this.level.drawAllLayers(bgCtx);
     }
 
     /**
-     * Permanent reveal (same mode as real gameplay, 03_mechanics.md 4.1)
-     * instead of the old decorative fading-bubble variant - the patroller
-     * pass is what erases it instead, previewing the real reveal/darken
-     * exchange rather than a separate menu-only effect.
+     * Permanent reveal (same mode as real gameplay, 03_mechanics.md 4.1), erased by the patroller pass.
      */
     _buildColorZone() {
         this.colorZone = new ColorZone(this.game.width, this.game.height, REVEAL_RADIUS, {
-            greyBrightness: 0.15,
+            greyBrightness: 0.3,
             greyTint: { sepia: 0.4, hueRotate: 180, saturate: 2 },
         });
         this.colorZone.paintGreyFrom(this.backgroundCanvas);
@@ -137,9 +128,8 @@ export class MenuState extends State {
 
     /**
      * Random direction each pass (03_mechanics.md 4.1's living-background
-     * demo) so the loop doesn't always run the same way - starts off the
-     * canvas edge on the entering side, ends once fully off the far edge
-     * (see _hasExited()).
+     * demo); starts off the canvas edge on the entering side, ends once
+     * fully off the far edge (see _hasExited()).
      */
     _startPlayerPass() {
         const direction = Math.random() < 0.5 ? 1 : -1;
@@ -167,8 +157,7 @@ export class MenuState extends State {
     }
 
     /**
-     * Beat between passes so the next entrance doesn't feel instant/glued
-     * to the previous exit - both are off-screen and nothing
+     * Beat between passes; both actors are off-screen and nothing
      * renders/updates color during this phase, see update()/render().
      * @param {() => void} nextPass - Pass to start once the delay elapses.
      */
@@ -186,10 +175,8 @@ export class MenuState extends State {
         this.titleEl.className = 'menu-title';
         this.titleEl.textContent = 'CHROMATIC';
         this.game.overlay.appendChild(this.titleEl);
-
         this.panel = new Panel(this.game.overlay);
         this.howToPlayPanel = new HowToPlayPanel(this.panel);
-
         this.menuButtons = new MenuButtons(this.game.overlay, {
             hasSave: this.game.difficulty !== null,
             onSelect: (id) => this._handleMenuSelect(id),

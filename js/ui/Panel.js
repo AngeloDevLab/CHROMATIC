@@ -1,3 +1,12 @@
+/**
+ * Generic modal panel (backdrop + title + body) used for Pause, Game Over,
+ * Buff choices, Settings, etc. onClose fires exactly once per close, however
+ * it happens (explicit close(), x, backdrop click, or Escape). dismissible=
+ * false omits x/backdrop/Escape (e.g. Game Over). closeOnEscape can be
+ * forced off independently of dismissible, for callers that handle Escape
+ * themselves. close({silent: true}) skips onClose, for teardown paths that
+ * shouldn't trigger a sub-panel's own "go back" behavior.
+ */
 export class Panel {
     /**
      * @param {HTMLElement} overlayRoot - Element to mount the panel into.
@@ -9,30 +18,14 @@ export class Panel {
     }
 
     /**
+     * Opens the panel, replacing any panel currently open.
      * @param {string} title
      * @param {string} bodyHTML
      * @param {object} [options]
-     * @param {(root: HTMLElement) => void} [options.onMount] - Called with the
-     *   panel's root element, for callers that need to wire up interactive
-     *   content inside bodyHTML (e.g. buttons) instead of just static text.
-     * @param {() => void} [options.onClose] - Called whenever this panel
-     *   actually closes, by whichever path (an explicit choice calling
-     *   close() itself, or a dismissible panel's own ×/backdrop/Escape) -
-     *   lets a caller with its own "is this open" state (e.g. BuffState.js
-     *   popping itself off the StateMachine stack) react in exactly one
-     *   place regardless of how the panel went away, instead of needing
-     *   every close path to remember to do it.
-     * @param {boolean} [options.dismissible=true] - When false, omits the ×
-     *   button and the backdrop-click/Escape close handlers - for panels
-     *   with no "cancel" path (e.g. Game Over), where the player must pick
-     *   one of the panel's own options instead.
-     * @param {boolean} [options.closeOnEscape=dismissible] - Defaults to
-     *   `dismissible`, but can be forced off while still allowing
-     *   backdrop/× - for a caller (e.g. PauseState.js's Settings sub-view)
-     *   that needs to handle Escape itself instead of Panel's own window-level
-     *   listener, so the two don't both react to the same keypress (Panel
-     *   closing the panel *and* the caller separately treating that same
-     *   Escape as "open Pause" a frame later).
+     * @param {(root: HTMLElement) => void} [options.onMount] - Wires up interactive content inside bodyHTML.
+     * @param {() => void} [options.onClose] - Called when the panel closes.
+     * @param {boolean} [options.dismissible=true] - Show the × button and allow backdrop/Escape close.
+     * @param {boolean} [options.closeOnEscape=dismissible] - Whether Escape closes the panel.
      */
     open(title, bodyHTML, { onMount, onClose, dismissible = true, closeOnEscape = dismissible } = {}) {
         this.close();
@@ -79,15 +72,9 @@ export class Panel {
     }
 
     /**
-     * Closes the panel, if open, and fires its onClose callback - unless
-     * `silent`, for a caller that's tearing itself down regardless of
-     * which content is currently showing (e.g. PauseState.exit() while its
-     * Settings sub-view happens to be open). Without this, that teardown
-     * would trigger Settings' own onClose (built to go "back" to the Paused
-     * choices on a normal ×/backdrop dismiss) and reopen a stray panel
-     * right as the whole state is being torn down.
+     * Closes the panel, if open, and fires its onClose callback unless silent.
      * @param {object} [options]
-     * @param {boolean} [options.silent=false]
+     * @param {boolean} [options.silent=false] - Skip the onClose callback.
      */
     close({ silent = false } = {}) {
         if (!this.element) return;
@@ -109,8 +96,7 @@ export class Panel {
     /**
      * Convenience wrapper around open() for the common "title + a list of
      * buttons" shape (Pause/Game Over/Buff choice) - builds the buttons'
-     * markup and wires each one's onClick, so callers only ever hand over
-     * data instead of building HTML themselves.
+     * markup and wires each one's onClick.
      * @param {string} title
      * @param {{id: string, label: string, onClick: () => void}[]} choices
      * @param {object} [options] - Forwarded to open() (dismissible, closeOnEscape, onClose).

@@ -1,10 +1,8 @@
 import { SecretDoor, SECRET_DOOR_PRISMA_COST } from '../../entities/SecretDoor.js';
 import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from './InteractPrompt.js';
 
-// Secret Room (Lvl 5 Gimmick, docs/GDD/02_game-structure.md 2.5) - "only
-// visible once the player has colored the surrounding area" needs no extra
-// code at all, it's just the same greyFilterCSS/revealed treatment as
-// Portal/Trapdoor, so it looks identical to unrevealed terrain until then.
+// Secret Room (Lvl 5 Gimmick, docs/GDD/02_game-structure.md 2.5) - uses the
+// same greyFilterCSS/revealed treatment as Portal/Trapdoor.
 export class SecretDoorInteractable {
     /**
      * @param {Game} game
@@ -20,24 +18,30 @@ export class SecretDoorInteractable {
         this.player = player;
         this._revealRadius = revealRadius;
         this._damageNumbers = damageNumbers;
-
-        const spawn = level.getObjectsByType('SecretDoor')[0];
-        this._secretDoor = spawn
-            ? new SecretDoor(spawn.x, spawn.y, spawn.width, spawn.height, {
-                closed: game.assets.getImage('secretdoor-closed'),
-                open: game.assets.getImage('secretdoor-open'),
-                opens: game.assets.getImage('secretdoor-opens'),
-                opensFrameCount: 7,
-                opensFps: 12,
-            }, greyFilterCSS)
-            : null;
+        this._secretDoor = this._buildSecretDoor(game, level, greyFilterCSS);
         this._promptEl = createInteractPrompt(game, `[E] Open (${SECRET_DOOR_PRISMA_COST} Prisma)`);
     }
 
     /**
-     * True if there's no door placed in this level at all (treated the same
-     * as "already open" by BuffTerminalInteractable's isDoorOpen gate) or
-     * the real door has finished opening.
+     * @param {Game} game
+     * @param {Level} level
+     * @param {string} greyFilterCSS
+     * @returns {SecretDoor|null}
+     */
+    _buildSecretDoor(game, level, greyFilterCSS) {
+        const spawn = level.getObjectsByType('SecretDoor')[0];
+        if (!spawn) return null;
+        return new SecretDoor(spawn.x, spawn.y, spawn.width, spawn.height, {
+            closed: game.assets.getImage('secretdoor-closed'),
+            open: game.assets.getImage('secretdoor-open'),
+            opens: game.assets.getImage('secretdoor-opens'),
+            opensFrameCount: 7,
+            opensFps: 12,
+        }, greyFilterCSS);
+    }
+
+    /**
+     * True if there's no door placed in this level, or the door has finished opening.
      * @returns {boolean}
      */
     get isOpen() {
@@ -45,11 +49,7 @@ export class SecretDoorInteractable {
     }
 
     /**
-     * AABB push-out along whichever axis has the smaller overlap - a closed
-     * SecretDoor is the only entity in the game that needs to physically
-     * block the player (see LevelSession.update()'s call site for why this
-     * isn't just part of Collision.js). No-op if there's no SecretDoor, or
-     * it's already open.
+     * AABB push-out along whichever axis has the smaller overlap. No-op if there's no SecretDoor, or it's already open.
      * @param {Player} player
      */
     blockPlayer(player) {
@@ -89,8 +89,7 @@ export class SecretDoorInteractable {
     }
 
     /**
-     * [E] in range pays SECRET_DOOR_PRISMA_COST and starts the door opening;
-     * same reveal-before-color treatment as TrapdoorInteractable.
+     * [E] in range pays SECRET_DOOR_PRISMA_COST and starts the door opening.
      * @param {Camera} camera
      * @param {boolean} interactPressed
      */

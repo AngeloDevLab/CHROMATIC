@@ -5,9 +5,7 @@ const VOLUME_BUSES = [
 ];
 
 /**
- * Defaults to 50%, not full volume - untested raw levels (esp. the OST,
- * see main.js) plus system/speaker volume stacking on top can get
- * uncomfortably loud on a first run, so new players start at a safer level.
+ * Defaults to 50%, not full volume.
  */
 const DEFAULT_VOLUME = 0.5;
 
@@ -72,11 +70,9 @@ function buildDisplaySection() {
 }
 
 /**
- * Mirrors InputHandler.js's KEY_MAP plus its two hardcoded keys (KeyP/
- * KeyE) and the mouse-click attack (03_mechanics.md 4.3) - read-only display
- * only, no rebinding logic here. Key rebinding UI is Phase 2 (same
- * deferred-feature convention as e.g. Swimming in 03_mechanics.md 4.2), not
- * built yet - this section exists so Controls isn't just a placeholder until then.
+ * Mirrors InputHandler.js's KEY_MAP plus its two hardcoded keys (KeyP/KeyE)
+ * and the mouse-click attack (03_mechanics.md 4.3) - read-only, no rebinding
+ * logic here. Key rebinding UI is planned for Phase 2, not built yet.
  */
 const CONTROLS = [
     { label: 'Run', keys: 'A / D or Left/Right Arrow' },
@@ -148,10 +144,9 @@ function wireMuteToggle(root, game) {
 }
 
 /**
- * Wires the fullscreen checkbox to the browser Fullscreen API. The actual
- * preference is persisted by main.js's global fullscreenchange listener,
- * not here, so it stays correct even if fullscreen is left some other way
- * (Escape key, browser chrome).
+ * Wires the fullscreen checkbox to the browser Fullscreen API. The
+ * preference itself is persisted by main.js's global fullscreenchange
+ * listener, not here.
  * @param {HTMLElement} root - The mounted panel's root element.
  */
 function wireFullscreenToggle(root) {

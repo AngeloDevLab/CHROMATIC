@@ -1,55 +1,41 @@
 import { Enemy } from '../Enemy.js';
 
 /**
- * 05_enemies-bosses.md 6.5. 35 HP (4 melee hits, the tankiest of the
- * roster) compensates for Sentinel being stationary and never having to be
- * chased down. Contact damage unified to 10 (matches every other enemy
- * type's contact hit).
+ * 05_enemies-bosses.md 6.5. 35 HP, the tankiest in the roster. Contact
+ * damage unified to 10 (matches every other enemy type).
  */
 const SENTINEL_HP = 35;
 const SENTINEL_CONTACT_DAMAGE = 10;
 
 /**
- * Fully below its own former position while buried (its whole 64px frame
- * height, not a partial sink) - belt-and-suspenders in case the terrain
- * art at a given spawn point isn't fully opaque there. The actual hiding
- * mechanism is GameState's render() drawing buried enemies before the
- * terrain layer, not this offset alone.
+ * Sinks the sprite by its full 64px frame height while buried. The actual
+ * hiding mechanism is GameState's render() drawing buried enemies before
+ * the terrain layer, not this offset alone.
  */
 const BURY_DEPTH_PX = 64;
 
 /**
  * How long the rise takes once triggered, visible in front of the terrain
- * the whole time (see `buried`/`dormant` split below) - long enough to be
- * a real dodge window, not just a "notice it, too late" flash.
- * First-guess, needs playtesting.
+ * the whole time (see `buried`/`dormant` split below). First-guess, needs playtesting.
  */
 const DEFAULT_RISE_DURATION_SECONDS = 0.6;
 
 /**
- * Simple radius check (not a rectangular tolerance like Charger's) - a
- * static sentry reacting to distance in every direction reads fine, no
- * need for the same-floor nuance a moving charge attack needs.
+ * Simple radius check (not a rectangular tolerance like Charger's).
  */
 const DEFAULT_AGGRO_RANGE_PX = 90;
 
 // Sentinel behavior (05_enemies-bosses.md 6.1: "Static, aggros when
-// approached"). Deliberately the simplest enemy in the roster - unlike
-// Patroller/Charger it never moves at all, not even after triggering.
+// approached"). The simplest enemy in the roster - it never moves at all,
+// not even after triggering.
 //
-// Two separate flags drive this, not one:
-// - `buried` (Enemy.js default false, starts true here): while true,
-//   GameState draws this BEFORE the terrain layer, fully hidden behind it.
-//   Clears the instant the aggro range triggers.
-// - `dormant` (Enemy.js): while true, Combat.js's contact damage skips it and
-//   HUD.js hides its HP bar. Stays true through the rise animation too,
-//   clearing only once fully risen.
-// The gap between the two is the point: the rise is visible (drawn in front,
-// climbing out of the ground over riseDuration) well before it can actually
-// hurt the player, instead of a hard cut from invisible-and-harmless straight
-// to visible-and-dangerous in the same frame. Once fully risen, the only
-// "life" it shows is facing the player (update()) - it never actually moves
-// toward them.
+// Two separate flags drive this:
+// - `buried` (starts true): while true, GameState draws this before the
+//   terrain layer, fully hidden behind it. Clears once aggro range triggers.
+// - `dormant`: while true, Combat.js's contact damage skips it and HUD.js
+//   hides its HP bar. Clears only once fully risen.
+// The gap between the two makes the rise visible (drawn in front, climbing
+// out of the ground) before it can actually hurt the player.
 export class Sentinel extends Enemy {
     /**
      * @param {number} x - World X position.
@@ -63,7 +49,6 @@ export class Sentinel extends Enemy {
         this.hp = SENTINEL_HP;
         this.maxHp = SENTINEL_HP;
         this.contactDamage = SENTINEL_CONTACT_DAMAGE;
-
         this.player = null;
         this.aggroRange = DEFAULT_AGGRO_RANGE_PX;
         this.riseDuration = DEFAULT_RISE_DURATION_SECONDS;
@@ -110,9 +95,7 @@ export class Sentinel extends Enemy {
     }
 
     /**
-     * Only affects rendering (and visualTopY's HP-bar anchor, moot anyway
-     * since HUD.js's dormant check keeps the bar hidden until the rise
-     * finishes) - the actual hitbox (this.x/this.y) never moves.
+     * Only affects rendering - the actual hitbox (this.x/this.y) never moves.
      * @returns {number}
      */
     _drawY() {

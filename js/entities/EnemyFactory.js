@@ -30,10 +30,8 @@ const ENEMY_SPRITE_SETS = {
 };
 
 /**
- * Builds and wires up an enemy from a Tiled EnemySpawn object. Own
- * SpriteAnimation instance per enemy - sharing one across all of them would
- * advance its frame timer once per enemy per game frame (animation playing
- * N times too fast for N enemies).
+ * Builds and wires up an enemy from a Tiled EnemySpawn object. Each enemy
+ * gets its own SpriteAnimation instance, not a shared one.
  * @param {AssetLoader} assets - Loader holding enemy sprites.
  * @param {Collision} collision - Level collision for patrol/charge movement.
  * @param {Player} player - Player instance enemies aggro/react to.
@@ -69,10 +67,8 @@ function _resolveEnemyClass(typeName) {
 }
 
 /**
- * `dead` plays once on death instead of vanishing instantly - see Enemy.js's
- * deathAnimationFinished/_enterDeathAnimation(). `shoot` (Shooter only) is a
- * 6-frame animation (shooter-shooting.png) that plays once per shot rather
- * than looping - same reasoning as Player.js's attack animation.
+ * Builds the running/dead animation set, plus charge/shoot clips when the
+ * sprite set provides them. `dead` and `shoot` both play once rather than looping.
  * @param {AssetLoader} assets - Loader holding enemy sprites.
  * @param {HTMLImageElement} sprite - Running/idle sprite, also used for the 'running' animation.
  * @param {object} spriteSet - This type's entry from ENEMY_SPRITE_SETS.
@@ -93,10 +89,7 @@ function _buildAnimations(assets, sprite, spriteSet) {
 }
 
 /**
- * Wires each enemy's movement/aggro behavior. Sentinel never patrols
- * (05_enemies-bosses.md 6.1: "Static") - skips enablePatrol entirely rather
- * than gating movement some other way, so it has no collision/gravity
- * dependency at all, just sits where Tiled placed it.
+ * Wires each enemy's movement/aggro behavior. Sentinel never patrols (05_enemies-bosses.md 6.1: "Static").
  * @param {Enemy} enemy - Freshly constructed enemy to wire up.
  * @param {Collision} collision - Level collision for patrol/charge movement.
  * @param {Player} player - Player instance enemies aggro/react to.

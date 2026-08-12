@@ -13,11 +13,15 @@ const TEXT_CHARS_PER_SECOND = 10;
 const DARKENING_TEXT = 'The Darkness reaches this world too.<br> It spreads, devouring land and color.';
 const ARRIVAL_TEXT = 'Just before the world sinks completely into Darkness,<br> a burst of color splits the dark.';
 
-// Intro cutscene, built entirely from the beach background + the existing idle
-// sprite - no dedicated "materializing" animation needed. Sequence: beach in
-// color, darkening from the edges inward (iris effect) until fully dark, a
-// white flash (the moment of arrival), then fading back from white with the
-// Guardian now present.
+// Intro cutscene, built entirely from the beach background + the existing
+// idle sprite. Sequence: beach in color, darkening from the edges inward
+// (iris effect) until fully dark, a white flash, then fading back from
+// white with the Guardian now present.
+//
+// The iris is drawn as several dark blobs onto a separate mask canvas
+// first, then composited onto the scene once with a single capped alpha -
+// drawing each blob straight onto the scene would let overlapping blobs
+// stack past the cap and wash out to solid black early.
 export class CutsceneState extends State {
     /**
      * Sets up the darken -> flash -> reveal phase sequence and its overlay elements.
@@ -82,10 +86,7 @@ export class CutsceneState extends State {
     }
 
     /**
-     * Reveals the text letter by letter instead of all at once - runs at a
-     * fixed pace independent of phase timing, so it keeps typing even after
-     * a phase transition (e.g. into "hold") until the full sentence is
-     * shown. <br> is kept as one atomic token so the reveal can't cut it mid-tag.
+     * Reveals the text letter by letter instead of all at once, keeping <br> as one atomic token.
      * @param {string} text - Text to type out.
      */
     _setText(text) {
@@ -191,9 +192,7 @@ export class CutsceneState extends State {
 
     /**
      * Several dark blobs anchored around the edge, each growing toward the
-     * center at a slightly different angle/rate (fixed once per cutscene,
-     * not re-randomized per frame) - reads as an irregular, organic
-     * darkness consuming the scene instead of one perfectly circular iris closing.
+     * center at a slightly different angle/rate, fixed once per cutscene.
      * @returns {{angle:number,growthRate:number,delay:number}[]}
      */
     _generateIrisBlobs() {
@@ -208,12 +207,8 @@ export class CutsceneState extends State {
     }
 
     /**
-     * Blobs are drawn fully opaque onto a separate mask canvas first (so
-     * their overlaps just union the covered shape), then the whole mask is
-     * composited onto the scene once with a single capped alpha - drawing
-     * each blob straight onto the scene at DARKEN_MAX_ALPHA would let
-     * overlapping blobs stack past that cap and wash out to solid black in
-     * the center anyway.
+     * Draws the iris darkening effect at the given progress (see the
+     * top-of-file note on the mask-compositing approach).
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {number} w - Canvas width.
      * @param {number} h - Canvas height.

@@ -7,12 +7,9 @@ const BOB_SPEED = 3;
 
 // Dropped at a boss's death position once it's defeated (see
 // Interactables.js's onBossDefeated()) - falls under gravity onto the floor
-// below it (Collision.resolve(), same mechanism as any other entity), then
-// bobs gently in place until collected. A plain proximity pickup, no [E]
-// prompt - collected the instant the player's hitbox overlaps it
-// (Interactables.js's _updateToken()). Renders assets/images/objects/token.png
-// (64x64), its own dedicated art kept separate from the Worldmap's
-// wm_btn_completed.png it started as a copy of.
+// below it, then bobs gently in place until collected. A plain proximity
+// pickup, no [E] prompt - collected the instant the player's hitbox
+// overlaps it (Interactables.js's _updateToken()).
 export class Token extends Entity {
     /**
      * @param {number} centerX - Boss's centerX at time of death.
@@ -51,10 +48,7 @@ export class Token extends Entity {
     }
 
     /**
-     * Draws below its native 64x64 (SIZE) - imageSmoothingEnabled is off
-     * just for this draw so the downscale stays crisp instead of blurring,
-     * consistent with the pixel-art look everywhere else, without touching
-     * the shared ctx's smoothing state for whatever renders around it.
+     * Draws below its native 64x64 (SIZE), with imageSmoothingEnabled off so the downscale stays crisp.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

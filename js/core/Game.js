@@ -1,59 +1,42 @@
 import { StateMachine } from './StateMachine.js';
 
-// _handleResize() snaps to the nearest whole-number scale instead of an
-// exact fractional fit - image-rendering:pixelated nearest-neighbor
-// upscaling at a non-integer factor was a real, reported Firefox
-// performance/shimmer issue (every source pixel maps to a *whole* number of
-// destination pixels only at an integer scale). Trade-off: visible
-// letterbox bars whenever the window isn't an exact multiple of 640x360 -
-// previously avoided on purpose, reinstated because the performance cost
-// turned out to matter more.
+// _handleResize() snaps to the nearest whole-number scale rather than an
+// exact fractional fit: pixelated nearest-neighbor upscaling at a
+// non-integer factor causes a Firefox performance/shimmer issue.
+//
+// resizeBuffer() swaps the canvas's width/height mid-game, which resets
+// the 2D context state; safe since every frame redraws from scratch.
 
 /**
- * Fixed gameplay timestep, independent of the display's frame rate - keeps
- * velocity-driven motion (e.g. Player.js's gravity/jump arc) identical on
- * every machine regardless of refresh rate.
+ * Fixed gameplay timestep, independent of the display's frame rate.
  */
 const FIXED_DT = 1 / 60;
 
 /**
- * Caps how many catch-up steps a single frame's accumulator can inject, so
- * a stutter/GC pause/tab switch produces a few extra fixed steps instead of
- * one oversized one.
+ * Caps how many catch-up steps a single frame's accumulator can inject.
  */
 const FRAME_TIME_CAP_SECONDS = 0.05;
 
 /**
- * How long resizeBuffer()'s viewport CSS transition takes to grow/shrink
- * into its new size (e.g. BossState's arena buffer) - first-guess, needs a
- * real look once there's an actual buffer swap to watch it against.
+ * How long resizeBuffer()'s viewport CSS transition takes to grow/shrink into its new size.
  */
 const BUFFER_RESIZE_TRANSITION_SECONDS = 0.3;
 
 export class Game {
     /**
-     * Base 640x360 resolution as shipped in index.html's <canvas>
-     * attributes - resizeBuffer()/resetBuffer() read these instead of
-     * hardcoding 640x360 a second time.
+     * Base 640x360 resolution, as shipped in index.html's <canvas> attributes.
      */
     _baseWidth;
     _baseHeight;
 
     /**
-     * Cross-state data that outlives any single State's enter()/exit() cycle
-     * (states are fully torn down/rebuilt on every switch, see StateMachine).
+     * Cross-state data that outlives any single State's enter()/exit() cycle.
      */
     assets = null;
     input = null;
 
     /**
-     * Placeholders - main.js calls loadProgress() right after constructing
-     * SaveSystem (which doesn't exist yet at construction time) to fill
-     * these in from a real save, if one exists (see loadProgress()/
-     * saveProgress() below). completedLevels is read by WorldmapState to
-     * unlock the next node; buffs (docs/GDD/02_game-structure.md 2.5) gets
-     * re-applied to every fresh Player instance GameState.enter()
-     * constructs (see Player.applyBuff()).
+     * Player progress, populated from SaveSystem via loadProgress().
      */
     difficulty = null;
     completedLevels = new Set();
@@ -62,21 +45,12 @@ export class Game {
     abilities = new Set();
 
     /**
-     * Levels whose boss Token reward has already been granted once -
-     * separate from completedLevels (which only ever gets set via the exit
-     * portal) so replaying an already-fought boss level can't drop fresh
-     * Tokens again just because the player never reached the portal on a
-     * prior visit (Interactables.js's onBossDefeated()).
+     * Levels whose boss Token reward has already been granted once.
      */
     claimedBossTokens = new Set();
 
     /**
-     * Same reasoning as claimedBossTokens above, but for a level's Secret
-     * Room buff choice (BuffState.js's _choose()) - buffs alone can't guard
-     * this, since it's a Set of buff *types* (cumulative once more Secret
-     * Rooms exist in later chapters, see 03_mechanics.md 4.5), not
-     * per-level, so it can't tell "already claimed this level's buff" apart
-     * from "never claimed this buff type from any Secret Room yet".
+     * Levels whose Secret Room buff has already been claimed.
      */
     claimedSecretRoomBuffs = new Set();
 
@@ -101,9 +75,7 @@ export class Game {
 
     /**
      * Restores completedLevels/buffs/tokens/abilities/difficulty from
-     * SaveSystem - called once from main.js right after game.save is
-     * assigned, since this.save doesn't exist yet at construction time.
-     * Sets round-trip as plain arrays (SaveSystem stores JSON).
+     * SaveSystem, converting the stored arrays back into Sets.
      */
     loadProgress() {
         this.completedLevels = new Set(this.save.get('completedLevels', []));
@@ -116,11 +88,7 @@ export class Game {
     }
 
     /**
-     * Snapshots completedLevels/buffs/tokens/abilities/difficulty into
-     * SaveSystem - call after mutating any of them (LevelSession's level
-     * completion, BuffState's buff choice, Interactables'/DevPanel's Token
-     * and ability grants, MenuState's difficulty pick) so progress survives
-     * a reload instead of only lasting the current tab session.
+     * Snapshots completedLevels/buffs/tokens/abilities/difficulty into SaveSystem.
      */
     saveProgress() {
         this.save.set('completedLevels', [...this.completedLevels]);
@@ -133,12 +101,7 @@ export class Game {
     }
 
     /**
-     * Wipes progress back to a fresh start - MenuState calls this once New
-     * Game's difficulty pick is confirmed (then sets the new difficulty and
-     * calls saveProgress() itself), since a persisted save would otherwise
-     * make New Game silently resume the old one instead of actually
-     * restarting. Doesn't touch difficulty itself; the caller is about to
-     * overwrite it anyway.
+     * Wipes progress back to a fresh start, without touching difficulty.
      */
     resetProgress() {
         this.completedLevels = new Set();
@@ -160,12 +123,7 @@ export class Game {
     }
 
     /**
-     * Rescales the canvas/overlay to fill the window at the nearest
-     * whole-number scale (see the top-of-file note on why not fractional).
-     * Also explicitly resyncs the overlay's size/transform instead of
-     * relying on its CSS defaults (640x360), so a resized buffer (e.g.
-     * BossState's arena) doesn't leave UI elements positioned against a
-     * stale box.
+     * Rescales the canvas/overlay to fill the window.
      */
     _handleResize() {
         const rawScale = Math.min(window.innerWidth / this.width, window.innerHeight / this.height);
@@ -179,11 +137,7 @@ export class Game {
     }
 
     /**
-     * Ratio of the current render buffer to the base 640x360 (e.g.
-     * BossState's larger arena buffer) - HUD.js/LevelSession.js/BossState.js
-     * multiply their screen-fixed metrics by this so HUD elements stay a
-     * constant on-screen size regardless of buffer size. CSS mirrors the
-     * same ratio via the --hud-scale custom property (see resizeBuffer()).
+     * Ratio of the current render buffer to the base 640x360 resolution.
      * @returns {number}
      */
     get hudScale() {
@@ -191,13 +145,8 @@ export class Game {
     }
 
     /**
-     * Switches the internal render resolution away from the base 640x360
-     * (used by BossState for its own arena-sized buffer). Safe mid-game:
-     * changing the canvas's width/height resets its 2D context state, but
-     * every frame redraws from scratch anyway (see _loop()'s clearRect).
-     * `animate` (default true) plays a CSS transition so the on-screen box
-     * grows/shrinks smoothly instead of snapping - resetBuffer() below
-     * passes false instead.
+     * Switches the internal render buffer to a new resolution (e.g.
+     * BossState's arena-sized buffer), animated by default.
      * @param {number} width
      * @param {number} height
      * @param {object} [options]
@@ -221,27 +170,21 @@ export class Game {
     }
 
     /**
-     * Starts the viewport's grow/shrink CSS transition before a buffer
-     * resize, so the on-screen box animates into its new size instead of
-     * snapping.
+     * Starts the viewport's grow/shrink CSS transition before a buffer resize.
      */
     _startResizeTransition() {
         this.viewport.style.transition = `width ${BUFFER_RESIZE_TRANSITION_SECONDS}s ease, height ${BUFFER_RESIZE_TRANSITION_SECONDS}s ease`;
     }
 
     /**
-     * Clears the transition once it's played out, so a later window-drag
-     * resize tracks the cursor instantly instead of lagging behind it.
+     * Clears the transition once it's played out.
      */
     _clearResizeTransitionAfterDelay() {
         setTimeout(() => { this.viewport.style.transition = ''; }, BUFFER_RESIZE_TRANSITION_SECONDS * 1000);
     }
 
     /**
-     * Restores the base 640x360 buffer - the inverse of resizeBuffer(),
-     * called once a dedicated-resolution state (BossState) exits. Instant
-     * (animate: false) - always happens mid state-change into an unrelated
-     * screen, never a continuous scene worth animating.
+     * Restores the base 640x360 buffer, instantly (animate: false).
      */
     resetBuffer() {
         this.resizeBuffer(this._baseWidth, this._baseHeight, { animate: false });
@@ -273,10 +216,7 @@ export class Game {
 
     /**
      * Advances the state machine in fixed steps to catch up with frameTime.
-     * LandscapeGate's portrait prompt fully blocks gameplay, not just
-     * visually, so it drops the accumulator instead of merely skipping the
-     * loop below - that also prevents a catch-up burst of queued steps
-     * firing all at once the moment the device is rotated back.
+     * Drops the accumulator entirely while landscapeGate is blocking.
      * @param {number} frameTime - Elapsed real time since the last frame, in seconds.
      */
     _advanceFixedSteps(frameTime) {

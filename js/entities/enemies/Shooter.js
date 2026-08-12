@@ -2,10 +2,8 @@ import { Enemy } from '../Enemy.js';
 import { ShooterProjectile } from './ShooterProjectile.js';
 
 /**
- * 05_enemies-bosses.md 6.5. 20 HP (2 melee hits) so it doesn't melt
- * instantly if a player does close the distance. Contact/projectile
- * damage both unified to 10 (matches every other enemy type's contact
- * hit) - the table gives one "Damage/Hit" value for the type, reused for both.
+ * 05_enemies-bosses.md 6.5. Contact/projectile damage both unified to 10
+ * (matches every other enemy type's contact hit).
  */
 const SHOOTER_HP = 20;
 const SHOOTER_CONTACT_DAMAGE = 10;
@@ -13,41 +11,33 @@ const SHOOTER_PROJECTILE_DAMAGE = 10;
 
 /**
  * "Keeps distance" (05_enemies-bosses.md 6.1) - engages from farther out
- * than Charger's own 190px charge range, since threatening from range
- * rather than needing to close in is this type's whole identity.
+ * than Charger's own 190px charge range.
  */
 const SHOOTER_RANGE_PX = 260;
 const SHOOTER_HEIGHT_TOLERANCE_PX = 24;
 
 /**
- * After a shot (windup + recovery), how long before the next - without
- * this it'd fire as fast as the animation allows, reading as a hose
- * rather than individual shots. Paired with the projectile speed
- * (ShooterProjectile.js) so shots read as dodgeable individually rather
- * than a fast, dense stream.
+ * After a shot (windup + recovery), how long before the next. Paired with
+ * the projectile speed (ShooterProjectile.js).
  */
 const DEFAULT_SHOT_COOLDOWN_SECONDS = 2;
 
 /**
- * Frame within the 6-frame shoot animation the projectile actually spawns
- * at - mirrors Player.js's ATTACK_IMPACT_FRAME (animation and the actual
- * game-logic spawn are two different things kept in sync by frame index).
+ * Frame within the 6-frame shoot animation the projectile spawns at -
+ * mirrors Player.js's ATTACK_IMPACT_FRAME.
  */
 const SHOT_IMPACT_FRAME = 3;
 
 // Shooter behavior (05_enemies-bosses.md 6.1: "Keeps distance, fires
-// projectiles"). Patrols exactly like the base Enemy/Patroller until the
-// player comes within range on roughly the same floor, then holds position
-// and fires - overrides _updatePatrol() rather than duplicating it, same
-// pattern as Charger.js. Once a shot starts it always plays out and fires
-// (facing locked at the moment it started, same commitment reasoning as
-// Charger's charge) - a hit landing mid-windup can still shove it around,
-// but doesn't cancel the shot itself.
+// projectiles"). Patrols like the base Enemy/Patroller until the player
+// comes within range on roughly the same floor, then holds position and
+// fires - overrides _updatePatrol() rather than duplicating it, same
+// pattern as Charger.js. Once a shot starts, facing locks and it always
+// plays out; a hit landing mid-windup can shove it around but doesn't
+// cancel the shot.
 export class Shooter extends Enemy {
     /**
-     * GameState's mailbox for a newly-spawned shot - read and cleared
-     * there right after enemy.update(), since Shooter itself has no
-     * access to the shared enemyProjectiles array.
+     * GameState's mailbox for a newly-spawned shot - read and cleared there right after enemy.update().
      */
     pendingProjectile = null;
 
@@ -86,8 +76,7 @@ export class Shooter extends Enemy {
 
     /**
      * _updateShooting() is checked unconditionally, independent of
-     * knockback/movement below - the shot is purely animation-frame driven,
-     * so a hit landing mid-windup shouldn't also desync when it actually fires/ends.
+     * knockback/movement below - the shot is purely animation-frame driven.
      * @param {number} dt - Elapsed time in seconds.
      */
     _updatePatrol(dt) {
@@ -168,9 +157,7 @@ export class Shooter extends Enemy {
     }
 
     /**
-     * shooter-shooting.png is a distinct sprite from the walking/idle one -
-     * same reset-on-switch reasoning as Charger.js's _updateChargeAnimation
-     * so it never starts mid-frame.
+     * Swaps to the shooting sprite while shooting, resetting on switch so it never starts mid-frame.
      */
     _updateAnimationState() {
         if (!this.animations?.shoot) return;

@@ -1,21 +1,17 @@
 const TILE_SIZE = 32;
 
 // tilesetRegistry (constructor param): { [tsxBasename]: { image, columns } } -
-// Tiled's own per-level `tilesets` array (firstgid + a source path to each
-// .tsx) already says which gid ranges belong to which tileset; the registry
-// just supplies the actual loaded image + column count for each one, keyed
-// by that .tsx's filename. Lets a level mix tilesets with different images
-// AND different column counts (a single shared image/column-count for the
-// whole level used to be assumed - broke once a level mixed a 5- and a
-// 9-column tileset, see getTileSourceRect()). Tiled itself numbers gids as
-// one continuous sequence across every tileset a level uses, in firstgid
-// order, so _tilesetFor()'s "current tileset for a gid" is whichever one
-// started most recently at or before it - _buildTilesets() sorts ascending
-// by firstGid so that scan can stop early. getTileTopPadding()/
-// findGroundSurfaceY() exist because tile art may leave transparent padding
-// within its 32x32 cell (e.g. grass tufts that don't fill the whole tile) -
-// they find where the actual artwork starts so callers can ground a
-// character on the visible surface rather than the raw grid line.
+// Tiled's own per-level `tilesets` array supplies firstgid + a source path;
+// the registry supplies the loaded image + column count for each one, keyed
+// by that .tsx's filename, so a level can mix tilesets with different images
+// and different column counts. Tiled numbers gids as one continuous sequence
+// across every tileset a level uses, in firstgid order, so _tilesetFor()
+// finds a gid's tileset as whichever one started most recently at or before
+// it; _buildTilesets() sorts ascending by firstGid so that scan can stop
+// early. getTileTopPadding()/findGroundSurfaceY() exist because tile art can
+// leave transparent padding within its 32x32 cell, so they find where the
+// artwork actually starts to ground a character on the visible surface
+// rather than the raw grid line.
 export class Level {
     /**
      * @param {object} data - Raw Tiled JSON export.
@@ -25,12 +21,10 @@ export class Level {
     constructor(data, tilesetRegistry, tileSize = TILE_SIZE) {
         this.data = data;
         this.tileSize = tileSize;
-
         this.widthInTiles = data.width;
         this.heightInTiles = data.height;
         this.pixelWidth = this.widthInTiles * tileSize;
         this.pixelHeight = this.heightInTiles * tileSize;
-
         this.tilesets = this._buildTilesets(data, tilesetRegistry);
         this._buildLayersAndObjects(data);
     }
@@ -142,19 +136,25 @@ export class Level {
         if (!tiles) return;
 
         for (let i = 0; i < tiles.length; i++) {
-            const gid = tiles[i];
-            if (gid === 0) continue;
-
-            const { image, sx, sy } = this.getTileSourceRect(gid);
-            const col = i % this.widthInTiles;
-            const row = Math.floor(i / this.widthInTiles);
-
-            ctx.drawImage(
-                image,
-                sx, sy, this.tileSize, this.tileSize,
-                col * this.tileSize, row * this.tileSize, this.tileSize, this.tileSize
-            );
+            if (tiles[i] !== 0) this._drawTile(ctx, tiles[i], i);
         }
+    }
+
+    /**
+     * @param {CanvasRenderingContext2D} ctx - Destination context.
+     * @param {number} gid - Tile's global ID.
+     * @param {number} index - Tile's index within the layer array.
+     */
+    _drawTile(ctx, gid, index) {
+        const { image, sx, sy } = this.getTileSourceRect(gid);
+        const col = index % this.widthInTiles;
+        const row = Math.floor(index / this.widthInTiles);
+
+        ctx.drawImage(
+            image,
+            sx, sy, this.tileSize, this.tileSize,
+            col * this.tileSize, row * this.tileSize, this.tileSize, this.tileSize
+        );
     }
 
     /**

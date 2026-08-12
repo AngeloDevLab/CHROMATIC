@@ -12,37 +12,35 @@ const DEFAULT_GRAVITY = 700;
 export const HIT_FLASH_SECONDS = 0.15;
 
 /**
- * How long a knockback push overrides the normal patrol vx assignment for -
- * without this, _updatePatrol would stomp the pushed-back vx with
- * patrolSpeed * facing on the very next frame, making the hit invisible.
+ * How long a knockback push overrides the normal patrol vx assignment;
+ * without it, _updatePatrol would immediately overwrite the pushed-back vx.
  */
 const KNOCKBACK_LOCK_SECONDS = 0.15;
 
 /**
- * Patroller behavior (05_enemies-bosses.md). 30 HP (3 melee hits) - set
- * this session's balancing pass, down from an earlier 50 that read as too
- * tanky for the roster's baseline enemy.
+ * Patroller behavior (05_enemies-bosses.md). 30 HP (3 melee hits).
  */
 const DEFAULT_HP = 30;
 
-/**
- * Bumped from the GDD's original 5 - at 5, the difficulty multiplier's
- * effect on a single Patroller hit was too small to actually notice while playing.
- */
 const DEFAULT_CONTACT_DAMAGE = 10;
 
 /**
- * How far past its own leading edge to probe for "is the way ahead blocked" -
- * small enough to react before actually stepping off, large enough to not
- * trigger on the enemy's own hitbox tiles.
+ * How far past its own leading edge to probe for whether the way ahead is blocked.
  */
 const LOOKAHEAD_PX = 4;
 
 // Patroller behavior (05_enemies-bosses.md): walks left/right along whatever
-// one-way floor it spawned on, gravity-bound via the shared Collision instance
-// like the player. Direction flips purely from reading the tile grid ahead
-// (wall, or floor about to run out) - no per-level patrol-bounds markers
-// needed, see GameState.js for the spawn wiring.
+// one-way floor it spawned on, gravity-bound via the shared Collision
+// instance. Direction flips from reading the tile grid ahead (wall, or
+// floor about to run out).
+//
+// Lifecycle flags: `dormant` keeps an enemy harmless and off the HP bar
+// until a subclass clears it. `buried` controls draw order relative to the
+// terrain layer. `colorRevealed` guards GameState's one-time death color-reveal.
+//
+// Knockback: applyKnockback() is the passive contact-push reaction;
+// applyAttackKnockback() handles active attacks and delegates to it by
+// default (Charger.js overrides it separately).
 export class Enemy extends Entity {
     /**
      * @param {number} x - World X position.
@@ -98,17 +96,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * Subclass-driven lifecycle flags. `dormant`: harmless and hidden from
-     * the HP bar until a subclass clears it (Sentinel.js, through both its
-     * buried and mid-rise phases - not dangerous until fully risen); every
-     * other enemy type stays false/interactive from the start. `buried`:
-     * whether GameState should draw this before the terrain layer (fully
-     * hidden) instead of after (normal) - separate from `dormant` since
-     * Sentinel.js clears this the instant it's triggered (so the rise is
-     * visible, telegraphing the coming threat) well before `dormant` itself
-     * clears (what actually makes it dangerous). `colorRevealed`: one-time
-     * flag so GameState's death color-reveal (Combat/ColorZone wiring)
-     * fires exactly once per enemy, not every frame it stays dead.
+     * Initializes the dormant/buried/colorRevealed lifecycle flags.
      */
     _initLifecycleFlags() {
         this.dormant = false;
@@ -118,10 +106,7 @@ export class Enemy extends Entity {
 
     /**
      * @param {number} amount - Damage to apply.
-     * @returns {number} The amount actually applied (0 if already dead) -
-     *   Boss.js's override doubles this during its vulnerable window, so
-     *   Combat.js reads this return value for damage-number display instead
-     *   of assuming its own pre-multiplier amount was what actually landed.
+     * @returns {number} The amount actually applied (0 if already dead).
      */
     takeDamage(amount) {
         if (this.dead) return 0;
@@ -132,10 +117,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * Switches to the one-shot death animation rather than vanishing
-     * instantly - render()/deathAnimationFinished keep it visible (and its
-     * own animation still updating) until that plays out. GameState's death
-     * color reveal etc. key off `dead` directly, so those still fire immediately.
+     * Switches to the one-shot death animation rather than vanishing instantly.
      */
     _enterDeathAnimation() {
         this.dead = true;
@@ -156,9 +138,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * Combat feel: a hit shoves the enemy back briefly instead of it just
-     * absorbing damage in place - see Combat.js's resolveContactDamage
-     * (the passive Prisma barrier / body-contact push).
+     * Applies a brief knockback push (see Combat.js's resolveContactDamage).
      * @param {number} vx - Knockback velocity to apply.
      */
     applyKnockback(vx) {
@@ -167,14 +147,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * Separate from applyKnockback() - used only by Combat.js's active
-     * attack resolvers (resolveMeleeAttack/resolveProjectileHits), so a
-     * subclass can make itself immune to being staggered by an attack
-     * without also losing the passive contact-push reaction (Charger.js
-     * overrides only this one, so charging through the player's body still
-     * bounces it back via applyKnockback() instead of clipping through).
-     * Plain delegation here - every non-Charger enemy reacts identically to
-     * both knockback sources.
+     * Applies knockback from an active attack (melee/projectile hit), as opposed to passive body contact.
      * @param {number} vx - Knockback velocity to apply.
      */
     applyAttackKnockback(vx) {
@@ -184,11 +157,7 @@ export class Enemy extends Entity {
     /**
      * @param {Object<string, SpriteAnimation>} animations - Named animation set.
      * @param {string} [initial='running'] - Animation to start on, and the
-     *   fixed reference for renderSize/ground-line anchoring (see _drawY()) -
-     *   sprite frames carry transparent padding around the creature, so
-     *   anchoring/scaling to that padding's own bounds (rather than
-     *   stretching the whole frame into the hitbox) keeps the ground line
-     *   from jumping if a differently-padded animation is added later.
+     *   fixed reference for renderSize/ground-line anchoring (see _drawY()).
      */
     setAnimations(animations, initial = 'running') {
         this.animations = animations;
@@ -227,10 +196,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * hitFlashTimer ticks down even once dead - otherwise the killing
-     * blow's white flash (still active from the same frame takeDamage()
-     * set it) would never fade and the whole death animation renders
-     * permanently white-tinted (same fix as Player.js).
+     * hitFlashTimer ticks down even once dead, so the killing blow's white flash still fades.
      * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
@@ -247,9 +213,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * Direction is only reconsidered while grounded - mid-air (e.g. right
-     * after spawning above its floor) there's nothing meaningful to react
-     * to yet.
+     * Direction is only reconsidered while grounded.
      * @param {number} dt - Elapsed time in seconds.
      */
     _updatePatrol(dt) {
@@ -269,8 +233,7 @@ export class Enemy extends Entity {
 
     /**
      * A solid tile just past the leading edge blocks the way; no solid tile
-     * below that same point means the floor is about to run out - either
-     * one is a reason to turn around before stepping into it.
+     * below that point means the floor is about to run out.
      * @returns {boolean}
      */
     _blockedAhead() {
@@ -285,10 +248,8 @@ export class Enemy extends Entity {
     }
 
     /**
-     * Bottom-anchored to the reference animation's ground line (not the raw
-     * hitbox edge) - keeps the visible creature's feet flush with the
-     * ground it's standing on regardless of how much transparent padding
-     * its sheet carries. Shared by render() and visualTopY (HP bar placement).
+     * Bottom-anchored to the reference animation's ground line, not the raw
+     * hitbox edge. Shared by render() and visualTopY (HP bar placement).
      * @returns {number}
      */
     _drawY() {

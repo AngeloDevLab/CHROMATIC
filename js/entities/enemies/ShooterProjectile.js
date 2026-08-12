@@ -2,39 +2,33 @@ import { Entity } from '../Entity.js';
 import { SpriteAnimation } from '../../utils/SpriteAnimation.js';
 
 // shooter-projectile.png is a 512x64 strip, 8 frames of 64x64 - a baked spin
-// cycle (unlike the player's thrown_sword.png, a single static image spun via
-// code in Projectile.js) - deliberately a separate, simpler class rather than
-// bolting a second rendering mode onto Projectile.js, since the two don't
-// share much beyond the swept-collision movement below.
+// cycle (unlike the player's thrown_sword.png, spun via code in
+// Projectile.js). Kept as a separate, simpler class rather than added to
+// Projectile.js.
 const FRAME_SIZE = 64;
 const FRAME_COUNT = 8;
 const FPS = 16;
 
 /**
- * Collision hitbox, deliberately smaller than FRAME_SIZE - the sprite's
- * actual dot only fills a fraction of its 64x64 frame (the rest is
- * transparent spin clearance), so using the full frame as the hitbox read
- * as oversized in playtesting. Render size stays FRAME_SIZE; only the
- * hitbox shrinks, same width/height-vs-sprite split as Player.js/Enemy.js.
+ * Collision hitbox, smaller than FRAME_SIZE - the sprite's actual dot only
+ * fills a fraction of its 64x64 frame. Render size stays FRAME_SIZE; only
+ * the hitbox shrinks.
  */
 const HITBOX_SIZE = 28;
 
 /**
- * Paired with Shooter.js's own shot-cooldown so individual shots read as
- * dodgeable rather than a fast, dense stream.
+ * Paired with Shooter.js's own shot-cooldown.
  */
 const SPEED = 180;
 
 /**
- * Despawns without a hit past this distance - a bit more than Shooter.js's
- * own SHOOTER_RANGE_PX (260) so it can still reach a player who was in
- * range at the moment of firing but has since drifted slightly farther.
+ * Despawns without a hit past this distance - a bit more than Shooter.js's own SHOOTER_RANGE_PX (260).
  */
 const MAX_TRAVEL_PX = 300;
 
 /**
- * Same tunneling-prevention reasoning as Projectile.js - small enough that
- * a fast shot can't skip through a thin wall in one frame.
+ * Same tunneling-prevention approach as Projectile.js - small enough that a
+ * fast shot can't skip through a thin wall in one frame.
  */
 const SWEEP_STEP_PX = 4;
 
@@ -43,9 +37,7 @@ export class ShooterProjectile extends Entity {
      * @param {number} spawnCenterX - Spawn center X.
      * @param {number} spawnCenterY - Spawn center Y.
      * @param {1|-1} direction - Travel direction.
-     * @param {HTMLImageElement} sprite - Spin-cycle sprite strip; gets its own
-     *   SpriteAnimation instance (not shared, same reasoning as
-     *   EnemyFactory.js's "own instance per enemy").
+     * @param {HTMLImageElement} sprite - Spin-cycle sprite strip; gets its own SpriteAnimation instance (not shared).
      * @param {number} damage - Damage dealt on hit.
      */
     constructor(spawnCenterX, spawnCenterY, direction, sprite, damage) {
@@ -59,8 +51,7 @@ export class ShooterProjectile extends Entity {
     }
 
     /**
-     * Sweeps forward in small steps, checking for a solid tile at each one,
-     * so a fast shot can't tunnel through a thin wall in a single frame.
+     * Sweeps forward in small steps, checking for a solid tile at each one.
      * @param {number} dt - Elapsed time in seconds.
      * @param {Collision} collision - Level collision to check against.
      */

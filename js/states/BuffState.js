@@ -2,19 +2,14 @@ import { State } from './State.js';
 import { Panel } from '../ui/Panel.js';
 
 // Secret Room reward (docs/GDD/02_game-structure.md 2.5) - pushed on top of
-// GameState from BuffTerminal's interact handler (Interactables.js's
-// _updateBuffTerminalPrompt()).
-// Dismissible (session decision: a player who doesn't want to choose right
-// now can back out with ×/backdrop/Escape) since the terminal itself has no
-// cost of its own and stays unused, so they can just walk up and try again
-// later - the Prisma cost was already paid to open the SecretDoor, not this
-// choice. Unlike Pause/GameOver, no explicit Escape handling is needed here:
-// GameState doesn't tick while this is current (same freeze as those two),
-// so there's no competing handler left to race Panel's own dismiss/Escape
-// listener - it can just close the panel directly. onClose (fired
-// regardless of which of the three dismiss paths - a choice, ×/backdrop, or
-// Escape - actually closed it) is the one place that pops the state, so none
-// of them have to remember to do it themselves.
+// GameState from BuffTerminalInteractable's [E] handler.
+//
+// Dismissible: the terminal stays unused until a buff is chosen, so the
+// player can walk away and try again later. No explicit Escape handling is
+// needed - GameState doesn't tick while this is current, so nothing
+// competes with Panel's own dismiss/Escape listener. onClose fires
+// regardless of which dismiss path closed the panel and is the one place
+// that pops the state.
 export class BuffState extends State {
     /**
      * @param {{player: import('../entities/Player.js').Player, buffTerminal: import('../entities/BuffTerminal.js').BuffTerminal, levelNumber: number}} params
@@ -42,11 +37,8 @@ export class BuffState extends State {
     }
 
     /**
-     * Belt-and-suspenders against replaying this level: Interactables.js
-     * already pre-marks the terminal `used` on spawn if this level's buff
-     * was already claimed, so this shouldn't normally be reachable, but
-     * applyBuff() is additive (+=) - worth guarding directly too rather
-     * than relying solely on the UI not offering the choice.
+     * Guards against a buff being applied twice (applyBuff() is additive)
+     * even though BuffTerminalInteractable already pre-marks used terminals.
      * @param {string} buffId - One of Player.applyBuff()'s recognized buff ids.
      */
     _choose(buffId) {

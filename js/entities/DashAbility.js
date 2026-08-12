@@ -1,23 +1,12 @@
-/**
- * First-guess, same reasoning as every other tuning constant in this
- * codebase - needs real playtesting.
- */
 const DASH_SPEED = 400;
 const DASH_DURATION_SECONDS = 0.18;
 const DASH_COOLDOWN_SECONDS = 0.6;
 const DOUBLE_TAP_WINDOW_SECONDS = 0.25;
 
-// Composed onto Player as this.dash (Player.js's _initAbilityState()) -
-// detects its own "double-tap A or D" trigger by comparing input.isDown()
-// frame-to-frame (see update()) rather than adding edge-triggered left/right
-// presses to InputHandler.js, which deliberately only tracks that for
-// actions multiple callers need (attack/jump/drop/pause/interact) - a
-// double-tap window is trigger-specific timing logic only this ability
-// needs. _trigger() sets player.vx/facing once; PlayerMovement._updateHorizontalVelocity()
-// freezes both for the burst's duration the same way it already does for
-// knockback. No i-frames paired with the dash (deliberately deferred, common
-// pairing in the genre but out of scope for this pass - revisit if
-// playtesting wants it).
+// Composed onto Player as this.dash (Player.js's _initAbilityState()).
+// Detects its own "double-tap A or D" trigger by comparing input.isDown()
+// frame-to-frame (see update()). PlayerMovement._updateHorizontalVelocity()
+// freezes vx/facing for the burst's duration, same as it does for knockback.
 export class DashAbility {
     /**
      * unlocked gates update() entirely (see Player.unlockAbility()); the

@@ -1,11 +1,8 @@
 /**
- * Maps each Tiled tileset's basename (its .tsx filename, referenced in
- * every level's own `tilesets` array) to the manifest image key + column
- * count Level.js needs to resolve a tile's gid against - see Level.js's
- * constructor/getTileSourceRect(). Update this whenever a new tileset is
- * added to the project; kept as one shared source of truth (used by every
- * Level.load() call site) rather than parsing each .tsx file's own XML at
- * runtime or duplicating this table per caller.
+ * Maps each Tiled tileset's basename (its .tsx filename, referenced in every
+ * level's own `tilesets` array) to the manifest image key + column count
+ * Level.js needs to resolve a tile's gid against. Update this whenever a new
+ * tileset is added to the project.
  */
 const TILESET_KEYS = {
     tileset_grass: { imageKey: 'prologue-tileset', columns: 5 },

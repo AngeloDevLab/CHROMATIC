@@ -6,16 +6,13 @@ import { LevelSessionSetup } from './LevelSessionSetup.js';
 import { LevelSessionRenderer } from './LevelSessionRenderer.js';
 
 /**
- * Slack past the level's bottom edge before a fall counts as death - a
- * platform flush with the edge shouldn't feel like an instant kill.
+ * Slack past the level's bottom edge before a fall counts as death.
  */
 const FALL_DEATH_MARGIN_PX = 64;
 
 /**
- * Player's live-glow/permanent color trail radius (03_mechanics.md 4.1) -
- * shared with Interactables.js's revealRadius option so Portal/Trapdoor/
- * SecretDoor "revealed" tracks the same distance. Exported so
- * LevelSessionSetup.js/LevelSessionRenderer.js can reuse the same value.
+ * Player's live-glow/permanent color trail radius (03_mechanics.md 4.1),
+ * shared with Interactables.js's revealRadius option.
  */
 export const PLAYER_REVEAL_RADIUS = 55;
 
@@ -23,8 +20,7 @@ export const PLAYER_REVEAL_RADIUS = 55;
  * Real Prologue levels (Tiled exports, assets/levels/Lv_N.json).
  * Player/enemy spawn positions come from each level's PlayerStart/
  * EnemySpawn objects (10_technical-architecture.md 11.6.2); an
- * unrecognized EnemySpawn name is skipped with a console warning rather
- * than spawning the wrong thing.
+ * unrecognized EnemySpawn name is skipped with a console warning.
  */
 export const LEVEL_JSON_KEYS = {
     1: 'lv1-level',
@@ -37,8 +33,7 @@ export const LEVEL_JSON_KEYS = {
 
 /**
  * Loads a throwaway Level for a quick property check (isBossLevel() below,
- * BossState.js's arena-sizing) before the real LevelSession builds its own -
- * cheap, the JSON's already in memory via AssetLoader.
+ * BossState.js's arena-sizing) before the real LevelSession builds its own.
  * @param {AssetLoader} assets
  * @param {number} levelNumber
  * @returns {Level|null}
@@ -64,25 +59,22 @@ export function isBossLevel(assets, levelNumber) {
 }
 
 // Everything a running level needs - Level/Collision/Camera/ColorZone/Player/
-// enemies/HUD/interactables/combat - extracted out of GameState.js so a
-// level-hosting State doesn't have to rebuild all of this itself. Not a
+// enemies/HUD/interactables/combat - extracted out of GameState.js. Not a
 // State (no enter()/exit()), just a plain constructor + update()/render()/
 // destroy(), driven by whichever State owns it (GameState for a normal
 // level, BossState for a boss arena). Construction (LevelSessionSetup.js)
 // and rendering (LevelSessionRenderer.js) are composed onto this class the
-// same way Player.js composes PlayerHealth/PlayerRenderer/PlayerMovement -
-// this file keeps the update loop and thin lifecycle methods.
+// same way Player.js composes PlayerHealth/PlayerRenderer/PlayerMovement.
 //
 // A few non-obvious choices, gathered here instead of scattered near their
-// call sites: the constructor leaves Camera.js's zoom at its default (1)
-// regardless of a Boss spawning - BossState.js owns that separately, via its
-// own arena-sized buffer. _updateWorld() re-applies every unlocked ability to
-// the player every frame - idempotent and cheap enough to poll, so a DevPanel
-// unlock takes effect immediately instead of only on the next respawn.
-// _startDeathSequence() clamps the ghost's rise position to the camera's
-// visible bottom edge, since falling into a pit can put the real death
-// position below what Camera.js ever scrolls to - without this the
-// rise-and-fade would spawn off-screen and never be seen.
+// call sites: the constructor leaves Camera's zoom at its default (1) even
+// for a Boss - BossState.js handles that separately, via its own
+// arena-sized buffer. _updateWorld() re-applies every unlocked ability
+// every frame - idempotent, so a DevPanel unlock takes effect immediately
+// instead of only on the next respawn. _startDeathSequence() clamps the
+// ghost's rise position to the camera's visible bottom edge, since a pit
+// death can land below where Camera.js ever scrolls - without this the
+// rise-and-fade would spawn off-screen.
 export class LevelSession {
     /**
      * @param {Game} game - Owning Game instance.
@@ -112,6 +104,8 @@ export class LevelSession {
     destroy() {
         this.healthValueEl?.remove();
         this.shieldValueEl?.remove();
+        this.healthIconEl?.remove();
+        this.shieldIconEl?.remove();
         this.tokenCounterEl?.remove();
         this.interactables.destroy();
         this.damageNumbers?.clear();
@@ -139,10 +133,9 @@ export class LevelSession {
     }
 
     /**
-     * Merchant dialogue/Buff choice handle Escape themselves - this only
-     * ever pushes Pause, and only once neither is active. Always drains the
-     * press regardless of death state, so a stale one can't leak into
-     * whatever comes after this session ends.
+     * Only pushes Pause when neither Merchant dialogue nor Buff choice is
+     * active. Always drains the press, even while dead, so a stale one
+     * can't leak into whatever comes next.
      */
     _handlePauseInput() {
         const pausePressed = this.game.input.consumePausePress();
@@ -153,9 +146,7 @@ export class LevelSession {
     }
 
     /**
-     * Freezes gameplay the same way Pause does (update() early-returns,
-     * render() keeps drawing the last frame) - [E] here means "advance the
-     * dialogue", not "interact with the level".
+     * Freezes gameplay the same way Pause does; [E] here advances the dialogue instead of interacting with the level.
      * @param {number} dt
      * @param {MerchantDialogue} merchantDialogue
      */
@@ -170,22 +161,47 @@ export class LevelSession {
      * @param {number} dt
      */
     _updateWorld(dt) {
+        this._updatePlayer(dt);
+        this._updateEnemiesAndInteractables(dt);
+        this._updateCombatAndReveal(dt);
+        this._updateCameraAndHud(dt);
+    }
+
+    /**
+     * @param {number} dt
+     */
+    _updatePlayer(dt) {
         this.player.godmode = this.game.devPanel.godmode;
         for (const id of this.game.abilities) this.player.unlockAbility(id);
         this.player.update(dt);
         this.playerFx.update(dt);
         this.interactables.blockSecretDoor();
+    }
 
+    /**
+     * @param {number} dt
+     */
+    _updateEnemiesAndInteractables(dt) {
         this.enemyRoster.updateEnemies(dt, this.combat, this.colorZone, PLAYER_REVEAL_RADIUS);
         this.interactables.updateEntities(dt);
         this._checkFallDeath();
+    }
 
+    /**
+     * @param {number} dt
+     */
+    _updateCombatAndReveal(dt) {
         this.combat.update(dt, this.game.difficulty);
         this.enemyRoster.updateColorReveal(this.colorZone);
         this.enemyRoster.checkLevelFullyRevealed(this.colorZone, this.interactables);
         this.enemyRoster.checkBossDefeated(this.interactables);
         this._updateDeathSequence(dt);
+    }
 
+    /**
+     * @param {number} dt
+     */
+    _updateCameraAndHud(dt) {
         this.camera.follow(this.player, this.level.pixelWidth, this.level.pixelHeight);
         this._updateInteractablePrompts();
         this._updateColorZone(dt);
@@ -194,8 +210,7 @@ export class LevelSession {
     }
 
     /**
-     * A gap with no floor below lets the player fall forever and keep
-     * controlling mid-air - treat crossing the kill plane as death instead.
+     * Kills the player once they fall past the level's bottom edge (with margin).
      */
     _checkFallDeath() {
         if (!this.player.dead && this.player.y > this.level.pixelHeight + FALL_DEATH_MARGIN_PX) {
@@ -204,9 +219,7 @@ export class LevelSession {
     }
 
     /**
-     * Starts the ghost-rise once the fall animation finishes, then pushes
-     * GameOverState once its fade-out completes - this session stops
-     * getting update() calls from that point on, same freeze as Pause.
+     * Starts the ghost-rise once the fall animation finishes, then pushes GameOverState once its fade-out completes.
      * @param {number} dt
      */
     _updateDeathSequence(dt) {
@@ -219,9 +232,8 @@ export class LevelSession {
     }
 
     /**
-     * Consumed once here rather than inside each of Interactables.js's own
-     * _update*Prompt() methods - they'd otherwise race to drain the same
-     * press, and whichever ran first would silently starve the others.
+     * Consumed once here rather than in each of Interactables.js's own
+     * _update*Prompt() methods, which would otherwise race to drain the same press.
      */
     _updateInteractablePrompts() {
         const interactPressed = this.game.input.consumeInteractPress();
@@ -230,8 +242,7 @@ export class LevelSession {
 
     /**
      * Stops feeding position updates once the death sequence's full-darken
-     * sweep finishes - otherwise the normal per-frame reveal punches a
-     * fresh colored hole right at the (frozen) death spot.
+     * sweep finishes, to avoid punching a fresh colored hole at the frozen death spot.
      * @param {number} dt
      */
     _updateColorZone(dt) {

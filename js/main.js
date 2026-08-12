@@ -18,9 +18,7 @@ import { DevPanel } from './ui/DevPanel.js';
 import { LandscapeGate } from './ui/LandscapeGate.js';
 
 /**
- * Persists the fullscreen state on every change, regardless of what
- * triggered it (Settings panel checkbox, browser F11, Escape key), so
- * LoadingState can re-apply it on the next boot.
+ * Persists the fullscreen state on every change, regardless of what triggered it.
  * @param {SaveSystem} save - Persisted player preferences.
  */
 function trackFullscreenChanges(save) {
@@ -36,9 +34,6 @@ game.save = new SaveSystem();
 game.loadProgress();
 game.sound = new SoundManager();
 game.music = new MusicPlaylist(game.sound);
-// Menu/Worldmap's zone, set here so it's already in place by the time
-// LoadingState.js's proceed() calls music.start() - MenuState/WorldmapState
-// only need to re-set this on returning to either later.
 game.music.setZone(MENU_ZONE, MENU_TRACK_KEYS);
 applyAudioPreferences(game);
 trackFullscreenChanges(game.save);

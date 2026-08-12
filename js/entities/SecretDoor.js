@@ -2,10 +2,7 @@ import { Entity } from './Entity.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 
 /**
- * docs/GDD/02_game-structure.md 2.5: "Costs 50 Shield/Prisma to open... the
- * player pays with their own color energy". Read directly here rather than
- * exported from Combat.js - this isn't a combat cost, just happens to
- * share the same currency.
+ * docs/GDD/02_game-structure.md 2.5: costs 50 Shield/Prisma to open.
  */
 export const SECRET_DOOR_PRISMA_COST = 50;
 
@@ -13,8 +10,7 @@ export const SECRET_DOOR_PRISMA_COST = 50;
 // color-mechanic participation (greyFilterCSS/revealed) as Portal.js, but
 // gated on the player affording the Prisma cost above instead of "all
 // enemies dead". GameState owns the actual Prisma-spend + interact-range
-// logic (see _updateSecretDoor()), this class only tracks/renders state -
-// same split of responsibility as Portal.js.
+// logic (see _updateSecretDoor()); this class only tracks/renders state.
 export class SecretDoor extends Entity {
     /**
      * @param {number} x - World X position.

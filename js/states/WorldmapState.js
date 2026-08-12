@@ -18,11 +18,10 @@ const CHAPTERS = [
 
 /**
  * Positions along the path, as a fraction of the SOURCE worldmap image
- * (768x256) - not the viewport, since the image is contain-fit (see
- * render()) and converted to screen coordinates via that fit's
- * offset/scale in _layoutNodes(). Rough estimate tracing the visible path,
- * tune further once checked against the art. Slots match
- * 02_game-structure.md 2.6 (Prologue, 1 Template, 6 levels).
+ * (768x256), converted to screen coordinates via _layoutNodes()'s
+ * contain-fit offset/scale. Rough estimate tracing the visible path, tune
+ * further once checked against the art. Slots match 02_game-structure.md
+ * 2.6 (Prologue, 1 Template, 6 levels).
  */
 const PROLOGUE_NODES = [
     { level: 1, type: 'Combat (Tutorial)', hasSecret: false, x: 0.06, y: 0.40 },
@@ -35,49 +34,42 @@ const PROLOGUE_NODES = [
 
 const NODE_SIZE = 64;
 
+/**
+ * Worldmap screen: shows Prologue level nodes over a background image
+ * split into per-node color zones (see _initColorZone()) that reveal as
+ * levels are completed (02_game-structure.md 2.1). Rebuilt on every
+ * enter()/exit(); completedLevels reads Game.completedLevels directly
+ * (persisted via SaveSystem) rather than owning a local copy, since a copy
+ * would forget completions between visits. Shares the Menu's music zone.
+ */
 export class WorldmapState extends State {
     /**
-     * this.completedLevels reads Game.completedLevels rather than owning its
-     * own Set - this state is torn down/rebuilt on every visit
-     * (enter()/exit()), so a local Set here would forget completions the
-     * instant the player left for a level and came back. Persisted across
-     * page reloads via SaveSystem (Game.js's loadProgress()/saveProgress()).
-     * Shares the Menu's music zone, since the Worldmap has no music of its
-     * own (02_game-structure.md).
-     * @param {{justCompleted?: number}} [params] - Forwarded from
-     *   LevelSession's exit-portal transition, see _initColorZone().
+     * Builds the worldmap scene: background, color zones, chapter bar,
+     * nodes, token counter, back button.
+     * @param {{justCompleted?: number}} [params] - Forwarded from LevelSession's exit-portal transition.
      */
     enter(params) {
         this.background = this.game.assets.getImage('worldmap-prologue-bg');
         this._computeFit();
         this.game.music.setZone(MENU_ZONE, MENU_TRACK_KEYS);
-
         this.completedLevels = this.game.completedLevels;
         this.selectedIndex = null;
-
         this._initColorZone(params?.justCompleted ?? null);
         this._buildChapterBar();
         this._buildNodes();
         this._buildTokenCounter();
         this._buildBackButton();
-
         this._onOutsideClick = this._onOutsideClick.bind(this);
         document.addEventListener('click', this._onOutsideClick);
     }
 
     /**
-     * 02_game-structure.md 2.1: "defeated levels and their connecting paths
-     * turn colorful" - the map is split into one full-height vertical zone
-     * per node (see _computeZoneBounds()), revealed once its level is
-     * completed. justCompletedLevel (forwarded from LevelSession's
-     * exit-portal transition) animates as a wipe instead of popping in
-     * instantly, so only the level the player just finished gets the
-     * flourish - Continue/New Game show every already-completed zone at once.
-     * @param {number|null} justCompletedLevel
+     * Sets up the color zone and reveals already-completed level zones.
+     * @param {number|null} justCompletedLevel - Animates as a wipe instead of an instant reveal.
      */
     _initColorZone(justCompletedLevel) {
         this.colorZone = new ColorZone(this.background.width, this.background.height, undefined, {
-            greyBrightness: 0.15,
+            greyBrightness: 0.3,
             greyTint: { sepia: 0.4, hueRotate: 180, saturate: 2 },
         });
         this.colorZone.paintGreyFrom(this.background);
@@ -86,8 +78,7 @@ export class WorldmapState extends State {
 
     /**
      * Reveals every already-completed zone, hard-edged and flush against
-     * any neighboring zone so a contiguous run reads as one seamless
-     * colorful stretch. justCompletedLevel's own zone animates as a
+     * any neighboring zone. justCompletedLevel's own zone animates as a
      * left-to-right wipe instead of popping in instantly.
      * @param {number|null} justCompletedLevel
      */
@@ -199,9 +190,9 @@ export class WorldmapState extends State {
     }
 
     /**
-     * Contain-fit (whole image visible, letterboxed) rather than cover-fit
-     * (cropped) - the source image is 3:1 while the viewport is ~1.78:1, and
-     * cropping would cut off the beach start / castle end of the path.
+     * Contain-fit (whole image visible, letterboxed) rather than cover-fit,
+     * since the source image's 3:1 aspect ratio would otherwise crop the
+     * beach start / castle end of the path.
      */
     _computeFit() {
         const w = this.game.width;
@@ -227,10 +218,9 @@ export class WorldmapState extends State {
     }
 
     /**
-     * completedLevels stores the Tiled/GameState level *number*
-     * (PROLOGUE_NODES[i].level, 1-based), not the array index - matters
-     * once node order and level number can diverge (e.g. a reordered
-     * Special/Secret node).
+     * completedLevels stores the Tiled/GameState level number
+     * (PROLOGUE_NODES[i].level, 1-based), not the array index, since node
+     * order and level number can diverge.
      * @param {number} index - Index into PROLOGUE_NODES.
      * @returns {boolean}
      */
@@ -249,9 +239,7 @@ export class WorldmapState extends State {
     }
 
     /**
-     * locked/completed both overlay the same always-visible default badge
-     * (see .worldmap-node::before in style.css) - mutually exclusive in
-     * practice, a completed level was necessarily unlocked to begin with.
+     * locked/completed both overlay the same always-visible default badge (see .worldmap-node::before in style.css).
      */
     _layoutNodes() {
         for (let i = 0; i < PROLOGUE_NODES.length; i++) {
@@ -336,9 +324,9 @@ export class WorldmapState extends State {
     }
 
     /**
-     * Deselects the current node, if any (X button, or a click outside the
-     * node/info-card - node buttons and the info card both stopPropagation()
-     * their own clicks, so this only fires for genuine outside clicks).
+     * Deselects the current node, if any. Node buttons and the info card
+     * both stopPropagation() their own clicks, so this only fires for
+     * genuine outside clicks.
      */
     _onOutsideClick() {
         this._deselect();

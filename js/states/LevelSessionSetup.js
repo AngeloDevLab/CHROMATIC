@@ -18,11 +18,11 @@ import { LEVEL_JSON_KEYS, PLAYER_REVEAL_RADIUS } from './LevelSession.js';
 const FALLBACK_SPAWN = { x: 64, y: 0 };
 
 // LevelSession's constructor-time build-out, composed onto it the same way
-// LevelSessionRenderer.js owns rendering - each method mutates the session
-// reference passed in, in the fixed order LevelSession's constructor calls
-// them (enemyRoster is created between spawnPlayer() and
-// initInteractablesAndHud() since Interactables needs it, so that one step
-// stays inline in the constructor instead of moving here).
+// LevelSessionRenderer.js owns rendering. Each method mutates the session
+// reference passed in, in the fixed order the constructor calls them.
+// enemyRoster is created between spawnPlayer() and initInteractablesAndHud()
+// since Interactables needs it, so that step stays inline in the
+// constructor instead of moving here.
 export class LevelSessionSetup {
     /**
      * @param {LevelSession} session
@@ -49,9 +49,7 @@ export class LevelSessionSetup {
     }
 
     /**
-     * Switches the music playlist to this level's zone (MusicPlaylist.js's
-     * LEVEL_MUSIC_ZONES) - a no-op if it's already active, so e.g. Lv1 -> Lv2
-     * (same zone) doesn't interrupt whatever's currently playing.
+     * Switches the music playlist to this level's zone (MusicPlaylist.js's LEVEL_MUSIC_ZONES); a no-op if it's already active.
      */
     setMusicZone() {
         const session = this.session;
@@ -63,8 +61,7 @@ export class LevelSessionSetup {
      * Bakes the level's tile layers onto an offscreen canvas once, on top of
      * the shared Prologue forest backdrop tiled across the level's width - a
      * level's own "background" tile layer paints over this per level.
-     * ColorZone.js's grey/color compositing reads from this baked canvas
-     * rather than redrawing every tile layer every frame.
+     * ColorZone.js's grey/color compositing reads from this baked canvas.
      */
     buildLevelCanvas() {
         const session = this.session;
@@ -84,23 +81,21 @@ export class LevelSessionSetup {
     }
 
     /**
-     * The color mechanic (03_mechanics.md 4.1): the player leaves a
-     * permanent color trail while moving - unlike MenuState's decorative
-     * fading-bubble ColorZone, this never reverts on its own.
+     * The color mechanic (03_mechanics.md 4.1) - a permanent color trail, unlike MenuState's decorative fading-bubble ColorZone.
      */
     initColorZone() {
         const session = this.session;
         session.colorZone = new ColorZone(session.level.pixelWidth, session.level.pixelHeight, PLAYER_REVEAL_RADIUS, {
-            greyBrightness: 0.15,
+            greyBrightness: 0.3,
             greyTint: { sepia: 0.4, hueRotate: 180, saturate: 2 },
         });
         session.colorZone.paintGreyFrom(session.levelCanvas);
     }
 
     /**
-     * Spawns the player at the level's PlayerStart marker (or a fallback) -
-     * re-applies permanent Secret Room buffs/unlocked abilities, since those
-     * live on Game, not any one Player instance.
+     * Spawns the player at the level's PlayerStart marker (or a fallback),
+     * re-applying permanent Secret Room buffs/unlocked abilities that live
+     * on Game, not the Player instance.
      */
     spawnPlayer() {
         const session = this.session;
@@ -119,16 +114,25 @@ export class LevelSessionSetup {
     }
 
     /**
-     * HUD/DamageNumbers/Interactables (Portal/Merchant/Trapdoor/SecretDoor/
-     * BuffTerminal, see Interactables.js) and the player's own HP/Shield
-     * text labels - grouped since Interactables needs damageNumbers to
-     * already exist.
+     * Builds HUD/DamageNumbers/Interactables (Portal/Merchant/Trapdoor/
+     * SecretDoor/BuffTerminal, see Interactables.js) and the player's own
+     * HP/Shield text labels; grouped since Interactables needs
+     * damageNumbers to already exist.
      */
     initInteractablesAndHud() {
         const session = this.session;
         session.hud = new HUD();
         session.damageNumbers = new DamageNumbers(session.game.overlay);
+        this._buildInteractables();
+        this._buildPlayerHud();
+    }
 
+    /**
+     * Builds Interactables (Portal/Merchant/Trapdoor/SecretDoor/
+     * BuffTerminal, see Interactables.js).
+     */
+    _buildInteractables() {
+        const session = this.session;
         session.interactables = new Interactables(session.game, session.level, session.player, {
             greyFilterCSS: session.colorZone.greyFilterCSS,
             revealRadius: PLAYER_REVEAL_RADIUS,
@@ -137,18 +141,23 @@ export class LevelSessionSetup {
             levelNumber: session.levelNumber,
             onComplete: () => session._completeLevel(),
         });
+    }
 
-        session.healthValueEl = this._createHudValueLabel(HEALTH_BAR);
-        session.shieldValueEl = this._createHudValueLabel(SHIELD_BAR);
+    /**
+     * Builds the player's own HP/Shield labels+icons, token counter, and touch controls.
+     */
+    _buildPlayerHud() {
+        const session = this.session;
+        session.healthValueEl = this._createHudValueLabel(HEALTH_BAR, 'health');
+        session.shieldValueEl = this._createHudValueLabel(SHIELD_BAR, 'shield');
+        session.healthIconEl = this._createHudBarIcon(HEALTH_BAR, 'health');
+        session.shieldIconEl = this._createHudBarIcon(SHIELD_BAR, 'shield');
         session.tokenCounterEl = this._createTokenCounter();
         session.touchControls = new TouchControls(session.game);
     }
 
     /**
-     * Icon+count readout below the HP/Shield bars - styled via CSS
-     * (.hud-token's ::before), this only positions it and owns the text.
-     * scaleRect() keeps the gap below the (also scaled) Shield bar
-     * proportional instead of a fixed 4px.
+     * Icon+count readout below the HP/Shield bars, styled via CSS (.hud-token's ::before) - this only positions it and owns the text.
      * @returns {HTMLElement}
      */
     _createTokenCounter() {
@@ -163,19 +172,38 @@ export class LevelSessionSetup {
     }
 
     /**
-     * scaleRect() keeps this against the (also scaled, via Game.hudScale)
-     * canvas-drawn bar regardless of buffer size - see that getter's comment.
+     * Kept aligned to the (also scaled, via Game.hudScale) canvas-drawn bar via scaleRect().
      * @param {{x:number,y:number,width:number,height:number}} bar - HEALTH_BAR or SHIELD_BAR (HUD.js).
+     * @param {'health'|'shield'} variant
      * @returns {HTMLElement} The attached, positioned label element.
      */
-    _createHudValueLabel(bar) {
+    _createHudValueLabel(bar, variant) {
         const session = this.session;
         const el = document.createElement('div');
-        el.className = 'hud-value';
+        el.className = `hud-value hud-value-${variant}`;
         const scale = session.game.hudScale;
         const scaled = scaleRect(bar, scale);
+        const extraGap = variant === 'shield' ? 2 * scale : 0;
         el.style.left = `${scaled.x + scaled.width + 4 * scale}px`;
-        el.style.top = `${scaled.y - 2 * scale}px`;
+        el.style.top = `${scaled.y - 6 * scale + extraGap}px`;
+        session.game.overlay.appendChild(el);
+        return el;
+    }
+
+    /**
+     * Creates an icon element that clips slightly into the bar.
+     * @param {{x:number,y:number,width:number,height:number}} bar - HEALTH_BAR or SHIELD_BAR (HUD.js).
+     * @param {'health'|'shield'} variant
+     * @returns {HTMLElement} The attached, positioned icon element.
+     */
+    _createHudBarIcon(bar, variant) {
+        const session = this.session;
+        const el = document.createElement('div');
+        el.className = `hud-bar-icon hud-bar-icon-${variant}`;
+        const scale = session.game.hudScale;
+        const scaled = scaleRect(bar, scale);
+        el.style.left = `${scaled.x - 10 * scale}px`;
+        el.style.top = `${scaled.y + scaled.height / 2}px`;
         session.game.overlay.appendChild(el);
         return el;
     }

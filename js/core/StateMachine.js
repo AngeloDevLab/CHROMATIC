@@ -1,12 +1,7 @@
 // push()/pop() let a state (Pause/GameOver/Buff) stack on top of whatever
 // is currently running instead of replacing it - the state underneath
-// never gets exit()/enter()'d, so it stays exactly as it was (mid-level
-// position, timers, entities) and keeps rendering its last frame behind
-// the overlay. change() is still the right call for an actual replacement
-// (Menu/Worldmap/GameState/BossState) - it now also unwinds the whole
-// stack first, not just `current`, so nothing pushed earlier leaks (e.g.
-// Game Over's "Retry"/"Main Menu" must tear the dead GameState down too,
-// not just the Game Over panel on top of it).
+// stays alive and keeps rendering behind the overlay. change() replaces
+// the current state entirely, unwinding the whole stack first.
 export class StateMachine {
     /**
      * @param {Game} game - The owning Game instance, passed through to states.
@@ -42,8 +37,7 @@ export class StateMachine {
     }
 
     /**
-     * Stacks the named state on top of the current one without exiting it -
-     * the current state stays alive underneath (see the class comment above).
+     * Stacks the named state on top of the current one without exiting it.
      * @param {string} name - Name a state was registered under.
      * @param {...*} args - Forwarded to the target state's enter().
      */
@@ -56,8 +50,7 @@ export class StateMachine {
     }
 
     /**
-     * Exits the current (overlay) state and resumes whichever state was
-     * beneath it, without re-entering it - it never left.
+     * Exits the current (overlay) state and resumes whichever state was beneath it, without re-entering it.
      */
     pop() {
         if (this.current) this.current.exit();
@@ -75,9 +68,7 @@ export class StateMachine {
     }
 
     /**
-     * Exits `current` and every state still beneath it on the stack, then
-     * clears the stack - see the top-of-file comment for why this has to
-     * unwind the whole thing instead of just the top.
+     * Exits `current` and every state still beneath it on the stack, then clears the stack.
      */
     _exitStack() {
         if (this.current) this.current.exit();
@@ -86,9 +77,8 @@ export class StateMachine {
     }
 
     /**
-     * Delegates the per-frame update to the current (topmost) state only -
-     * anything beneath it on the stack stays frozen, same as today's
-     * per-state `paused` early-return but generalized.
+     * Delegates the per-frame update to the current (topmost) state only;
+     * anything beneath it on the stack stays frozen.
      * @param {number} dt - Fixed timestep in seconds.
      */
     update(dt) {
@@ -96,9 +86,7 @@ export class StateMachine {
     }
 
     /**
-     * Renders the whole stack bottom-to-top, then `current` last - so a
-     * pushed overlay (Pause/GameOver/Buff) draws on top of the frozen state
-     * it was pushed over, instead of that state disappearing behind it.
+     * Renders the whole stack bottom-to-top, then `current` last.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

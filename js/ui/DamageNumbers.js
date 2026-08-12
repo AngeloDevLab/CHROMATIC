@@ -1,21 +1,12 @@
 const RISE_PX = 20;
 const DAMAGE_DURATION_SECONDS = 0.7;
 
-/**
- * Text takes longer to read than a 2-3 digit damage number, held up longer.
- */
 const STATUS_DURATION_SECONDS = 1.2;
 
-// Floating popups over an entity's head - damage numbers over enemies, and
-// short one-off status text over the player (e.g. GameState's "No Prisma"
-// ranged-attack warning). Text always renders through the HTML overlay,
-// never canvas fillText (10_technical-architecture.md 11.8/11.8.1) - so this
-// manages a small pool of overlay elements and recomputes their screen
-// position from world coordinates every frame, since #ui-overlay doesn't
-// scroll with Camera.js the way the canvas does. update()'s position math is
-// multiplied by camera.zoom (Camera.js) to match render()'s own
-// ctx.scale(zoom)+translate - without this, any camera zoom below 1 would
-// leave these drifting away from the entity they're floating over.
+// Floating popups over an entity's head - damage numbers over enemies, short
+// status text over the player. Rendered via the HTML overlay, not canvas
+// fillText, so update() reprojects world coordinates through camera.zoom
+// every frame to stay aligned with the canvas's own scaling.
 export class DamageNumbers {
     /**
      * @param {HTMLElement} overlay - Element to spawn popups into.
@@ -35,9 +26,8 @@ export class DamageNumbers {
     }
 
     /**
-     * Generic text popup (see .status-message in style.css for its look,
-     * distinct from .damage-number) - same float/fade mechanic as spawn(),
-     * just not tied to a numeric amount.
+     * Generic text popup - same float/fade mechanic as spawn(), just not
+     * tied to a numeric amount.
      * @param {number} worldX - World X to float up from.
      * @param {number} worldY - World Y to float up from.
      * @param {string} text - Status text to display.

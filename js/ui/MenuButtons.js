@@ -10,8 +10,7 @@ export class MenuButtons {
      * @param {HTMLElement} overlayRoot - Element to mount the button list into.
      * @param {object} [options]
      * @param {boolean} [options.hasSave=false] - Whether Continue stays
-     *   enabled (08_menu-flow.md 9.3) - true once a difficulty has ever been
-     *   chosen (Game.difficulty, persisted via SaveSystem), see MenuState.js.
+     *   enabled (08_menu-flow.md 9.3).
      * @param {(id: string) => void} [options.onSelect] - Called with a menu item's id on click.
      */
     constructor(overlayRoot, { hasSave = false, onSelect } = {}) {

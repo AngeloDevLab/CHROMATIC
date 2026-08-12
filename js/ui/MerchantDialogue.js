@@ -1,26 +1,17 @@
 import { Panel } from './Panel.js';
 
 /**
- * Faster than CutsceneState's 10 chars/sec - that's tuned for a slow,
- * scene-setting reveal, this is a quick in-level flavor line the player
- * pages through mid-run and shouldn't feel like it's dragging.
+ * Faster than CutsceneState's 10 chars/sec.
  */
 const CHARS_PER_SECOND = 30;
 const TITLE = 'Unknown Merchant';
 const PORTRAIT_SRC = 'assets/images/objects/merchant-dialog-portrait.png';
 
 // Single-panel typewriter dialogue (Miniboss tier) that can optionally carry
-// an ability shop (Templateboss/Chapterboss tier, see Interactables.js's
-// _openMerchantDialogue()) - whether one is attached is entirely up to the
-// caller's optional `shop` param passed to open(), this class doesn't know
-// about token/ability rules itself. The shop grid (see _buildShopSectionHTML())
-// is built hidden alongside the text from the start and only unhidden once
-// the typewriter finishes (_revealShopIfNeeded()) - one dialog, one [E] to
-// open it, no second press to "advance" into the shop. Reuses Panel.js for
-// the backdrop/box chrome, drives its own typewriter reveal on top the same
-// way CutsceneState.js does for cutscene text. Portrait/name/text is laid
-// out as its own bodyHTML (see _buildBodyHTML()) instead of Panel's generic
-// title bar, so the portrait can sit beside the name rather than above the body.
+// an ability shop (Templateboss/Chapterboss tier). The shop grid is built
+// hidden alongside the text and unhidden once the typewriter finishes.
+// Reuses Panel.js for the backdrop/box chrome; drives its own typewriter
+// reveal on top, the same way CutsceneState.js does for cutscene text.
 export class MerchantDialogue {
     /**
      * @param {HTMLElement} overlayRoot - Element to mount the panel into.
@@ -38,6 +29,9 @@ export class MerchantDialogue {
     }
 
     /**
+     * Opens the dialogue panel and starts its typewriter reveal. onClose is
+     * wired directly (not routed through this class's own close()) so
+     * backdrop-click/×/Escape all still clear `isOpen`.
      * @param {string} text - Dialogue line to reveal.
      * @param {object} [shop] - When given, its option grid is revealed in the
      *   same panel once `text` finishes typing (see _revealShopIfNeeded()).
@@ -45,10 +39,6 @@ export class MerchantDialogue {
      * @param {() => number} shop.getTokens - Reads the player's current Token count.
      * @param {(id: string) => boolean} shop.isOwned - Whether an option is already unlocked.
      * @param {(id: string, cost: number) => boolean} shop.buy - Attempts a purchase, returns success.
-     * onClose is wired directly here (not routed through this class's own
-     * close()) so backdrop-click/×/Escape all still clear `isOpen` -
-     * without it, `isOpen` would stay stuck true and LevelSession.update()
-     * would never leave its dialogue-frozen branch again.
      */
     open(text, shop = null) {
         this.isOpen = true;
@@ -77,10 +67,9 @@ export class MerchantDialogue {
     }
 
     /**
-     * Renders the full (final) text once to measure its wrapped height, then
-     * locks that as a min-height and clears it back out for the typewriter
-     * reveal - without this, the panel visibly grows taller line by line as
-     * update() reveals more characters instead of staying put from open().
+     * Measures the final text's wrapped height, locks it as min-height, then
+     * clears the text back out for the typewriter reveal - without this, the
+     * panel would grow taller line by line as more characters are revealed.
      * @param {string} text - The full dialogue line, same as passed to open().
      */
     _lockHeight(text) {
@@ -121,12 +110,9 @@ export class MerchantDialogue {
     }
 
     /**
-     * [E] pressed again while open: fast-forward the typewriter if it's
-     * still typing (revealing the shop immediately after, same as the
-     * typewriter finishing on its own), otherwise - once there's nothing
-     * left to reveal - treat the press as "got it" and close. Only reachable
-     * when there's no shop attached: with one, the panel stays open for the
-     * player to click an Unlock button or dismiss it themselves.
+     * Fast-forwards the typewriter if still revealing text; otherwise
+     * closes the dialogue, but only when no shop is attached - with one,
+     * the panel stays open for the player to use its own buttons.
      */
     advance() {
         if (!this.isOpen) return;
@@ -195,9 +181,8 @@ export class MerchantDialogue {
     }
 
     /**
-     * Wires every Unlock button currently in the DOM - called once on
-     * open() (shop starts hidden but is already in the DOM) and again after
-     * every purchase, since _handleShopBuy() rebuilds the section's innerHTML.
+     * Wires every Unlock button currently in the DOM. Called once on open()
+     * and again after every purchase (see _handleShopBuy()).
      */
     _wireShopButtons() {
         for (const button of this._shopEl.querySelectorAll('.merchant-shop-buy:not(:disabled)')) {
@@ -207,8 +192,7 @@ export class MerchantDialogue {
 
     /**
      * Rebuilds the shop section in place on a successful purchase, so every
-     * option's owned/afford state and the token count reflect the new
-     * totals, rather than tracking that diff by hand.
+     * option's owned/afford state and the token count reflect the new totals.
      * @param {string} id
      */
     _handleShopBuy(id) {

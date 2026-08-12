@@ -1,25 +1,21 @@
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 
 /**
- * attack.png is a wider canvas than the other guardian sheets - gives the
- * sword room to swing past the body without clipping the frame edge.
+ * attack.png uses a wider canvas than the other guardian sheets, to fit the sword's swing.
  */
 const CHARACTER_FRAME_SIZE = 96;
 const ATTACK_FRAME_WIDTH = 150;
 const ATTACK_FRAME_HEIGHT = 96;
 
 /**
- * enter-afk.png/afk.png are cut to a smaller 64x64 canvas than the other
- * guardian sheets - fine as-is, PlayerRenderer.js's default (non-attack)
- * render path only assumes square frames, not a matching pixel size, so it
- * scales to idle's renderSize the same way running/jump/dead already do.
+ * enter-afk.png/afk.png use a smaller 64x64 canvas than the other guardian
+ * sheets; the renderer scales to idle's size regardless.
  */
 const AFK_FRAME_SIZE = 64;
 
 /**
  * Player action smoke (entities/VfxEffect.js, Player.js's pendingVfx
- * mailbox) - all three sheets are 64x64 frames, fps first-guess to land
- * around a ~0.4-0.5s playtime.
+ * mailbox); all three sheets are 64x64 frames.
  */
 export const VFX_FRAME_SIZE = 64;
 export const VFX_CLIPS = {
@@ -45,10 +41,7 @@ export function buildPlayerAnimations(assets) {
 }
 
 /**
- * Wraith.js's 6-clip-as-6-states shape (see that file's own comment) - each
- * a distinct drawn pose, not a generic looping cycle. toVulnerable is
- * deliberately slow (9 frames at 3fps, ~3s) to match its "glides back down
- * while still firing" description.
+ * Wraith.js's 6-clip-as-6-states shape; each a distinct drawn pose, not a generic looping cycle.
  * @param {AssetLoader} assets
  * @returns {object} Named SpriteAnimation set for the Wraith's state machine.
  */
@@ -65,9 +58,7 @@ export function buildWraithAnimations(assets) {
 }
 
 /**
- * Same 7-clip-as-7-states shape as buildWraithAnimations() - WraithTemplateboss
- * extends Wraith and reuses its whole state machine, against the lv_6_boss
- * sheets' own 96x150 frame size.
+ * Same 7-clip-as-7-states shape as buildWraithAnimations(), sized for the lv_6_boss sheets' 96x150 frames.
  * @param {AssetLoader} assets
  * @returns {object} Named SpriteAnimation set for the Templateboss's state machine.
  */

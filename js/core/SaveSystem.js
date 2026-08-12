@@ -1,10 +1,8 @@
 const STORAGE_KEY = 'chromatic-save';
 
 /**
- * Thin JSON-over-localStorage wrapper for player preferences and progress.
- * Reads/writes a single namespaced blob (rather than one localStorage key
- * per value) so unrelated keys never collide with anything else on the
- * same origin, and a single JSON.parse/stringify covers every read/write.
+ * Thin JSON-over-localStorage wrapper for player preferences and progress,
+ * stored as a single namespaced blob.
  */
 export class SaveSystem {
     constructor() {

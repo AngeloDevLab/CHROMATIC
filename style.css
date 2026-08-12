@@ -32,6 +32,11 @@
     box-sizing: border-box;
 }
 
+button {
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
 html,
 body {
     width: 100%;
@@ -41,6 +46,8 @@ body {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='160' viewBox='0 0 240 160'%3E%3Cpath d='M0,30 L20,30 L20,25 L40,25 L40,20 L60,20 L60,15 L80,15 L80,10 L100,10 L140,10 L140,15 L160,15 L160,20 L180,20 L180,25 L200,25 L200,30 L220,30 L240,30 L240,160 L0,160 Z' fill='%231a1c20'/%3E%3C/svg%3E");
     background-repeat: repeat-x;
     background-position: bottom;
+    -webkit-touch-callout: none;
+    user-select: none;
 }
 
 body {
@@ -676,6 +683,25 @@ body {
     pointer-events: none;
 }
 
+.hud-bar-icon {
+    position: absolute;
+    width: calc(18px * var(--hud-scale));
+    height: calc(18px * var(--hud-scale));
+    background-size: contain;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+.hud-bar-icon-health {
+    background-image: url('assets/icons/health-icon.png');
+}
+
+.hud-bar-icon-shield {
+    background-image: url('assets/icons/shield-icon.png');
+}
+
+
 /* LevelSession's Token counter, positioned just below the HP/Shield bars
    (.hud-value's sibling) - the icon is a ::before rather than an <img> so
    this stays a single positioned element, same shape as .hud-value.
@@ -1092,7 +1118,7 @@ body {
 
     50%,
     65% {
-        transform: rotate(-90deg);
+        transform: rotate(90deg);
     }
 
     100% {

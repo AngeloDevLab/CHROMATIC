@@ -11,27 +11,18 @@ const TEMPLATEBOSS_NAME = 'Wraith of the Grey City';
 const TEMPLATEBOSS_TOKEN_REWARD = 2;
 
 // Wraith of the Grey City (Lvl 6 Templateboss) - extends Wraith.js rather
-// than duplicating it, per 6.3.1's "expands [the Miniboss's moveset] rather
-// than replacing it". Only the moment right after toFiring's rise finishes
+// than duplicating it. Only the moment right after toFiring's rise finishes
 // differs: instead of always firing horizontally in place, this rolls a
-// random axis each attack -
+// random axis each attack:
 //   horizontal: unchanged, inherited _enterFiring('horizontal').
-//   vertical: a new 'firingSweep' state - glides to the OTHER fixed side
-//   while still up at _topY (reusing Wraith.js's own _updateWalk() X-
-//   interpolation via _updateCustomState()), with a vertical WraithBeam live
-//   and tracking its column for the whole crossing, sweeping the floor
-//   underneath it. No separate stationary hold for this axis - the crossing
-//   duration *is* the firing duration.
-// Either way, arrival feeds into the same inherited toVulnerable -> vulnerable
-// -> toIdle -> walking -> idle cycle - "come back down, then vulnerable,
-// then switch sides again" falls out of reusing that existing cycle
-// unchanged, not from any special-cased bookkeeping here. A vertical attack
-// therefore crosses sides twice per cycle (once while firing, once after
-// vulnerable); a horizontal attack crosses once (the normal end-of-cycle walk).
+//   vertical: a new 'firingSweep' state - glides to the other fixed side
+//   while still up at _topY, with a vertical WraithBeam tracking its column
+//   for the whole crossing. The crossing duration is the firing duration.
+// Either way, arrival feeds into the same inherited toVulnerable ->
+// vulnerable -> toIdle -> walking -> idle cycle.
 export class WraithTemplateboss extends Wraith {
     /**
-     * Last axis actually fired, for _rollAxis()'s enrage bias - null until
-     * the first attack, so that first roll is always a fair coinflip.
+     * Last axis actually fired, for _rollAxis()'s enrage bias; null until the first attack.
      */
     _lastAxis = null;
 
@@ -51,8 +42,7 @@ export class WraithTemplateboss extends Wraith {
     }
 
     /**
-     * Overrides Wraith.js's default (always horizontal) - rolls an axis
-     * first, per 6.3.1's "either/or... never both at once".
+     * Overrides Wraith.js's default (always horizontal) - rolls an axis first.
      */
     _onRiseComplete() {
         const axis = this._rollAxis();
@@ -62,10 +52,8 @@ export class WraithTemplateboss extends Wraith {
     }
 
     /**
-     * 6.3.1's enrage addition: "increases how often it alternates... rather
-     * than just faster" - below 50% HP, always pick the opposite axis from
-     * last time instead of a fresh coinflip; above 50%, stays an independent
-     * coinflip.
+     * Below 50% HP (enraged), always picks the opposite axis from last time
+     * instead of a fresh coinflip; above 50%, stays an independent coinflip.
      * @returns {'horizontal'|'vertical'}
      */
     _rollAxis() {
@@ -76,11 +64,9 @@ export class WraithTemplateboss extends Wraith {
     }
 
     /**
-     * Templateboss-only alternative to _enterFiring() - see the class
-     * comment above for the full shape. Reuses _walkTargetX/_onSideA
-     * (Wraith.js's own "Seitenwechsel" bookkeeping) so the crossing lands on
-     * whichever fixed anchor it isn't currently on, same as the normal
-     * end-of-cycle walk.
+     * Templateboss-only alternative to _enterFiring() (see the class
+     * comment above). Reuses _walkTargetX/_onSideA so the crossing lands on
+     * whichever fixed anchor it isn't currently on.
      */
     _enterFiringSweep() {
         this.telegraphing = false;
@@ -97,9 +83,8 @@ export class WraithTemplateboss extends Wraith {
     }
 
     /**
-     * 'firingSweep' isn't in Wraith.js's own switch - its default case routes
-     * here. Reuses _updateWalk() verbatim (same X-interpolation/enrage-speed
-     * as the normal end-of-cycle walk), only the arrival hook differs (see _onArrived()).
+     * 'firingSweep' isn't in Wraith.js's own switch - its default case
+     * routes here. Reuses _updateWalk(); only the arrival hook differs (see _onArrived()).
      * @param {number} dt
      */
     _updateCustomState(dt) {
@@ -107,13 +92,7 @@ export class WraithTemplateboss extends Wraith {
     }
 
     /**
-     * Reached the far side of the sweep - unlike the horizontal beam (which
-     * stays live through the whole toVulnerable descent), the vertical
-     * sweep's beam is done firing the instant the crossing itself ends, so
-     * it's killed here rather than left for the later _enterVulnerable() to
-     * clean up - the boss then comes down beam-less before going vulnerable.
-     * Falls back to the Miniboss's normal resume-idle behavior for every
-     * other arrival (the regular end-of-cycle walk).
+     * Handles arrival at the end of a sweep, falling back to the Miniboss's normal resume-idle behavior outside firingSweep.
      */
     _onArrived() {
         if (this.state !== 'firingSweep') {

@@ -1,9 +1,8 @@
 const ICON_BASE = 'assets/icons/';
 
 /**
- * Held while pressed - InputHandler.pressAction()/releaseAction() apply
- * the exact same start-of-hold edge-press guard as a real keydown/keyup,
- * so a touch Jump/Drop tap behaves identically to the matching key.
+ * Held while pressed - InputHandler.pressAction()/releaseAction() apply the
+ * same edge-press guard as a real keydown/keyup.
  */
 const HOLD_BUTTONS = [
     { action: 'left', icon: 'btn-icon-left', className: 'touch-left' },
@@ -14,11 +13,9 @@ const HOLD_BUTTONS = [
 
 /**
  * One-shot on tap (InputHandler.triggerPress()), no held state to release.
- * Pause is built separately below (always, regardless of touch capability -
- * see the constructor) - Interact is deliberately not here either, it's
- * context-sensitive (Portal/Merchant/SecretDoor/BuffTerminal), shown/
- * positioned by Interactables.js's existing [E] prompt elements instead of
- * a fixed corner button.
+ * Pause is built separately below, for any device. Interact isn't here
+ * either - it's context-sensitive, positioned by Interactables.js's own
+ * [E] prompt elements instead of a fixed corner button.
  */
 const TAP_BUTTONS = [
     { name: 'attack', icon: 'btn-icon-attack', className: 'touch-attack' },
@@ -32,10 +29,9 @@ export function isTouchCapable() {
 }
 
 /**
- * Builds one button's background plate + icon as separate layered children
- * (not a single flat image) so the plate's see-through opacity (style.css)
- * doesn't also fade the icon on top of it. Caller owns appending/removing
- * it - Interactables.js's contextual Interact prompt reuses this too.
+ * Builds one button's background plate + icon as separate layered children,
+ * so the plate's see-through opacity doesn't also fade the icon. Caller owns
+ * appending/removing it - Interactables.js's Interact prompt reuses this too.
  * @param {string} icon - Icon filename (without extension) under assets/icons/.
  * @param {string} className
  * @returns {HTMLButtonElement}
@@ -48,16 +44,11 @@ export function buildTouchButtonElement(icon, className) {
     return el;
 }
 
-// Virtual on-screen D-Pad/action buttons - plain HTML overlay elements
-// (like every other in-game UI) that just feed InputHandler's existing
-// pressAction()/releaseAction()/triggerPress(), so Player.js/
-// CombatCoordinator.js etc. never need to know input came from a touch
-// button instead of a key. The Pause button always builds, on any device -
-// the rest only on an actually touch-capable one (a mouse-driven "alternative
-// controls" toggle was tried and dropped again - clicking small buttons one
-// at a time doesn't play well against a keyboard's simultaneous-key holds).
-// Owned by LevelSession like Interactables/PlayerFx - only relevant while
-// actually playing a level.
+// Virtual on-screen D-Pad/action buttons - plain HTML overlay elements that
+// feed InputHandler's existing pressAction()/releaseAction()/triggerPress(),
+// so Player.js/CombatCoordinator.js never need to know input came from touch
+// vs a key. The Pause button always builds; the rest only on a touch-capable
+// device. Owned by LevelSession like Interactables/PlayerFx.
 export class TouchControls {
     /**
      * @param {Game} game - For input/overlay.

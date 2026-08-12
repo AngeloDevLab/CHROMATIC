@@ -10,29 +10,31 @@ import {
     RANGED_ATTACK_COOLDOWN_SECONDS,
 } from './Combat.js';
 
-// Combat feel: a brief total freeze the instant a hit lands (melee or
-// contact), before anything reacts to it - LevelSession.update() early-
-// returns while isFrozen is true (render() keeps drawing the last frame),
-// same mechanism as its Merchant-dialogue freeze.
+// Combat feel: a brief total freeze the instant a hit lands. LevelSession.
+// update() early-returns while isFrozen is true (render() keeps drawing the
+// last frame).
 const HIT_STOP_SECONDS = 0.06;
 
 // Sequences the player's per-frame attack decision (melee vs the ranged
 // thrown-sword) and both projectile pools (the player's own throw, and
 // enemy-fired shots/beams) through Combat.js's pure resolve* functions,
-// extracted out of LevelSession.js so that file isn't also the sole owner
-// of combat resolution on top of everything else it does (same motivation
-// as Interactables.js). Owns the hit-stop timer too, since it's purely a
-// reaction to the hits this class resolves - LevelSession only ever needs
-// to ask isFrozen() and call tickFrozen(dt).
+// extracted out of LevelSession.js. Owns the hit-stop timer too -
+// LevelSession only ever needs to ask isFrozen() and call tickFrozen(dt).
+//
+// Contact damage (Combat.js's resolveContactDamage) is bidirectional: the
+// player's share is displayed directly, the enemy's share is folded into the
+// shared per-frame hits array so it goes through the same sfx/hit-stop path
+// as melee/projectile hits. A charging enemy's own side is 0 for that tick,
+// filtered out so it doesn't display a stray "0".
+//
+// Attack resolution (03_mechanics.md 4.3): melee if the nearest enemy is in
+// reach, a thrown-sword projectile otherwise. The ranged throw has its own cooldown.
 export class CombatCoordinator {
     projectiles = [];
 
     /**
      * Separate from the player's own projectiles above rather than one
-     * shared list with a "whose is this" flag - resolveProjectileHits only
-     * ever checks player-thrown ones against enemies, and
-     * resolveEnemyProjectileHits (Shooter.js's shots) only ever checks
-     * these against the player, so there's no ambiguity to sort out.
+     * shared list with a "whose is this" flag.
      */
     enemyProjectiles = [];
 
@@ -41,7 +43,7 @@ export class CombatCoordinator {
 
     /**
      * @param {Player} player
-     * @param {Enemy[]} enemies - Same array reference LevelSession itself iterates, so this always sees current state.
+     * @param {Enemy[]} enemies - Same array reference LevelSession itself iterates.
      * @param {Collision} collision - For resolving projectile flight against terrain.
      * @param {object} options
      * @param {DamageNumbers} options.damageNumbers
@@ -88,16 +90,7 @@ export class CombatCoordinator {
     }
 
     /**
-     * Contact damage is bidirectional (Combat.js's resolveContactDamage) -
-     * displays the player's own share directly here, then returns the
-     * enemy's share for update() to fold into the shared hits array (so it
-     * goes through the same _displayEnemyHits() sfx/hit-stop path as
-     * melee/projectile hits). Filtered to enemyAmount > 0 - a charging
-     * enemy's own side is 0 (no self-damage that tick, see Combat.js's
-     * _resolveEnemyContact()), which would otherwise show a stray "0".
-     * Contact damage always hits the player (the barrier exchange), even
-     * when charging skips the enemy's own side of it - so the player's own
-     * hit-stop/sfx is triggered here unconditionally on any contact.
+     * Resolves contact damage between the player and enemies this frame, displaying the player's share and returning the enemy's share.
      * @param {number} dt
      * @param {string} difficulty
      * @returns {{enemy:Enemy,amount:number}[]} Enemy-side contact hits this frame.
@@ -113,12 +106,7 @@ export class CombatCoordinator {
     }
 
     /**
-     * Contact damage is bidirectional (Combat.js's resolveContactDamage) -
-     * the enemy's own share is folded into the shared hits array in update()
-     * above (so it goes through the same _displayEnemyHits() sfx/hit-stop
-     * path as melee/projectile hits), but the player's share needs its own
-     * display here, anchored at the player rather than the enemy - same
-     * reasoning as _updateEnemyProjectiles()'s playerHits loop.
+     * Spawns damage numbers on the player for each contact hit received this frame.
      * @param {{enemy:Enemy,playerAmount:number,enemyAmount:number}[]} contactHits
      */
     _displayContactHitsOnPlayer(contactHits) {
@@ -128,12 +116,7 @@ export class CombatCoordinator {
     }
 
     /**
-     * 03_mechanics.md 4.3: melee if the nearest enemy is in reach, a
-     * thrown-sword projectile otherwise - both share the same swing
-     * animation/timing (Player.js is untouched), only what happens at the
-     * swing's impact frame differs. The ranged throw is on its own cooldown
-     * (RANGED_ATTACK_COOLDOWN_SECONDS) so it can't be spammed indefinitely
-     * while an enemy sits just out of melee range - melee itself stays free.
+     * Resolves the player's attack this frame as melee or a ranged throw, depending on range to the nearest enemy.
      * @returns {{enemy:Enemy,amount:number}[]} Melee hits, if any landed this frame.
      */
     _resolvePlayerAttack() {
@@ -176,12 +159,7 @@ export class CombatCoordinator {
     }
 
     /**
-     * Enemy-fired shots/beams against the player - own damage-number loop
-     * and hit-stop trigger, separate from the enemy-hit display below since
-     * these land on the player, not an enemy. Anchored at the player, not
-     * "the enemy" - the Shooter that fired this may be far away (or dead)
-     * by the time its shot actually lands, so showing the number at the
-     * impact point (the player) is the only position that still makes sense.
+     * Updates enemy-fired projectiles and resolves their hits against the player.
      * @param {number} dt
      * @param {string} difficulty
      */

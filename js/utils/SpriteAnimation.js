@@ -1,16 +1,10 @@
-// `finished` (non-looping animations only) goes true once the last frame
-// has been held for its full duration, so callers (e.g. Player's attack
-// state) know when to switch back to normal locomotion instead of guessing
-// from elapsed time. Sprite sheets typically carry transparent padding
-// around each frame (room for the animation to move within a fixed
-// canvas); topRatio/groundLineRatio locate where the actual artwork
-// starts/ends (as a fraction of frame height, from the top), so callers
-// can align to the visible character - its feet, or its true visual center
-// - instead of the frame's raw edges. draw()'s flashAmount (0-1) tints the
-// frame white for hit-feedback without baking it into the sprite sheet -
-// drawn onto a scratch canvas first so the white fill's source-atop
-// compositing only affects this frame's own opaque pixels, not whatever
-// else is already on the destination canvas.
+// `finished` (non-looping only) goes true once the last frame has held for
+// its full duration, so callers know when to switch back to normal
+// locomotion. topRatio/groundLineRatio locate where the actual artwork
+// starts/ends within a frame's transparent padding, so callers can align to
+// the visible character instead of the frame's raw edges. draw()'s
+// flashAmount tints the frame white on a scratch canvas first, so the
+// source-atop compositing only affects this frame's own opaque pixels.
 export class SpriteAnimation {
     /**
      * @param {HTMLImageElement} image - Sprite sheet, frames laid out left to right.
@@ -28,7 +22,6 @@ export class SpriteAnimation {
         this.frameCount = frameCount;
         this.frameDuration = 1 / fps;
         this.loop = loop;
-
         this.elapsed = 0;
         this.currentFrame = 0;
         this.finished = false;
@@ -97,17 +90,25 @@ export class SpriteAnimation {
         this.elapsed += dt;
         while (this.elapsed >= this.frameDuration) {
             this.elapsed -= this.frameDuration;
-
-            if (this.currentFrame + 1 < this.frameCount) {
-                this.currentFrame++;
-            } else if (this.loop) {
-                this.currentFrame = 0;
-            } else {
-                this.finished = true;
-                this.elapsed = 0;
-                break;
-            }
+            if (this._advanceFrame()) break;
         }
+    }
+
+    /**
+     * @returns {boolean} Whether playback just finished (non-looping, last frame held).
+     */
+    _advanceFrame() {
+        if (this.currentFrame + 1 < this.frameCount) {
+            this.currentFrame++;
+            return false;
+        }
+        if (this.loop) {
+            this.currentFrame = 0;
+            return false;
+        }
+        this.finished = true;
+        this.elapsed = 0;
+        return true;
     }
 
     /**

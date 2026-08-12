@@ -1,14 +1,8 @@
 import { Entity } from './Entity.js';
 
-// The actual buff pickup inside a Secret Room, past the SecretDoor.js
-// entrance - a terminal/console, not an altar (session naming correction).
-// Deliberately dumb - GameState.js gates whether [E] does anything here at
-// all on the door already being open, and drives the buff-choice panel
-// itself; this class only tracks "has this already been used" so a player
-// can't walk back in and pick a second buff from the same terminal. Size
-// comes from the Tiled object itself, same reasoning as
-// Trapdoor.js/SecretDoor.js. Single static sprite (buffterminal.png), no
-// animation - `used` only dims it, doesn't switch frames.
+// The buff pickup inside a Secret Room, past the SecretDoor.js entrance.
+// GameState.js drives the buff-choice panel and gates interaction on the
+// door already being open; this class only tracks whether it's been used.
 export class BuffTerminal extends Entity {
     /**
      * @param {number} x - World X position.

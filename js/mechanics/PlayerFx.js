@@ -8,9 +8,8 @@ import { buildVfxAnimation } from '../entities/CharacterAnimations.js';
 const FOOTSTEP_INTERVAL_SECONDS = 0.40;
 
 // Player's ground-contact smoke (jump/landing/dash) and action SFX (attack
-// swoosh, footsteps) - extracted out of LevelSession.js since it's a fully
-// self-contained subsystem, only ever touching the player, its own VfxEffect
-// pool, and the sound bus.
+// swoosh, footsteps) - extracted out of LevelSession.js. Only ever touches
+// the player, its own VfxEffect pool, and the sound bus.
 export class PlayerFx {
     /**
      * @param {Game} game - For assets/sound.
@@ -35,9 +34,7 @@ export class PlayerFx {
     }
 
     /**
-     * Each pendingVfx key doubles as an SFX key of the same name
-     * (SoundManager.playSfx() is fail-soft, so this is safe even for a key
-     * with no sound file loaded yet).
+     * Each pendingVfx key doubles as an SFX key of the same name (SoundManager.playSfx() is fail-soft).
      */
     _drainPendingVfx() {
         const feetY = this.player.y + this.player.height;
@@ -49,8 +46,7 @@ export class PlayerFx {
     }
 
     /**
-     * Attack's swing sound and the running footstep loop - neither has a
-     * matching VfxEffect, so they're kept separate from _drainPendingVfx().
+     * Attack's swing sound and the running footstep loop - neither has a matching VfxEffect.
      * @param {number} dt
      */
     _updateActionSfx(dt) {
@@ -61,8 +57,7 @@ export class PlayerFx {
 
     /**
      * Repeats every FOOTSTEP_INTERVAL_SECONDS while actually running under
-     * control - resets so the very next step fires immediately once running
-     * starts again, rather than waiting out a stale interval.
+     * control. Resets so the next step fires immediately once running starts again.
      * @param {number} dt
      */
     _updateFootstepSfx(dt) {

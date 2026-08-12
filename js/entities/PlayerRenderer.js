@@ -1,19 +1,15 @@
 const TARGET_VISIBLE_HEIGHT = 64;
 
 /**
- * Poses whose sheet doesn't share idle's own padding-to-character ratio -
- * see _renderDimensions() - mapped to the animation whose detected bounds
- * should drive their render scale. attack scales off itself; afk shares
- * afkEnter's bounds rather than its own, since afk.png's own padding ratio
- * differs slightly and would otherwise pop the character's size right as
- * the loop takes over from the one-shot enter.
+ * Poses whose sheet doesn't share idle's padding-to-character ratio, mapped
+ * to the animation whose bounds should drive their render scale (see
+ * _renderDimensions()). afk shares afkEnter's bounds to avoid a size pop
+ * when the loop takes over.
  */
 const OWN_BOUNDS_SOURCE = { attack: 'attack', afkEnter: 'afkEnter', afk: 'afkEnter' };
 
 /**
- * Max AFK art-alignment nudge, in pixels - ramped up 1px per afkEnter
- * frame (see _afkYOffset()) rather than applied all at once, so settling
- * into the pose reads as a gradual sink instead of a sudden pop.
+ * Max AFK art-alignment nudge, in pixels - ramped up 1px per afkEnter frame (see _afkYOffset()).
  */
 const AFK_Y_OFFSET = 5;
 
@@ -31,8 +27,7 @@ export class PlayerRenderer {
 
     /**
      * Scales the render size so the *visible* character (excluding the
-     * sprite's own padding) measures TARGET_VISIBLE_HEIGHT, instead of the
-     * whole padded frame - which would look smaller than intended.
+     * sprite's own padding) measures TARGET_VISIBLE_HEIGHT, instead of the whole padded frame.
      * @param {object} animations
      * @returns {number}
      */
@@ -44,8 +39,7 @@ export class PlayerRenderer {
 
     /**
      * Anchored to idle's feet position, not the current animation's own -
-     * e.g. jump's tucked-legs pose has a much higher lowest-opaque-pixel than
-     * idle, so a fixed reference keeps the visible sprite stable across poses.
+     * e.g. jump's tucked-legs pose has a much higher lowest-opaque-pixel than idle.
      * @param {SpriteAnimation} [referenceAnim]
      * @param {number} [renderSize]
      * @returns {number}
@@ -108,9 +102,7 @@ export class PlayerRenderer {
 
     /**
      * Ramps from 0 to AFK_Y_OFFSET 1px per afkEnter frame as it plays, then
-     * holds at the max once afkEnter finishes and afk's loop takes over -
-     * afkEnter's own currentFrame drives it either way, since afkEnter
-     * itself no longer advances once finished.
+     * holds at the max once afkEnter finishes and afk's loop takes over.
      * @returns {number}
      */
     _afkYOffset() {
@@ -120,12 +112,7 @@ export class PlayerRenderer {
     }
 
     /**
-     * Idle/running/jump/dead share idle's own render size (see _drawY's
-     * default params) so switching between those poses never jitters
-     * vertically. OWN_BOUNDS_SOURCE poses use a differently-padded sheet
-     * without throwing that off - scaled from boundsAnim's bounds by height
-     * only, then width follows the *drawn* frame's own aspect ratio (a
-     * non-square frame would otherwise stretch).
+     * Computes the render width/height for the current animation, scaled from boundsAnim's bounds when the pose uses a differently-padded sheet.
      * @param {SpriteAnimation} anim
      * @param {?SpriteAnimation} boundsAnim
      * @returns {{width:number, height:number}}

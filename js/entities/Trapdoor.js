@@ -1,24 +1,20 @@
 import { Entity } from './Entity.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 
-// Lvl 4's Gimmick (docs/GDD/02_game-structure.md 2.6: "a trapdoor leads to a
-// random underground level" - session decision: purely narrative framing,
-// one fixed Lv_4, no real level-switch). The fall itself needs no code at
-// all - the Tiled object sits directly over a genuine gap in the `terrain`
-// layer, so gravity does the work exactly like any other stacked-floor gap.
-// This class is purely the visual "the ground gives way" cue layered on top.
-// Only two real states (session decision, simpler than Portal.js's
-// closed/opening/open): closed -> opening (one-shot breaking animation) ->
-// gone. The turf just breaks away and stays broken - there's no separate
-// "open" pose to hold afterward, so nothing renders once opening finishes.
+// Lvl 4's Gimmick (docs/GDD/02_game-structure.md 2.6). The fall itself needs
+// no code - the Tiled object sits directly over a genuine gap in the
+// `terrain` layer, so gravity does the work like any other stacked-floor
+// gap. This class is purely the visual "the ground gives way" cue.
+// Two states: closed -> opening (one-shot breaking animation) -> gone;
+// nothing renders once opening finishes.
 export class Trapdoor extends Entity {
     /**
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
-     * @param {number} width - Width from the Tiled object (sized to exactly cover the terrain gap, not a fixed sprite footprint like Portal.js's SIZE).
+     * @param {number} width - Width from the Tiled object.
      * @param {number} height - Height from the Tiled object.
      * @param {{closed: HTMLImageElement, opens: HTMLImageElement, opensFrameCount: number, opensFps: number}} sprites
-     * @param {string} greyFilterCSS - Same color-mechanic participation as Portal.js - stays grey until the player's reveal radius reaches it, so a still-grey trapdoor doesn't stick out against colored ground and give away its position.
+     * @param {string} greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
      */
     constructor(x, y, width, height, sprites, greyFilterCSS) {
         super(x, y, width, height);

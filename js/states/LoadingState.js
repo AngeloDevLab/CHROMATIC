@@ -1,5 +1,37 @@
 import { State } from './State.js';
 
+// Full-manifest loading screen: images/JSON (_loadManifest()) block state
+// entry; sounds (_loadSounds()) load in two waves - the first OST track
+// plus every SFX block too, the rest of the OST rotation loads unblocked in
+// the background afterward (_loadBackgroundMusic()), since
+// MusicPlaylist.js doesn't reach them until minutes into playback.
+// Progress (_onAssetLoaded()) is counted by manifest entry, not by byte.
+//
+// The final state transition waits for one user gesture
+// (_waitForContinue()): both the saved fullscreen preference and the
+// SoundManager's AudioContext can only be (re-)applied/resumed inside a
+// click/keypress handler. Listens for `pointerup` rather than `pointerdown`
+// since Chrome's Web Audio autoplay unlock isn't reliably granted until a
+// gesture completes (https://developer.chrome.com/blog/autoplay/#web_audio).
+//
+// _loadManifest()'s asset notes:
+// - Tileset images are resolved to the right image/gid-range per tile by
+//   world/TilesetRegistry.js, not hardcoded to one shared tileset per level.
+// - trapdoor (Lvl 4 Gimmick, Trapdoor.js): closed is a single 128x32 frame,
+//   opens is a 10-frame 128x32 strip (1280x32).
+// - secretdoor (Lvl 5 Secret Room, SecretDoor.js): closed/open are single
+//   32x64 frames, opens is a 7-frame 32x64 strip (224x64).
+// - buffterminal (Lvl 5 Secret Room, BuffTerminal.js), merchant (post-boss,
+//   Merchant.js), and token (boss-drop pickup, Token.js) are all single
+//   static frames, no animation.
+// - boss-wraith-* (Lvl 3 Miniboss, entities/bosses/Wraith.js) and
+//   boss-templateboss-* (Lvl 6 Templateboss, WraithTemplateboss.js) share
+//   the same 7-clip shape (idle loops, the rest are one-shot transitions
+//   between held end-poses); the Templateboss frame is smaller (96x150 vs
+//   128x256), see CharacterAnimations.js's buildTemplatebossAnimations().
+// - vfx-* (player action VFX, VfxEffect.js) are 64x64 frames, triggered via
+//   Player.js's pendingVfx mailbox (PlayerFx.js).
+// - credits (MenuState.js's Info panel) is the single source of truth for Credits.
 export class LoadingState extends State {
     /**
      * Shows the loading label and kicks off asset/sound loading.
@@ -31,9 +63,7 @@ export class LoadingState extends State {
     }
 
     /**
-     * Per-asset progress display, counted by entry (not by byte) - the OST
-     * tracks dominate actual transfer time, so the percentage can still
-     * appear to stall near the end while the last one or two finish.
+     * Updates the loading percentage display.
      */
     _onAssetLoaded() {
         this._progress.done++;
@@ -42,13 +72,7 @@ export class LoadingState extends State {
     }
 
     /**
-     * Gates the state transition behind one user gesture. Assets are ready
-     * at this point, but both a saved fullscreen preference (Fullscreen
-     * API) and the SoundManager's AudioContext can only be (re-)applied/
-     * resumed inside a click/keypress handler, never on load. Listens for
-     * `pointerup`, not `pointerdown` - Chrome's Web Audio autoplay unlock
-     * isn't reliably granted on a gesture's start, only once it completes
-     * (https://developer.chrome.com/blog/autoplay/#web_audio).
+     * Gates the state transition behind one user gesture.
      */
     _waitForContinue() {
         this.label.textContent = 'Press any key to continue';
@@ -92,9 +116,6 @@ export class LoadingState extends State {
                 'menu-parallax-bg': 'assets/images/backgrounds/forest_bg.png',
                 'cutscene-beach-bg': 'assets/images/backgrounds/beach_bg.png',
                 'worldmap-prologue-bg': 'assets/images/backgrounds/worldmap_prolog.png',
-                // Every tileset a level might reference - resolved to the
-                // right image/gid-range per tile by world/TilesetRegistry.js,
-                // not hardcoded to one shared tileset per level any more.
                 'prologue-tileset': 'assets/images/tilesets/tileset_grass.png',
                 'tileset-gravel': 'assets/images/tilesets/tileset_gravel.png',
                 'tileset-scifilab': 'assets/images/tilesets/tileset_scifilab.png',
@@ -112,29 +133,14 @@ export class LoadingState extends State {
                 'portal-closed': 'assets/images/objects/portal-closed.png',
                 'portal-open': 'assets/images/objects/portal-open.png',
                 'portal-opens': 'assets/images/objects/portal-opens.png',
-                // Lvl 4 Gimmick (entities/Trapdoor.js) - closed is a single
-                // 128x32 frame, opens is a 10-frame 128x32 strip (1280x32).
                 'trapdoor-closed': 'assets/images/objects/trapdoor-closed.png',
                 'trapdoor-opens': 'assets/images/objects/trapdoor-opens.png',
-                // Lvl 5 Secret Room (entities/SecretDoor.js) - closed/open are
-                // single 32x64 frames, opens is a 7-frame 32x64 strip (224x64).
                 'secretdoor-closed': 'assets/images/objects/secretdoor-closed.png',
                 'secretdoor-open': 'assets/images/objects/secretdoor-open.png',
                 'secretdoor-opens': 'assets/images/objects/secretdoor-opens.png',
-                // Lvl 5 Secret Room (entities/BuffTerminal.js) - single static
-                // 32x64 frame, no animation.
                 'buffterminal': 'assets/images/objects/buffterminal.png',
-                // Post-boss Merchant (entities/Merchant.js) - single static
-                // 64x64 frame, no animation.
                 'merchant': 'assets/images/objects/merchant.png',
-                // Boss-drop Token pickup (entities/Token.js) - single static
-                // 64x64 frame, no animation.
                 'token': 'assets/images/objects/token.png',
-                // Wraith of the Shifting Sands (Lvl 3 Miniboss, entities/bosses/
-                // Wraith.js) - each a fixed 128x256 frame (see the earlier PixelLab
-                // sizing discussion). idle loops; the rest are one-shot transitions
-                // between held end-poses, matching how the sprites were actually
-                // animated rather than a generic loop per state.
                 'boss-wraith-idle': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/floating-idle.png',
                 'boss-wraith-to-firing': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/from-idle-to-firing.png',
                 'boss-wraith-firing': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/firing.png',
@@ -142,10 +148,6 @@ export class LoadingState extends State {
                 'boss-wraith-vulnerable': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/vulnerable.png',
                 'boss-wraith-to-idle': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/from-vulnerable-to-idle.png',
                 'boss-wraith-dead': 'assets/images/enemys/bosses/prologue/Lv_3_Boss/dead.png',
-                // Wraith of the Grey City (Lvl 6 Templateboss, entities/bosses/
-                // WraithTemplateboss.js) - same 7-clip shape as the Miniboss
-                // above, but a smaller 96x150 frame (see CharacterAnimations.js's
-                // buildTemplatebossAnimations()).
                 'boss-templateboss-idle': 'assets/images/enemys/bosses/prologue/lv_6_boss/floating-idle.png',
                 'boss-templateboss-to-firing': 'assets/images/enemys/bosses/prologue/lv_6_boss/from-idle-to-firing.png',
                 'boss-templateboss-firing': 'assets/images/enemys/bosses/prologue/lv_6_boss/firing.png',
@@ -153,8 +155,6 @@ export class LoadingState extends State {
                 'boss-templateboss-vulnerable': 'assets/images/enemys/bosses/prologue/lv_6_boss/vulnerable.png',
                 'boss-templateboss-to-idle': 'assets/images/enemys/bosses/prologue/lv_6_boss/from-vulnerable-to-idle.png',
                 'boss-templateboss-dead': 'assets/images/enemys/bosses/prologue/lv_6_boss/dead.png',
-                // Player action VFX (entities/VfxEffect.js) - 64x64 frames,
-                // triggered via Player.js's pendingVfx mailbox (PlayerFx.js).
                 'vfx-jump': 'assets/images/vfx/jumping.png',
                 'vfx-landing': 'assets/images/vfx/landing.png',
                 'vfx-dash': 'assets/images/vfx/dash.png',
@@ -167,8 +167,6 @@ export class LoadingState extends State {
                 'lv4-level': 'assets/levels/Lv_4.json',
                 'lv5-level': 'assets/levels/Lv_5.json',
                 'lv6-level': 'assets/levels/Lv_6.json',
-                // MenuState.js's Info panel - single source of truth for
-                // Credits, no separate file to keep in sync by hand.
                 'credits': 'assets/credits.json',
             },
         };
@@ -178,14 +176,7 @@ export class LoadingState extends State {
 
     /**
      * Loads the first OST track and every SFX blocking the loading screen,
-     * then kicks off the rest of the OST rotation in the background (not
-     * awaited) once that's done. 'ost-01'..'ost-08' aren't needed until
-     * MusicPlaylist.js's rotation actually reaches them, minutes into
-     * playback - background loading finishes long before that even on a
-     * slow connection, and SoundManager.playMusic() already no-ops quietly
-     * if a track somehow isn't ready yet. SFX keys match their trigger 1:1
-     * (PlayerFx.js) - more get added here as files exist, SoundManager.load()
-     * already tolerates a missing/broken file on its own.
+     * then kicks off the rest of the OST rotation in the background.
      */
     async _loadSounds() {
         const manifest = {
@@ -211,9 +202,8 @@ export class LoadingState extends State {
     }
 
     /**
-     * Fire-and-forget: not part of `_progress`/the `Promise.all` in
-     * `_load()`, so it never blocks `_waitForContinue()` - keeps running
-     * after the player is already in the menu.
+     * Fire-and-forget rest of the OST rotation - keeps running after the
+     * player is already in the menu.
      */
     _loadBackgroundMusic() {
         this.game.sound.loadManifest({

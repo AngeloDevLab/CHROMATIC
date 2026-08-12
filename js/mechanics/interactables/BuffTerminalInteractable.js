@@ -1,19 +1,17 @@
 import { BuffTerminal } from '../../entities/BuffTerminal.js';
 import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from './InteractPrompt.js';
 
-// Buff Terminal (Lvl 5 Gimmick) - only interactable once the SecretDoor is
-// open (or there simply isn't one placed) and hasn't already been used;
-// pushes BuffState (see StateMachine.js's push()) rather than granting
-// anything directly. Gated on secretDoor.isOpen, not its own separate
-// reveal/color state - it sits inside the room the door already guards. The
-// constructor pre-marks a spawned terminal used if Game.claimedSecretRoomBuffs
-// already has this level (BuffState.js's _choose()) - `used` alone
-// (BuffTerminal.js's own instance field) doesn't survive a replay's fresh
-// LevelSession on its own, so without this a replay could offer (and stack)
-// a second buff choice from the same terminal. updatePrompt() hides its
-// prompt explicitly the instant [E] pushes BuffState, rather than leaving it
-// to next frame's inRange check - this session gets no more update() calls
-// at all while BuffState is on top, so nothing else would ever hide it again.
+// Buff Terminal (Lvl 5 Gimmick) - interactable once the SecretDoor is open
+// (or none is placed) and unused; pushes BuffState rather than granting
+// anything directly.
+//
+// The constructor pre-marks a terminal used if Game.claimedSecretRoomBuffs
+// already has this level, since `used` alone doesn't survive a replay's
+// fresh LevelSession - without this a replay could offer a second buff
+// choice from the same terminal.
+//
+// updatePrompt() hides its prompt immediately when [E] pushes BuffState,
+// since no further update() calls happen afterward to hide it later.
 export class BuffTerminalInteractable {
     /**
      * @param {Game} game
@@ -21,7 +19,7 @@ export class BuffTerminalInteractable {
      * @param {Player} player
      * @param {object} options
      * @param {number} options.levelNumber
-     * @param {() => boolean} options.isDoorOpen - SecretDoorInteractable's isOpen getter, so this class doesn't need a direct reference to that instance.
+     * @param {() => boolean} options.isDoorOpen - SecretDoorInteractable's isOpen getter.
      */
     constructor(game, level, player, { levelNumber, isDoorOpen }) {
         this.game = game;
