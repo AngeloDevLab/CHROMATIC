@@ -13,8 +13,8 @@ export const WRAITH_HEIGHT = 128;
  * contactDamage stays shared/inherited.
  */
 export const WRAITH_HP = 300;
-export const SIGNATURE_HIT_DAMAGE = 40;
-export const WRAITH_CONTACT_DAMAGE = 10;
+export const SIGNATURE_HIT_DAMAGE = 60;
+export const WRAITH_CONTACT_DAMAGE = 40;
 
 /**
  * 05_enemies-bosses.md's Miniboss row - BossState.js's HP bar label.

@@ -2,12 +2,12 @@ import { Enemy } from '../Enemy.js';
 import { ShooterProjectile } from './ShooterProjectile.js';
 
 /**
- * 05_enemies-bosses.md 6.5. Contact/projectile damage both unified to 10
+ * 05_enemies-bosses.md 6.5. Contact/projectile damage both unified
  * (matches every other enemy type's contact hit).
  */
 const SHOOTER_HP = 20;
-const SHOOTER_CONTACT_DAMAGE = 10;
-const SHOOTER_PROJECTILE_DAMAGE = 10;
+const SHOOTER_CONTACT_DAMAGE = 20;
+const SHOOTER_PROJECTILE_DAMAGE = 20;
 
 /**
  * "Keeps distance" (05_enemies-bosses.md 6.1) - engages from farther out

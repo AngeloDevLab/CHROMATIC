@@ -2,6 +2,7 @@ const MENU_ITEMS = [
     { id: 'continue', label: 'Continue' },
     { id: 'new-game', label: 'New Game' },
     { id: 'settings', label: 'Settings' },
+    { id: 'how-to-play', label: 'How to Play' },
     { id: 'info', label: 'Info' },
 ];
 

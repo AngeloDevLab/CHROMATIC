@@ -1,17 +1,10 @@
 const TILE_SIZE = 32;
 
-// tilesetRegistry (constructor param): { [tsxBasename]: { image, columns } } -
-// Tiled's own per-level `tilesets` array supplies firstgid + a source path;
-// the registry supplies the loaded image + column count for each one, keyed
-// by that .tsx's filename, so a level can mix tilesets with different images
-// and different column counts. Tiled numbers gids as one continuous sequence
-// across every tileset a level uses, in firstgid order, so _tilesetFor()
-// finds a gid's tileset as whichever one started most recently at or before
-// it; _buildTilesets() sorts ascending by firstGid so that scan can stop
-// early. getTileTopPadding()/findGroundSurfaceY() exist because tile art can
-// leave transparent padding within its 32x32 cell, so they find where the
-// artwork actually starts to ground a character on the visible surface
-// rather than the raw grid line.
+// Tiled numbers gids as one continuous sequence across a level's tilesets,
+// in firstgid order; _tilesetFor() finds the tileset that started most
+// recently at or before a given gid. getTileTopPadding()/findGroundSurfaceY()
+// exist because tile art can leave transparent padding within its cell, so
+// grounding uses where the artwork visually starts, not the raw grid line.
 export class Level {
     /**
      * @param {object} data - Raw Tiled JSON export.

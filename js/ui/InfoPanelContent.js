@@ -1,8 +1,6 @@
-const INFO_HOW_TO_PLAY_LINK = `<button class="panel-link" data-action="how-to-play">How to Play</button>`;
-
 const LEGAL_NOTICE_BODY = `
     <h3>Legal Notice</h3>
-    <p>Information according to § 5 DDG (German Digital Services Act)</p>
+    <p>Information according to § 5 DDG</p>
     <p>
         Angelo Pietsch<br>
         Haydnstraße 45<br>
@@ -61,15 +59,15 @@ function buildFreesoundCreditRow(credit) {
 }
 
 /**
- * @param {{name:string,detail:string,links:{label:string,url:string}[],license:string|null,licenseUrl:string|null,licenseNote:string}} entry
+ * @param {{name:string,detail:string,license:string|null,licenseUrl:string|null,licenseNote:string}} entry - detail carries its own author link(s) as inline `<a>` markup.
  * @returns {string}
  */
 function buildThirdPartyRow(entry) {
-    const links = entry.links.map((link) => `<a href="${link.url}" target="_blank" rel="noopener noreferrer">${link.label}</a>`).join(', ');
+    const noteSuffix = entry.licenseNote ? ` - ${entry.licenseNote}` : '';
     const licenseLine = entry.license
-        ? `License: <a href="${entry.licenseUrl}" target="_blank" rel="noopener noreferrer">${entry.license}</a> - ${entry.licenseNote}`
+        ? `License: <a href="${entry.licenseUrl}" target="_blank" rel="noopener noreferrer">${entry.license}</a>${noteSuffix}`
         : entry.licenseNote;
-    return `<p>${entry.name} - ${entry.detail} (${links}). ${licenseLine}</p>`;
+    return `<p>${entry.name} - ${entry.detail}. ${licenseLine}</p>`;
 }
 
 /**
@@ -103,12 +101,11 @@ function buildCreditsBody(credits) {
 }
 
 /**
- * Full Info panel body - How to Play entry point, Credits, Legal Notice,
- * Privacy Policy, in that order.
+ * Full Info panel body - Credits, Legal Notice, Privacy Policy, in that order.
  * @param {AssetLoader} assets - For assets/credits.json (already loaded by LoadingState.js).
  * @returns {string}
  */
 export function buildInfoBody(assets) {
     const credits = assets.getJSON('credits');
-    return INFO_HOW_TO_PLAY_LINK + buildCreditsBody(credits) + LEGAL_NOTICE_BODY + PRIVACY_POLICY_BODY;
+    return `<div class="readable-body">${buildCreditsBody(credits) + LEGAL_NOTICE_BODY + PRIVACY_POLICY_BODY}</div>`;
 }

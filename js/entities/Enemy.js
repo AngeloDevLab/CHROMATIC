@@ -22,7 +22,7 @@ const KNOCKBACK_LOCK_SECONDS = 0.15;
  */
 const DEFAULT_HP = 30;
 
-const DEFAULT_CONTACT_DAMAGE = 10;
+const DEFAULT_CONTACT_DAMAGE = 20;
 
 /**
  * How far past its own leading edge to probe for whether the way ahead is blocked.

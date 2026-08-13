@@ -192,6 +192,7 @@ export class MenuState extends State {
             continue: () => this.game.stateMachine.change('worldmap'),
             'new-game': () => this._openDifficultySelect(),
             settings: () => this._openSettings(),
+            'how-to-play': () => this._openHowToPlay(),
             info: () => this._openInfo(),
         };
         handlers[id]?.();
@@ -207,23 +208,19 @@ export class MenuState extends State {
     }
 
     /**
-     * Opens the Info panel - a How to Play entry point, then Credits (built
-     * from assets/credits.json, already loaded by LoadingState.js), Legal
-     * Notice, Privacy Policy.
+     * Opens the Info panel - Credits (built from assets/credits.json,
+     * already loaded by LoadingState.js), Legal Notice, Privacy Policy.
      */
     _openInfo() {
-        this.panel.open('Info', buildInfoBody(this.game.assets), {
-            onMount: (root) => root.querySelector('[data-action="how-to-play"]').addEventListener('click', () => this._openHowToPlay()),
-        });
+        this.panel.open('Info', buildInfoBody(this.game.assets));
     }
 
     /**
-     * Swaps How to Play into the same shared Panel Info just opened into -
-     * onClose returns to Info rather than stacking a second panel-backdrop
-     * (see HowToPlayPanel.js's own comment on why it takes an injected Panel).
+     * Opens How to Play into the shared Panel instance (see
+     * HowToPlayPanel.js's own comment on why it takes an injected Panel).
      */
     _openHowToPlay() {
-        this.howToPlayPanel.open({ onClose: () => this._openInfo() });
+        this.howToPlayPanel.open();
     }
 
     /**

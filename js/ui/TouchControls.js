@@ -44,11 +44,20 @@ export function buildTouchButtonElement(icon, className) {
     return el;
 }
 
-// Virtual on-screen D-Pad/action buttons - plain HTML overlay elements that
-// feed InputHandler's existing pressAction()/releaseAction()/triggerPress(),
-// so Player.js/CombatCoordinator.js never need to know input came from touch
-// vs a key. The Pause button always builds; the rest only on a touch-capable
+// Virtual on-screen D-Pad/action buttons - plain HTML elements that feed
+// InputHandler's existing pressAction()/releaseAction()/triggerPress(), so
+// Player.js/CombatCoordinator.js never need to know input came from touch vs
+// a key. The Pause button always builds; the rest only on a touch-capable
 // device. Owned by LevelSession like Interactables/PlayerFx.
+//
+// Mounted to document.body, outside #ui-overlay, like LandscapeGate.js/
+// DevPanel.js - #ui-overlay is transform-scaled to the internal game
+// resolution, so anything inside it (even position: fixed) tracks the
+// scaled/letterboxed canvas rather than the physical screen corners.
+//
+// isTouchCapable() is re-checked on every resize/orientationchange, not just
+// at construction, so a DevTools device-mode toggle mid-level is picked up
+// too (same reasoning as LandscapeGate.js).
 export class TouchControls {
     /**
      * @param {Game} game - For input/overlay.
@@ -56,16 +65,53 @@ export class TouchControls {
     constructor(game) {
         this.game = game;
         this.elements = [];
+        this._touchOnlyElements = [];
+        this._isTouch = false;
+        this.root = document.createElement('div');
+        this.root.className = 'touch-controls-root';
+        document.body.appendChild(this.root);
 
         this._wireTapButton(this._createButton('btn-icon-pause', 'touch-pause'), 'pause');
-        if (!isTouchCapable()) return;
+        this._onResize = this._onResize.bind(this);
+        window.addEventListener('resize', this._onResize);
+        window.addEventListener('orientationchange', this._onResize);
+        this._onResize();
+    }
 
+    /**
+     * Adds/removes the touch-only buttons when touch capability changes.
+     */
+    _onResize() {
+        const touch = isTouchCapable();
+        if (touch === this._isTouch) return;
+        this._isTouch = touch;
+        if (touch) this._buildTouchOnlyButtons();
+        else this._removeTouchOnlyButtons();
+    }
+
+    /**
+     * Builds the D-Pad/action buttons, touch devices only.
+     */
+    _buildTouchOnlyButtons() {
         for (const { action, icon, className } of HOLD_BUTTONS) {
-            this._wireHoldButton(this._createButton(icon, className), action);
+            const el = this._createButton(icon, className);
+            this._touchOnlyElements.push(el);
+            this._wireHoldButton(el, action);
         }
         for (const { name, icon, className } of TAP_BUTTONS) {
-            this._wireTapButton(this._createButton(icon, className), name);
+            const el = this._createButton(icon, className);
+            this._touchOnlyElements.push(el);
+            this._wireTapButton(el, name);
         }
+    }
+
+    /**
+     * Removes the D-Pad/action buttons built by _buildTouchOnlyButtons().
+     */
+    _removeTouchOnlyButtons() {
+        for (const el of this._touchOnlyElements) el.remove();
+        this.elements = this.elements.filter((el) => !this._touchOnlyElements.includes(el));
+        this._touchOnlyElements = [];
     }
 
     /**
@@ -110,16 +156,18 @@ export class TouchControls {
      */
     _createButton(icon, className) {
         const el = buildTouchButtonElement(icon, className);
-        this.game.overlay.appendChild(el);
+        this.root.appendChild(el);
         this.elements.push(el);
         return el;
     }
 
     /**
-     * Removes every button this instance added.
+     * Removes the root element and every button it held.
      */
     destroy() {
-        for (const el of this.elements) el.remove();
+        window.removeEventListener('resize', this._onResize);
+        window.removeEventListener('orientationchange', this._onResize);
+        this.root.remove();
         this.elements = [];
     }
 }

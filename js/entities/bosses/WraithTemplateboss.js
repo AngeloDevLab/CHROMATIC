@@ -6,7 +6,7 @@ import { WraithBeam } from './WraithBeam.js';
  * Damage) and 6.3's name for the Lvl 6 fight.
  */
 const TEMPLATEBOSS_HP = 400;
-const TEMPLATEBOSS_SIGNATURE_HIT_DAMAGE = 70;
+const TEMPLATEBOSS_SIGNATURE_HIT_DAMAGE = 80;
 const TEMPLATEBOSS_NAME = 'Wraith of the Grey City';
 const TEMPLATEBOSS_TOKEN_REWARD = 2;
 

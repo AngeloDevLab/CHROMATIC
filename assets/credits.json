@@ -8,19 +8,13 @@
     "thirdParty": [
         {
             "name": "Sci-Fi Labs Tileset (1.0)",
-            "detail": "Commissioned from aimen23b, distributed by Foozle.",
-            "links": [
-                { "label": "aimen23b", "url": "https://www.fiverr.com/aimen23b" },
-                { "label": "Foozle", "url": "https://www.foozle.io" }
-            ],
+            "detail": "Commissioned from <a href=\"https://www.fiverr.com/aimen23b\" target=\"_blank\" rel=\"noopener noreferrer\">aimen23b</a>, distributed by <a href=\"https://www.foozle.io\" target=\"_blank\" rel=\"noopener noreferrer\">Foozle</a>",
             "license": "CC0",
-            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
-            "licenseNote": "Free to use/modify including commercially, attribution not required."
+            "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/"
         },
         {
             "name": "500 Pixel Bullet and Free Smoke FX Pixel 2",
-            "detail": "By BDragon1727.",
-            "links": [{ "label": "BDragon1727", "url": "https://bdragon1727.itch.io/" }],
+            "detail": "By <a href=\"https://bdragon1727.itch.io/\" target=\"_blank\" rel=\"noopener noreferrer\">BDragon1727</a>",
             "license": null,
             "licenseUrl": null,
             "licenseNote": "Free for non-commercial games - commercial use requires a voluntary contribution. Modification allowed, resale/redistribution not allowed."

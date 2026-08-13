@@ -80,12 +80,12 @@ Rough values for calibration, to be adjusted after playtesting. Base: player dam
 
 | Type | HP | Damage/Hit | Player hits until enemy dead | Enemy hits until player dead (1v1, isolated) |
 |---|---|---|---|---|
-| Patroller | 30 | 10 | 3 | 20 |
-| Sentinel | 35 | 10 | 4 | 20 |
-| Charger (Zone 2+) | 25 | 10 (20 while mid-charge) | 3 | 20 (10 if repeatedly caught mid-charge) |
-| Shooter (Zone 3+) | 20 | 10 | 2 | 20 |
+| Patroller | 30 | 20 | 3 | 10 |
+| Sentinel | 35 | 20 | 4 | 10 |
+| Charger (Zone 2+) | 25 | 20 (40 while mid-charge) | 3 | 10 (5 if repeatedly caught mid-charge) |
+| Shooter (Zone 3+) | 20 | 20 | 2 | 10 |
 
-Revised this session: contact/projectile damage unified to 10 across every type (previously 8-10) - Sentinel and Shooter both compensate for the higher damage with more HP (Sentinel's own HP also reflects it being stationary and never chased down), landing every type at the same 20-hit baseline for how long a player can tank isolated hits.
+Revised this session: contact/projectile damage doubled to 20 across every type (previously unified at 10) - Easy was reading as too easy, so Normal's baseline damage was raised instead of just retuning the difficulty multiplier (which would have scaled bosses too); Easy/Hard still derive from this via the existing 0.5x/2x difficulty multiplier. Player hits until player dead (isolated) drops from 20 to 10 accordingly.
 
 Zone 3 "stronger variants" (see [02_game-structure.md](02_game-structure.md) 2.4): +50% to HP and damage.
 
@@ -93,8 +93,8 @@ Zone 3 "stronger variants" (see [02_game-structure.md](02_game-structure.md) 2.4
 
 | Tier | HP | Signature Hit Damage | Player hits until boss dead (approx.) |
 |---|---|---|---|
-| Miniboss | 300 | 40 | ~30 |
-| Templateboss | 400 | 70 | ~40 |
+| Miniboss | 300 | 60 | ~30 |
+| Templateboss | 400 | 80 | ~40 |
 | Chapterboss | 500 | 100 (= Normal Boss-Hit from 5.3) | ~50 |
 
 Revised from an earlier 150/250/400 draft (session playtesting: 150 read as
@@ -102,3 +102,9 @@ weaker than the player's own ~200 Health+Shield pool, which shouldn't be true
 for a boss) - a clean round 300/400/500 progression instead, keeping the
 Miniboss meaningfully below the later tiers now that the gap is 100 HP per
 tier rather than 100/150.
+
+Signature Hit Damage raised this session (Miniboss 40->60, Templateboss
+70->80) alongside the regular-enemy damage increase above, so bosses keep
+hitting noticeably harder than the roster they're fought alongside. Melee
+contact damage (`WRAITH_CONTACT_DAMAGE`, shared by both Wraith fights) was
+raised to 40 in the same pass, well above the regular-enemy 20 baseline.

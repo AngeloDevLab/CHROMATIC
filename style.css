@@ -16,6 +16,15 @@
     font-display: swap;
 }
 
+@font-face {
+    font-family: 'Mozilla Headline';
+    src: url('assets/fonts/MozillaHeadline-Regular.woff2') format('woff2'),
+        url('assets/fonts/MozillaHeadline-Regular.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
     --game-width: 640;
     --game-height: 360;
@@ -102,7 +111,7 @@ body {
 
 .menu-title {
     position: absolute;
-    top: 40px;
+    top: 10px;
     left: 50%;
     transform: translateX(-50%);
     font-family: 'Jersey 10', serif;
@@ -119,7 +128,7 @@ body {
 
 .menu-buttons {
     position: absolute;
-    top: 105px;
+    top: 75px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -179,6 +188,25 @@ body {
     padding: calc(20px * var(--hud-scale)) calc(24px * var(--hud-scale));
     color: #f2f2f2;
     font-family: 'Jersey 10', sans-serif;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(92, 201, 255, 0.6) transparent;
+}
+
+.panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.panel::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.panel::-webkit-scrollbar-thumb {
+    background: rgba(92, 201, 255, 0.6);
+    border-radius: 4px;
+}
+
+.panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(92, 201, 255, 0.9);
 }
 
 .panel-title {
@@ -235,6 +263,32 @@ body {
     letter-spacing: 0.5px;
     margin-top: calc(10px * var(--hud-scale));
     color: rgba(242, 242, 242, 0.75);
+}
+
+/* Info/HowToPlayPanel.js's prose - Jersey 10's pixel look is hard to read at
+   length, so their body text switches to Mozilla Headline; headings stay
+   Jersey 10 to match the rest of the panel chrome. */
+.readable-body {
+    font-family: 'Mozilla Headline', sans-serif;
+}
+
+.readable-body h3 {
+    font-family: 'Jersey 10', sans-serif;
+    font-size: calc(24px * var(--hud-scale));
+}
+
+.readable-body h4 {
+    font-family: 'Jersey 10', sans-serif;
+    font-size: calc(22px * var(--hud-scale));
+}
+
+.readable-body a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.readable-body a:hover {
+    text-decoration: underline;
 }
 
 /* MenuState.js's Legal Notice/Privacy Policy - marks a still-unfilled
@@ -363,25 +417,6 @@ body {
     opacity: 0.8;
 }
 
-/* Info panel's entry point into HowToPlayPanel.js - same pill shape as
-   .merchant-shop-buy, neutral color since it isn't a purchase action. */
-.panel-link {
-    display: inline-block;
-    margin-bottom: calc(12px * var(--hud-scale));
-    font-family: 'Jersey 10', sans-serif;
-    font-size: calc(16px * var(--hud-scale));
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: calc(4px * var(--hud-scale));
-    padding: calc(4px * var(--hud-scale)) calc(10px * var(--hud-scale));
-    color: #f2f2f2;
-    cursor: pointer;
-}
-
-.panel-link:hover {
-    background: rgba(255, 255, 255, 0.18);
-}
-
 /* MerchantDialogue.js's shop grid (_buildShopSectionHTML()) - card shape
    borrowed from .difficulty-option rather than inventing a third button
    style. No separate Token-count readout - each option shows its own cost
@@ -486,7 +521,6 @@ body {
 }
 
 .how-to-play-section h4 {
-    font-size: calc(16px * var(--hud-scale));
     letter-spacing: 1px;
     margin-bottom: calc(4px * var(--hud-scale));
 }
@@ -990,20 +1024,33 @@ body {
     cursor: default;
 }
 
+/* TouchControls.js's root - fixed outside #ui-overlay like .dev-panel/
+   .landscape-gate, so its buttons anchor to the physical screen corners
+   instead of the scaled/letterboxed game viewport. */
+.touch-controls-root {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    pointer-events: none;
+}
+
 /* TouchControls.js's virtual buttons - each is a plate (.touch-button-bg,
    faded so the game reads through it) with a fully opaque icon layered on
    top (.touch-button-icon), kept as separate children rather than one flat
-   image so the opacity only ever touches the plate. Positions/layout below
+   image so the opacity only ever touches the plate. Sizes/positions are
+   plain px, not --hud-scale (that variable compensates for #ui-overlay's
+   transform, which these buttons sit outside of). Positions/layout below
    are still first-guess, needs a look on a real device. */
 .touch-button {
-    position: absolute;
-    width: calc(48px * var(--hud-scale));
-    height: calc(48px * var(--hud-scale));
+    position: fixed;
+    width: 48px;
+    height: 48px;
     border: none;
     background: none;
     padding: 0;
     cursor: pointer;
     touch-action: none;
+    pointer-events: auto;
 }
 
 .touch-button-bg,
@@ -1045,33 +1092,33 @@ body {
    (a natural thumb arc) rather than stacked directly above/below - session
    decision after a first D-Pad-style layout read as awkward on a real device. */
 .touch-left {
-    left: calc(16px * var(--hud-scale));
-    bottom: calc(36px * var(--hud-scale));
+    left: 16px;
+    bottom: 36px;
 }
 
 .touch-right {
-    left: calc(100px * var(--hud-scale));
-    bottom: calc(36px * var(--hud-scale));
+    left: 100px;
+    bottom: 36px;
 }
 
 .touch-jump {
-    right: calc(16px * var(--hud-scale));
-    bottom: calc(140px * var(--hud-scale));
+    right: 16px;
+    bottom: 140px;
 }
 
 .touch-attack {
-    right: calc(56px * var(--hud-scale));
-    bottom: calc(80px * var(--hud-scale));
+    right: 56px;
+    bottom: 80px;
 }
 
 .touch-drop {
-    right: calc(96px * var(--hud-scale));
-    bottom: calc(20px * var(--hud-scale));
+    right: 96px;
+    bottom: 20px;
 }
 
 .touch-pause {
-    top: calc(12px * var(--hud-scale));
-    right: calc(12px * var(--hud-scale));
+    top: 12px;
+    right: 12px;
 }
 
 /* LandscapeGate.js - fixed outside #ui-overlay like .dev-panel, has to

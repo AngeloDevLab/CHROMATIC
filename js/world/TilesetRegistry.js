@@ -1,8 +1,7 @@
 /**
- * Maps each Tiled tileset's basename (its .tsx filename, referenced in every
- * level's own `tilesets` array) to the manifest image key + column count
- * Level.js needs to resolve a tile's gid against. Update this whenever a new
- * tileset is added to the project.
+ * Tiled tileset basename
+ * manifest image key + column count. 
+ * Add an entry here when a new tileset is added to the project.
  */
 const TILESET_KEYS = {
     tileset_grass: { imageKey: 'prologue-tileset', columns: 5 },
@@ -11,10 +10,9 @@ const TILESET_KEYS = {
 };
 
 /**
- * Resolves each known tileset basename to its already-loaded image and
- * column count, ready for Level.js to look up by tileset name.
+ * Builds the tileset registry by resolving each basename to its loaded image.
  * @param {AssetLoader} assets - Loader holding the tileset images.
- * @returns {Object<string, {image: HTMLImageElement, columns: number}>}
+ * @returns {Object<string, {image: HTMLImageElement, columns: number}>} Resolved tileset data, keyed by basename.
  */
 export function buildTilesetRegistry(assets) {
     const registry = {};

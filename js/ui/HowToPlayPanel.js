@@ -4,23 +4,23 @@
 const SECTIONS = [
     {
         title: 'The Color Trail',
-        text: 'Moving through the world permanently reclaims the ground beneath you, turning it back from grey to color. Exploring is how you make progress - the more you walk, the more of the world comes back to life.',
+        text: 'Walking reclaims the world, turning grey back to color. Explore to progress.',
     },
     {
         title: 'Movement',
-        text: 'Move left and right with A/D or the arrow keys, and jump with Space, W, or the up arrow. While standing on a platform, press S or the down arrow to drop straight down through it instead of landing on it.',
+        text: 'A/D or arrow keys to move, Space/W/Up to jump. S/Down drops you through a platform.',
     },
     {
         title: 'Combat',
-        text: 'Attack by clicking, or press F. Up close you swing your sword in melee; against an enemy too far away to reach, you throw it instead - the game switches automatically based on distance, there is no separate button for it. Throwing deals half of melee\'s damage and has a short cooldown before you can throw again, so it\'s the safer option, not a spammable one. Simply touching an enemy also hurts both of you, so getting in close for melee always carries some risk.',
+        text: 'Click or F to attack: melee up close, auto-thrown at range. Touching an enemy hurts you both.',
     },
     {
         title: 'Health & Prisma',
-        text: 'Health and Prisma are your two resources, shown as the two bars top left. Prisma is a color barrier around you: it absorbs hits before Health does, damages any enemy that touches it, and slowly regenerates on its own over time. Only once Prisma is fully depleted does incoming damage start hurting your actual Health. Losing all Health restarts the level from the beginning.',
+        text: 'Prisma (top left) shields you and regenerates over time. Health only drops once Prisma is empty; 0 Health restarts the level.',
     },
     {
         title: 'Levels',
-        text: 'Every level plays differently: some are combat-heavy, some hide a Secret Room with a permanent buff, some twist the rules with a one-off gimmick, and some end in a boss fight.',
+        text: 'Each level plays differently: combat, secret rooms with a buff, one-off gimmicks, boss fights.',
     },
 ];
 
@@ -64,11 +64,12 @@ export class HowToPlayPanel {
      * @returns {string} The full section list markup.
      */
     _buildBodyHTML() {
-        return SECTIONS.map((section) => `
+        const sections = SECTIONS.map((section) => `
             <div class="how-to-play-section">
                 <h4>${section.title}</h4>
                 <p>${section.text}</p>
             </div>
         `).join('');
+        return `<div class="readable-body">${sections}</div>`;
     }
 }

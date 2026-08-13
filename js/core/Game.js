@@ -1,8 +1,11 @@
 import { StateMachine } from './StateMachine.js';
+import { isTouchCapable } from '../ui/TouchControls.js';
 
 // _handleResize() snaps to the nearest whole-number scale rather than an
 // exact fractional fit: pixelated nearest-neighbor upscaling at a
-// non-integer factor causes a Firefox performance/shimmer issue.
+// non-integer factor causes a Firefox performance/shimmer issue. Touch
+// devices skip that rounding and always fill the screen exactly, since
+// filling the viewport matters more there than avoiding the shimmer.
 //
 // resizeBuffer() swaps the canvas's width/height mid-game, which resets
 // the 2D context state; safe since every frame redraws from scratch.
@@ -127,13 +130,22 @@ export class Game {
      */
     _handleResize() {
         const rawScale = Math.min(window.innerWidth / this.width, window.innerHeight / this.height);
-        const scale = rawScale >= 1 ? Math.floor(rawScale) : rawScale;
+        const scale = this._scaleFor(rawScale);
 
         this.viewport.style.width = `${this.width * scale}px`;
         this.viewport.style.height = `${this.height * scale}px`;
         this.overlay.style.width = `${this.width}px`;
         this.overlay.style.height = `${this.height}px`;
         this.overlay.style.transform = `scale(${scale})`;
+    }
+
+    /**
+     * @param {number} rawScale - Exact fit-to-window scale factor.
+     * @returns {number} Whole-number scale on non-touch devices, exact fractional scale on touch.
+     */
+    _scaleFor(rawScale) {
+        if (isTouchCapable()) return rawScale;
+        return rawScale >= 1 ? Math.floor(rawScale) : rawScale;
     }
 
     /**

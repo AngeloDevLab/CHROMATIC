@@ -2,10 +2,10 @@ import { Enemy } from '../Enemy.js';
 
 /**
  * 05_enemies-bosses.md 6.5. 35 HP, the tankiest in the roster. Contact
- * damage unified to 10 (matches every other enemy type).
+ * damage unified (matches every other enemy type).
  */
 const SENTINEL_HP = 35;
-const SENTINEL_CONTACT_DAMAGE = 10;
+const SENTINEL_CONTACT_DAMAGE = 20;
 
 /**
  * Sinks the sprite by its full 64px frame height while buried. The actual

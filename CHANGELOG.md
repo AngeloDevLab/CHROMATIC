@@ -4,6 +4,23 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.19.0] - 2026-08-13
+
+### Added
+- How to Play: now its own top-level main menu button (`MenuButtons.js`/`MenuState.js`), matching the Pause menu's layout, instead of being nested one level deep inside the Info panel. Menu title/button block shifted up (`style.css`) to fit the extra button without crowding the animated background.
+- Mozilla Headline font for Info/How to Play body text - Jersey 10's pixel look reads fine for short UI labels but is hard to read at paragraph length; headings stay Jersey 10 to match the rest of the panel chrome. New `.readable-body` class (`style.css`), scoped to just these two panels' content rather than the shared `.panel-body` used everywhere else.
+- Custom scrollbar for `.panel` (Chrome/Edge/Safari via `::-webkit-scrollbar`, Firefox via `scrollbar-color`), matching the dark theme with a light-blue thumb instead of the browser default.
+- Links inside Info/How to Play now inherit the surrounding text color with no underline at rest, underline only on hover, instead of the browser's default blue/underlined look.
+
+### Changed
+- Touch devices now fill the screen exactly (fractional display scale) instead of snapping to the nearest whole-number scale like desktop - `Game._scaleFor()` (`Game.js`), gated on `isTouchCapable()` (avoids the Firefox pixelated-upscale shimmer issue the whole-number rounding exists for, which only applies to mice/precise pointers anyway).
+- `TouchControls` now mounts outside `#ui-overlay` (`document.body`, same pattern as `DevPanel`/`LandscapeGate`) with `position: fixed`, so its buttons anchor to the physical screen corners instead of the scaled/letterboxed game viewport. Also now re-checks `isTouchCapable()` on every resize/orientationchange instead of only once at construction, so toggling DevTools' device-mode mid-level is picked up without a reload.
+- How to Play content trimmed to one short sentence per section (`HowToPlayPanel.js`) - the previous paragraphs read as too much text for an in-game reference.
+- Regular enemy contact/projectile damage doubled from a unified 10 to a unified 20 (`Enemy.js`, `Sentinel.js`, `Shooter.js`) so Normal difficulty actually reads as a mid-point instead of Easy's old baseline - Easy/Hard still derive from this via the existing 0.5x/2x difficulty multiplier (10/20/40 across the three). Boss damage raised in the same pass so bosses keep hitting noticeably harder than the roster they're fought alongside: Signature Hit Damage (Miniboss 40->60, Templateboss 70->80) and `WRAITH_CONTACT_DAMAGE` (10->40, shared by both Wraith fights) - `WraithConstants.js`/`WraithTemplateboss.js`. `docs/GDD/05_enemies-bosses.md` 6.5 updated to match.
+- Credits: author name is now linked once, inline in each third-party entry's own detail text, instead of being named in plain text and then linked again in a separate parenthetical - `InfoPanelContent.js`/`credits.json`. Also dropped the CC0-licensed entry's `licenseNote` (redundant with CC0 itself); the non-CC0 entry keeps its `licenseNote` since it's the only place that asset's actual usage terms are stated.
+- `main.js` renamed to `Main.js`, matching the `PascalCase` convention already used by every other script file; its top-level boot logic split into `createGame()`/`registerStates()`/`bootstrap()`
+- Trimmed top-of-file/JSDoc comment density in `js/world/` (`Level.js`, `TilesetRegistry.js`) - broader pass across the rest of the codebase still outstanding (tracked in `TODO.md`).
+
 ## [0.18.1] - 2026-08-13
 
 ### Fixed
