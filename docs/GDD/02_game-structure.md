@@ -132,8 +132,8 @@ Surface. Sprawling. Decayed streets, buildings, squares. Enemies: Patroller, Sen
 
 | Lvl | Slot | Content |
 |---|---|---|
-| 1 | Combat | First Patrollers, combat system in a new setting |
-| 2 | Combat | More enemies, first Sentinels |
+| 1 | Combat | Patrollers return, combat system in a new setting |
+| 2 | Combat | More enemies, Sentinels return |
 | 3 | Secret | Exploration, first Secret Room of the chapter |
 | 4 | Boss (Miniboss) | **The Gatebreaker** → 1 Token, Merchant appears |
 | 5 | Special | Level almost completely dark - only the color radius lights it |
@@ -145,7 +145,7 @@ Underground. Tight. Wet. More dangerous. Enemies: Patroller, Charger, Sentinel.
 
 | Lvl | Slot | Content |
 |---|---|---|
-| 1 | Combat | New zone, Charger introduced |
+| 1 | Combat | New zone, Charger returns |
 | 2 | Secret | Secret Room, branching layout |
 | 3 | Boss (Miniboss) | **The Sludge Colossus** → 1 Token, Merchant appears |
 | 4 | Special | Rising water forces the player to rush upward |
@@ -153,11 +153,11 @@ Underground. Tight. Wet. More dangerous. Enemies: Patroller, Charger, Sentinel.
 | 6 | Boss (Templateboss) | **The Flood Lord** → 2 Tokens, Merchant appears |
 
 ### Template 3 - "The Black Forest"
-Outside the city. Sprawling. Dark. Threatening. Enemies: all types, Shooter new.
+Outside the city. Sprawling. Dark. Threatening. Enemies: all types.
 
 | Lvl | Slot | Content |
 |---|---|---|
-| 1 | Combat | Forest's edge, Shooter introduced, sprawling |
+| 1 | Combat | Forest's edge, sprawling |
 | 2 | Combat | Dense forest, all enemy types at once |
 | 3 | Secret | Deepest point of the forest, last Secret Room, story fragment |
 | 4 | Boss (Miniboss) | **The Thorn Colossus** → 1 Token, Merchant appears |

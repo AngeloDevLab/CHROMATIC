@@ -56,7 +56,7 @@ export class LevelSessionRenderer {
     }
 
     /**
-     * Draws interactables, non-buried enemies with their HP bars, combat projectiles, and player FX.
+     * Draws interactables, non-buried enemies with their HP bars, combat projectiles, and player/enemy FX.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     _renderEntities(ctx) {
@@ -69,6 +69,7 @@ export class LevelSessionRenderer {
         }
         session.combat.render(ctx);
         session.playerFx.render(ctx);
+        session.enemyRoster.render(ctx);
     }
 
     /**

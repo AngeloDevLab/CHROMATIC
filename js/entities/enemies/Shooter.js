@@ -20,9 +20,9 @@ const SHOOTER_HEIGHT_TOLERANCE_PX = 24;
 const DEFAULT_SHOT_COOLDOWN_SECONDS = 2;
 
 /**
- * 6-frame shoot animation; mirrors Player.js's ATTACK_IMPACT_FRAME.
+ * 10-frame shoot animation; mirrors Player.js's ATTACK_IMPACT_FRAME.
  */
-const SHOT_IMPACT_FRAME = 3;
+const SHOT_IMPACT_FRAME = 5;
 
 // Patrols like the base Enemy until the player comes within range on roughly
 // the same floor, then holds position and fires. Once a shot starts, facing

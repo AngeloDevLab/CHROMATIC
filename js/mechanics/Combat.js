@@ -256,7 +256,8 @@ function _resolveEnemyContact(dt, player, enemy, multiplier) {
 
     const isCharging = !!enemy.charging;
     const playerAmount = enemy.contactDamage * multiplier * (isCharging ? CHARGE_CONTACT_DAMAGE_MULTIPLIER : 1);
-    const enemyAmount = isCharging ? 0 : enemy.takeDamage(enemy.contactDamage);
+    const selfDamage = enemy.contactDamage * enemy.contactSelfDamageMultiplier;
+    const enemyAmount = isCharging ? 0 : enemy.takeDamage(selfDamage, { scaleForVulnerable: false });
     _applyContactHit(player, enemy, playerAmount);
     return { enemy, playerAmount, enemyAmount };
 }

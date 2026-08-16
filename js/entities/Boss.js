@@ -29,7 +29,8 @@ export class Boss extends Enemy {
     tokenReward = 1;
 
     /**
-     * Passes through to Enemy's base setup.
+     * Passes through to Enemy's base setup; halves contact self-damage so
+     * standing near a boss doesn't chip it as fast as a regular enemy.
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {HTMLImageElement} sprite - Fallback static sprite.
@@ -38,15 +39,20 @@ export class Boss extends Enemy {
      */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
+        this.contactSelfDamageMultiplier = 0.5;
     }
 
     /**
-     * Applies incoming damage, doubled while vulnerable.
+     * Applies incoming damage, doubled while vulnerable - except passive
+     * contact self-damage (Combat.js), which shouldn't reward just standing next to the boss.
      * @param {number} amount - Damage to apply.
+     * @param {object} [options] - Optional settings.
+     * @param {boolean} [options.scaleForVulnerable=true] - Whether this hit gets the vulnerable-window bonus.
      * @returns {number} The amount actually applied.
      */
-    takeDamage(amount) {
-        return super.takeDamage(this.vulnerable ? amount * VULNERABLE_DAMAGE_MULTIPLIER : amount);
+    takeDamage(amount, { scaleForVulnerable = true } = {}) {
+        const scaled = this.vulnerable && scaleForVulnerable ? amount * VULNERABLE_DAMAGE_MULTIPLIER : amount;
+        return super.takeDamage(scaled);
     }
 
     /**

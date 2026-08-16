@@ -15,6 +15,11 @@ const BURY_DEPTH_PX = 64;
 const DEFAULT_RISE_DURATION_SECONDS = 0.6;
 
 /**
+ * Manual nudge - the sprite's auto-detected ground line lands a bit above the actual floor.
+ */
+const GROUND_OFFSET_PX = 10;
+
+/**
  * Simple radius check (not a rectangular tolerance like Charger's).
  */
 const DEFAULT_AGGRO_RANGE_PX = 90;
@@ -89,6 +94,6 @@ export class Sentinel extends Enemy {
      * @returns {number}
      */
     _drawY() {
-        return super._drawY() + (1 - this.riseProgress) * BURY_DEPTH_PX;
+        return super._drawY() + (1 - this.riseProgress) * BURY_DEPTH_PX + GROUND_OFFSET_PX;
     }
 }

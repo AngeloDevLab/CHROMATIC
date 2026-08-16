@@ -95,7 +95,6 @@ export class LoadingState extends State {
                 'enemy-patroller-walking-idle': 'assets/images/enemys/patroller/patroller-walking-idle.png',
                 'enemy-patroller-dead': 'assets/images/enemys/patroller/patroller-dead.png',
                 'enemy-charger-walking-idle': 'assets/images/enemys/charger/charger-walking-idle.png',
-                'enemy-charger-charge': 'assets/images/enemys/charger/charger-charge.png',
                 'enemy-charger-dead': 'assets/images/enemys/charger/charger-dead.png',
                 'enemy-sentinel-walking-idle': 'assets/images/enemys/sentinel/sentinel-walking-idle.png',
                 'enemy-sentinel-dead': 'assets/images/enemys/sentinel/sentinel-dead.png',

@@ -4,6 +4,19 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.20.0] - 2026-08-16
+
+### Added
+- Charger's charge-start now spawns the same dash smoke VFX (and SFX) the player's own Dash uses - `EnemyRoster.js` gained a per-frame `pendingVfx` drain/pool mirroring `PlayerFx.js`'s, `Enemy.js`'s base class gained the `pendingVfx` mailbox itself, and `Charger._setCharging()` pushes `'dash'` on the false -> true edge.
+
+### Changed
+- New hand-off artwork wired in for Charger/Sentinel/Shooter - `EnemyFactory.js`'s `ENEMY_SPRITE_SETS` gained per-type `runningFrames`/`deadFrames`/`shootFrames` overrides instead of a hardcoded 12 everywhere. Charger's running/dead sheets are now 10/12 frames and its charge animation reuses the running sheet at 14fps instead of separate art (no more `charger-charge.png`). Sentinel's running/dead sheets are now 9 frames each, plus a new `GROUND_OFFSET_PX` (10px, `Sentinel.js`) since its new art reads as sitting slightly above the floor. Shooter's dead/shoot sheets are now 8/10 frames, `SHOT_IMPACT_FRAME` moved proportionally from 3/6 to 5/10 to match.
+- `docs/GDD/02_game-structure.md`'s Chap 1 section (2.7) still described Patroller/Sentinel/Charger/Shooter as being "introduced" there - stale since the Prologue scope cut already introduces all 4 in Lvl 1-2 (2.6); reworded to "returns" instead.
+
+### Fixed
+- Charger/Sentinel/Shooter's running/dead/shoot animations were reading past the edge of their (now differently-sized) sprite sheets, rendering a blank frame near the end of each loop - frame counts are now per-type instead of a single hardcoded value everywhere.
+- Boss contact self-damage: touching a boss mirrored its full `contactDamage` back onto itself, and `Boss.takeDamage()`'s vulnerable-window 2x multiplier applied to that self-damage too, turning "stand next to the boss during its opening" into a way to kill it without landing a real attack. Passive contact self-damage now skips the vulnerable multiplier (`Boss.takeDamage()` takes a `scaleForVulnerable` option) and is separately halved via a new `Enemy.contactSelfDamageMultiplier` (`Boss.js` sets it to 0.5).
+
 ## [0.19.1] - 2026-08-16
 
 ### Changed

@@ -124,12 +124,13 @@ export class Charger extends Enemy {
     }
 
     /**
-     * Starts the cooldown only on the true -> false edge, not every frame
-     * charging is already false.
+     * Starts the cooldown on the true -> false edge and queues the dash VFX
+     * on the false -> true edge, not every frame the value is unchanged.
      * @param {boolean} value - New charging state.
      */
     _setCharging(value) {
         if (this.charging && !value) this.chargeCooldownTimer = this.chargeCooldownSeconds;
+        if (!this.charging && value) this.pendingVfx.push('dash');
         this.charging = value;
     }
 

@@ -10,17 +10,20 @@ import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 const ENEMY_FRAME_SIZE = 64;
 
 /**
- * Maps an EnemySpawn's Tiled Name field to its asset keys. `charge` is
- * Charger-only and `shoot`/`projectile` are Shooter-only - absent for types that don't use them.
+ * Maps an EnemySpawn's Tiled Name field to its asset keys and per-type
+ * animation overrides (`runningFrames`, `deadFrames`, `chargeFps`,
+ * `shootFrames`, `projectile`) - absent for types that don't use them.
  */
 const ENEMY_SPRITE_SETS = {
     patroller: { running: 'enemy-patroller-walking-idle', dead: 'enemy-patroller-dead' },
-    charger: { running: 'enemy-charger-walking-idle', dead: 'enemy-charger-dead', charge: 'enemy-charger-charge' },
-    sentinel: { running: 'enemy-sentinel-walking-idle', dead: 'enemy-sentinel-dead' },
+    charger: { running: 'enemy-charger-walking-idle', dead: 'enemy-charger-dead', runningFrames: 10, chargeFps: 14 },
+    sentinel: { running: 'enemy-sentinel-walking-idle', dead: 'enemy-sentinel-dead', runningFrames: 9, deadFrames: 9 },
     shooter: {
         running: 'enemy-shooter-walking-idle',
         dead: 'enemy-shooter-dead',
+        deadFrames: 8,
         shoot: 'enemy-shooter-shooting',
+        shootFrames: 10,
         projectile: 'enemy-shooter-projectile',
     },
 };
@@ -72,15 +75,18 @@ function _resolveEnemyClass(typeName) {
  * @returns {Object<string, SpriteAnimation>}
  */
 function _buildAnimations(assets, sprite, spriteSet) {
+    const runningFrames = spriteSet.runningFrames ?? 12;
+    const deadFrames = spriteSet.deadFrames ?? 12;
     const animations = {
-        running: new SpriteAnimation(sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 10),
-        dead: new SpriteAnimation(assets.getImage(spriteSet.dead), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 12, { loop: false }),
+        running: new SpriteAnimation(sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, runningFrames, 10),
+        dead: new SpriteAnimation(assets.getImage(spriteSet.dead), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, deadFrames, 12, { loop: false }),
     };
-    if (spriteSet.charge) {
-        animations.charge = new SpriteAnimation(assets.getImage(spriteSet.charge), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 14);
+    if (spriteSet.chargeFps) {
+        animations.charge = new SpriteAnimation(sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, runningFrames, spriteSet.chargeFps);
     }
     if (spriteSet.shoot) {
-        animations.shoot = new SpriteAnimation(assets.getImage(spriteSet.shoot), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 6, 12, { loop: false });
+        const shootFrames = spriteSet.shootFrames ?? 6;
+        animations.shoot = new SpriteAnimation(assets.getImage(spriteSet.shoot), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, shootFrames, 12, { loop: false });
     }
     return animations;
 }

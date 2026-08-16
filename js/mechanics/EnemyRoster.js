@@ -1,7 +1,8 @@
 import { createEnemy } from '../entities/EnemyFactory.js';
 import { Wraith } from '../entities/bosses/Wraith.js';
 import { WraithTemplateboss } from '../entities/bosses/WraithTemplateboss.js';
-import { buildWraithAnimations, buildTemplatebossAnimations } from '../entities/CharacterAnimations.js';
+import { buildWraithAnimations, buildTemplatebossAnimations, buildVfxAnimation } from '../entities/CharacterAnimations.js';
+import { VfxEffect } from '../entities/VfxEffect.js';
 
 /**
  * Every living enemy continuously erases color around itself while
@@ -40,6 +41,7 @@ export class EnemyRoster {
         this.player = player;
         this.collision = collision;
         this.boss = null;
+        this.vfx = [];
         this.enemies = level.getObjectsByType('EnemySpawn').map((spawn) => this._spawnFromMarker(spawn)).filter(Boolean);
         this._levelFullyRevealed = false;
         this._bossDefeated = false;
@@ -104,6 +106,7 @@ export class EnemyRoster {
     updateEnemies(dt, combat, colorZone, safeRevealRadius) {
         for (const enemy of this.enemies) {
             enemy.update(dt);
+            this._drainPendingVfx(enemy);
             if (enemy.pendingProjectile) {
                 combat.enemyProjectiles.push(enemy.pendingProjectile);
                 if (enemy === this.boss) this.game.sound.playSfx('boss-beam');
@@ -114,6 +117,38 @@ export class EnemyRoster {
                 enemy.pendingRoomDarken = false;
             }
         }
+        this._updateVfx(dt);
+    }
+
+    /**
+     * Each pendingVfx key doubles as an SFX key of the same name
+     * (SoundManager.playSfx() is fail-soft) - same convention as PlayerFx.js.
+     * @param {Enemy} enemy - Enemy whose pendingVfx mailbox to drain.
+     */
+    _drainPendingVfx(enemy) {
+        const feetY = enemy.y + enemy.height;
+        for (const key of enemy.pendingVfx) {
+            this.vfx.push(new VfxEffect(enemy.centerX, feetY, buildVfxAnimation(this.game.assets, key)));
+            this.game.sound.playSfx(key);
+        }
+        enemy.pendingVfx.length = 0;
+    }
+
+    /**
+     * Advances the enemy VFX pool and prunes finished clips.
+     * @param {number} dt - Elapsed time in seconds.
+     */
+    _updateVfx(dt) {
+        for (const fx of this.vfx) fx.update(dt);
+        this.vfx = this.vfx.filter((fx) => !fx.dead);
+    }
+
+    /**
+     * Draws every active enemy VFX (e.g. Charger's charge-start dash smoke).
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     */
+    render(ctx) {
+        for (const fx of this.vfx) fx.render(ctx);
     }
 
     /**

@@ -28,6 +28,9 @@ const LOOKAHEAD_PX = 4;
 //
 // `applyKnockback()` is the passive contact-push reaction; `applyAttackKnockback()`
 // handles active attacks and delegates to it by default.
+//
+// `pendingVfx` is a per-frame VFX mailbox drained by EnemyRoster, same
+// pattern as Player.js's own mailbox - unused by most enemies, Charger pushes 'dash' on charge start.
 export class Enemy extends Entity {
     /**
      * Builds base render/movement/combat/lifecycle state.
@@ -57,6 +60,7 @@ export class Enemy extends Entity {
         this.facing = 1;
         this.renderSize = width;
         this.referenceAnim = null;
+        this.pendingVfx = [];
     }
 
     /**
@@ -78,6 +82,7 @@ export class Enemy extends Entity {
         this.hp = DEFAULT_HP;
         this.maxHp = DEFAULT_HP;
         this.contactDamage = DEFAULT_CONTACT_DAMAGE;
+        this.contactSelfDamageMultiplier = 1;
         this.contactCooldown = 0;
         this.dead = false;
         this.hitFlashTimer = 0;
