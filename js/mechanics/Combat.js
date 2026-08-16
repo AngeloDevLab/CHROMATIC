@@ -1,8 +1,7 @@
-// Two separate ways damage happens (03_mechanics.md 4.3 + 4.5), both operating
-// on plain Entity-shaped objects (x/y/width/height) plus the takeDamage()
-// contract Player and Enemy each implement:
-// - resolveMeleeAttack: the active sword swing, once per swing, on request.
-// - resolveContactDamage: the passive Prisma barrier, checked continuously.
+// Two separate ways damage happens, both operating on plain Entity-shaped
+// objects (x/y/width/height) plus the takeDamage() contract Player and Enemy
+// each implement: resolveMeleeAttack (active swing, on request) vs
+// resolveContactDamage (passive, checked continuously).
 
 /**
  * How far the melee hitbox extends past the player's own hitbox -
@@ -13,42 +12,33 @@ const ATTACK_REACH_PX = 40;
 export const PLAYER_ATTACK_DAMAGE = 10;
 
 /**
- * Ranged Sword Throw deals half of melee's damage and no longer spends
- * Prisma - a cooldown (CombatCoordinator.js's own timer) is the anti-spam
- * gate instead.
+ * No longer spends Prisma - the cooldown (CombatCoordinator.js's own timer) is the anti-spam gate instead.
  */
 export const RANGED_ATTACK_DAMAGE = PLAYER_ATTACK_DAMAGE * 0.5;
 export const RANGED_ATTACK_COOLDOWN_SECONDS = 2;
 
-/**
- * Per-enemy cooldown between contact-damage ticks.
- */
 const CONTACT_DAMAGE_COOLDOWN_SECONDS = 1;
 
 /**
- * Combat feel: knockback speed applied away from whoever landed the hit.
- * Both entities' own knockback lock (Player.js/Enemy.js) briefly overrides normal movement.
+ * Both entities' own knockback lock (Player.js/Enemy.js) briefly overrides normal movement while this plays out.
  */
 const ENEMY_KNOCKBACK_SPEED = 180;
 const PLAYER_KNOCKBACK_SPEED = 150;
 
 /**
- * 04_health-save-system.md 5.3: difficulty scales only incoming damage;
- * enemy HP and the player's own damage stay the same across all three.
- * Falls back to Normal (1) for an unrecognized/missing difficulty.
+ * Difficulty scales only incoming damage; enemy HP and the player's own damage stay the same across all three.
  */
 const DIFFICULTY_DAMAGE_MULTIPLIERS = { easy: 0.5, normal: 1, hard: 2 };
 
 /**
- * Charger mid-rush (entities/enemies/Charger.js's `charging`) hits harder
- * through the passive barrier below, instead of also zapping itself for the
- * normal contactDamage amount - see resolveContactDamage.
+ * Charger mid-rush (entities/enemies/Charger.js's `charging`) hits harder through the passive contact-damage barrier.
  */
 const CHARGE_CONTACT_DAMAGE_MULTIPLIER = 2;
 
 /**
- * @param {{x:number,y:number,width:number,height:number}} a
- * @param {{x:number,y:number,width:number,height:number}} b
+ * Checks two axis-aligned rects for overlap.
+ * @param {{x:number,y:number,width:number,height:number}} a - First rect to check.
+ * @param {{x:number,y:number,width:number,height:number}} b - Second rect to check.
  * @returns {boolean}
  */
 function rectsOverlap(a, b) {
@@ -57,11 +47,9 @@ function rectsOverlap(a, b) {
 }
 
 /**
- * Auto-targeting (03_mechanics.md 4.3: Mobile's "automatic targeting of the
- * nearest enemy", reused for Desktop too) - nearest living enemy by
- * horizontal distance, either side of the player.
- * @param {Player} player
- * @param {Enemy[]} enemies
+ * Finds the nearest living enemy to the player, used for auto-targeting on both mobile and desktop.
+ * @param {Player} player - Player to find the nearest enemy to.
+ * @param {Enemy[]} enemies - Enemies to search among.
  * @returns {Enemy|null}
  */
 export function findNearestEnemy(player, enemies) {
@@ -79,13 +67,9 @@ export function findNearestEnemy(player, enemies) {
 }
 
 /**
- * Mode-decision only - reuses ATTACK_REACH_PX so melee/ranged never overlap
- * or gap. The actual melee hit still goes through resolveMeleeAttack()'s own
- * facing-direction hitbox rect, this just decides which path to take.
- * Edge-to-edge gap, not center-to-center distance. A negative gap (already
- * overlapping) still counts as in range.
- * @param {Player} player
- * @param {Enemy} enemy
+ * Mode-decision only - reuses ATTACK_REACH_PX so melee/ranged never overlap or gap.
+ * @param {Player} player - Attacking player.
+ * @param {Enemy} enemy - Enemy to check range against.
  * @returns {boolean}
  */
 export function isWithinMeleeRange(player, enemy) {
@@ -97,9 +81,9 @@ export function isWithinMeleeRange(player, enemy) {
 
 /**
  * Returns the enemies actually hit (as { enemy, amount }).
- * @param {Player} player
- * @param {Enemy[]} enemies
- * @param {ShooterProjectile[]} [enemyProjectiles]
+ * @param {Player} player - Attacking player.
+ * @param {Enemy[]} enemies - Enemies to check the swing against.
+ * @param {ShooterProjectile[]} [enemyProjectiles] - Enemy projectiles the swing can also swat out of the air.
  * @returns {{enemy:Enemy,amount:number}[]}
  */
 export function resolveMeleeAttack(player, enemies, enemyProjectiles = []) {
@@ -110,7 +94,8 @@ export function resolveMeleeAttack(player, enemies, enemyProjectiles = []) {
 }
 
 /**
- * @param {Player} player
+ * Builds the melee hitbox extending ATTACK_REACH_PX past the player, in the direction they're facing.
+ * @param {Player} player - Attacking player.
  * @returns {{x:number,y:number,width:number,height:number}} Facing-direction melee hitbox.
  */
 function _buildMeleeHitbox(player) {
@@ -120,9 +105,10 @@ function _buildMeleeHitbox(player) {
 }
 
 /**
- * @param {{x:number,y:number,width:number,height:number}} hitbox
- * @param {Enemy[]} enemies
- * @param {1|-1} facing
+ * Damages and knocks back every living enemy overlapping the hitbox.
+ * @param {{x:number,y:number,width:number,height:number}} hitbox - Melee hitbox to check overlap against.
+ * @param {Enemy[]} enemies - Enemies to check the hitbox against.
+ * @param {1|-1} facing - Direction to apply knockback in.
  * @returns {{enemy:Enemy,amount:number}[]}
  */
 function _damageOverlappingEnemies(hitbox, enemies, facing) {
@@ -138,11 +124,9 @@ function _damageOverlappingEnemies(hitbox, enemies, facing) {
 }
 
 /**
- * The same swing also swats an incoming Shooter.js bolt out of the air - no
- * damage number, just destroyed (see resolveProjectileHits() for the
- * player's own thrown sword doing the same).
- * @param {{x:number,y:number,width:number,height:number}} hitbox
- * @param {ShooterProjectile[]} enemyProjectiles
+ * Swats an incoming Shooter.js bolt out of the air, same as the thrown sword's own clash check.
+ * @param {{x:number,y:number,width:number,height:number}} hitbox - Melee hitbox to check overlap against.
+ * @param {ShooterProjectile[]} enemyProjectiles - Enemy projectiles to swat out of the air.
  */
 function _destroyOverlappingProjectiles(hitbox, enemyProjectiles) {
     for (const enemyProjectile of enemyProjectiles) {
@@ -154,9 +138,9 @@ function _destroyOverlappingProjectiles(hitbox, enemyProjectiles) {
 
 /**
  * Same shape as the other resolve* functions (returns { enemy, amount } hits).
- * @param {Projectile[]} projectiles
- * @param {Enemy[]} enemies
- * @param {ShooterProjectile[]} [enemyProjectiles]
+ * @param {Projectile[]} projectiles - The player's own thrown-sword projectiles.
+ * @param {Enemy[]} enemies - Enemies to check for hits.
+ * @param {ShooterProjectile[]} [enemyProjectiles] - Enemy projectiles a clash can destroy.
  * @returns {{enemy:Enemy,amount:number}[]}
  */
 export function resolveProjectileHits(projectiles, enemies, enemyProjectiles = []) {
@@ -171,8 +155,9 @@ export function resolveProjectileHits(projectiles, enemies, enemyProjectiles = [
 }
 
 /**
- * @param {Projectile} projectile
- * @param {Enemy[]} enemies
+ * Damages and destroys the projectile against the first living enemy it overlaps.
+ * @param {Projectile} projectile - Projectile to check against every enemy.
+ * @param {Enemy[]} enemies - Enemies to check for hits.
  * @returns {{enemy:Enemy,amount:number}|null} The hit, if the projectile struck a living enemy.
  */
 function _hitFirstOverlappingEnemy(projectile, enemies) {
@@ -188,11 +173,9 @@ function _hitFirstOverlappingEnemy(projectile, enemies) {
 }
 
 /**
- * The player's own thrown sword cuts through an incoming Shooter.js bolt the
- * same way - destroys the bolt, the thrown sword keeps flying. A clash isn't
- * a hit on either character, so nothing goes in `hits`.
- * @param {Projectile} projectile
- * @param {ShooterProjectile[]} enemyProjectiles
+ * Destroys an overlapping enemy bolt; the thrown sword itself survives and isn't counted as a hit.
+ * @param {Projectile} projectile - The player's own thrown-sword projectile.
+ * @param {ShooterProjectile[]} enemyProjectiles - Enemy projectiles it can clash with.
  */
 function _clashWithEnemyProjectile(projectile, enemyProjectiles) {
     for (const enemyProjectile of enemyProjectiles) {
@@ -205,9 +188,9 @@ function _clashWithEnemyProjectile(projectile, enemyProjectiles) {
 
 /**
  * Resolves Shooter.js's fired shots against the player - the enemy-side mirror of resolveProjectileHits().
- * @param {ShooterProjectile[]} projectiles
- * @param {Player} player
- * @param {string} difficulty
+ * @param {ShooterProjectile[]} projectiles - Enemy-fired projectiles to resolve.
+ * @param {Player} player - Player to check for hits.
+ * @param {string} difficulty - Game.difficulty, for incoming-damage scaling.
  * @returns {{amount:number}[]}
  */
 export function resolveEnemyProjectileHits(projectiles, player, difficulty) {
@@ -223,8 +206,9 @@ export function resolveEnemyProjectileHits(projectiles, player, difficulty) {
 }
 
 /**
- * @param {ShooterProjectile} projectile
- * @param {Player} player
+ * Damages and knocks back the player if this projectile overlaps them.
+ * @param {ShooterProjectile} projectile - Enemy-fired projectile to check.
+ * @param {Player} player - Player to check for a hit.
  * @param {number} multiplier - Difficulty damage multiplier.
  * @returns {{amount:number}|null} The hit, if this projectile actually landed this frame.
  */
@@ -241,9 +225,9 @@ function _resolveEnemyProjectileHit(projectile, player, multiplier) {
 /**
  * Resolves passive contact damage between the player and every enemy this frame.
  * @param {number} dt - Elapsed time in seconds.
- * @param {Player} player
- * @param {Enemy[]} enemies
- * @param {string} difficulty
+ * @param {Player} player - Player to check for contact damage.
+ * @param {Enemy[]} enemies - Enemies to check for contact damage.
+ * @param {string} difficulty - Game.difficulty, for incoming-damage scaling.
  * @returns {{enemy:Enemy,playerAmount:number,enemyAmount:number}[]}
  */
 export function resolveContactDamage(dt, player, enemies, difficulty) {
@@ -259,12 +243,11 @@ export function resolveContactDamage(dt, player, enemies, difficulty) {
 }
 
 /**
- * Resolves contact damage between the player and one enemy, if cooldown and
- * overlap allow it. A charging enemy skips the self-damage mirror
- * (enemyAmount 0) - otherwise every charge would tick it to death off its own rush.
+ * A charging enemy skips the self-damage mirror (enemyAmount 0) - otherwise
+ * every charge would tick it to death off its own rush.
  * @param {number} dt - Elapsed time in seconds.
- * @param {Player} player
- * @param {Enemy} enemy
+ * @param {Player} player - Player to check for contact damage.
+ * @param {Enemy} enemy - Enemy to check for contact damage.
  * @param {number} multiplier - Difficulty damage multiplier.
  * @returns {{enemy:Enemy,playerAmount:number,enemyAmount:number}|null} The hit, if contact damage actually landed this frame.
  */
@@ -279,9 +262,10 @@ function _resolveEnemyContact(dt, player, enemy, multiplier) {
 }
 
 /**
+ * Ticks the enemy's contact cooldown and checks whether it's eligible to hit the player this frame.
  * @param {number} dt - Elapsed time in seconds.
- * @param {Player} player
- * @param {Enemy} enemy
+ * @param {Player} player - Player to check overlap against.
+ * @param {Enemy} enemy - Enemy to check overlap and cooldown against.
  * @returns {boolean}
  */
 function _canContactDamage(dt, player, enemy) {
@@ -293,9 +277,9 @@ function _canContactDamage(dt, player, enemy) {
 
 /**
  * Applies the player's damage/knockback and resets the enemy's contact cooldown.
- * @param {Player} player
- * @param {Enemy} enemy
- * @param {number} playerAmount
+ * @param {Player} player - Player taking the damage/knockback.
+ * @param {Enemy} enemy - Enemy whose contact cooldown resets.
+ * @param {number} playerAmount - Damage amount applied to the player.
  */
 function _applyContactHit(player, enemy, playerAmount) {
     player.takeDamage(playerAmount);

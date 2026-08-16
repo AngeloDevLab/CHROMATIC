@@ -1,23 +1,17 @@
 import { Enemy } from '../Enemy.js';
 
 /**
- * 05_enemies-bosses.md 6.5. 35 HP, the tankiest in the roster. Contact
- * damage unified (matches every other enemy type).
+ * Tankiest in the roster; contact damage matches every other enemy type.
  */
 const SENTINEL_HP = 35;
 const SENTINEL_CONTACT_DAMAGE = 20;
 
 /**
- * Sinks the sprite by its full 64px frame height while buried. The actual
- * hiding mechanism is GameState's render() drawing buried enemies before
- * the terrain layer, not this offset alone.
+ * Sinks the sprite while buried; actual hiding comes from GameState drawing
+ * buried enemies before the terrain layer, not this offset alone.
  */
 const BURY_DEPTH_PX = 64;
 
-/**
- * How long the rise takes once triggered, visible in front of the terrain
- * the whole time (see `buried`/`dormant` split below). First-guess, needs playtesting.
- */
 const DEFAULT_RISE_DURATION_SECONDS = 0.6;
 
 /**
@@ -25,19 +19,12 @@ const DEFAULT_RISE_DURATION_SECONDS = 0.6;
  */
 const DEFAULT_AGGRO_RANGE_PX = 90;
 
-// Sentinel behavior (05_enemies-bosses.md 6.1: "Static, aggros when
-// approached"). The simplest enemy in the roster - it never moves at all,
-// not even after triggering.
-//
-// Two separate flags drive this:
-// - `buried` (starts true): while true, GameState draws this before the
-//   terrain layer, fully hidden behind it. Clears once aggro range triggers.
-// - `dormant`: while true, Combat.js's contact damage skips it and HUD.js
-//   hides its HP bar. Clears only once fully risen.
-// The gap between the two makes the rise visible (drawn in front, climbing
-// out of the ground) before it can actually hurt the player.
+// Sentinel never moves, even after triggering. `buried` hides the sprite
+// (GameState draws it pre-terrain); `dormant` blocks contact damage and the
+// HP bar, clearing later so the rise is visible first.
 export class Sentinel extends Enemy {
     /**
+     * Sets Sentinel's HP and starts it buried/dormant.
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {HTMLImageElement} sprite - Fallback static sprite.
@@ -58,10 +45,11 @@ export class Sentinel extends Enemy {
     }
 
     /**
+     * Arms this Sentinel to aggro on a player within range.
      * @param {Player} player - Player instance to watch for aggro range.
-     * @param {object} [options]
-     * @param {number} [options.range=DEFAULT_AGGRO_RANGE_PX]
-     * @param {number} [options.riseDuration=DEFAULT_RISE_DURATION_SECONDS]
+     * @param {object} [options] - Optional settings.
+     * @param {number} [options.range=DEFAULT_AGGRO_RANGE_PX] - Aggro trigger range, in pixels.
+     * @param {number} [options.riseDuration=DEFAULT_RISE_DURATION_SECONDS] - Seconds to fully rise once triggered.
      */
     enableTrigger(player, { range = DEFAULT_AGGRO_RANGE_PX, riseDuration = DEFAULT_RISE_DURATION_SECONDS } = {}) {
         this.player = player;
@@ -70,6 +58,7 @@ export class Sentinel extends Enemy {
     }
 
     /**
+     * Rises from buried once the player is in range, then tracks facing once fully risen.
      * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
@@ -87,6 +76,7 @@ export class Sentinel extends Enemy {
     }
 
     /**
+     * Checks whether the player is within aggro radius.
      * @returns {boolean}
      */
     _playerInRange() {

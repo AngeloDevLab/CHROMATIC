@@ -1,19 +1,18 @@
 import { Entity } from './Entity.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 
-// Lvl 4's Gimmick (docs/GDD/02_game-structure.md 2.6). The fall itself needs
-// no code - the Tiled object sits directly over a genuine gap in the
-// `terrain` layer, so gravity does the work like any other stacked-floor
-// gap. This class is purely the visual "the ground gives way" cue.
-// Two states: closed -> opening (one-shot breaking animation) -> gone;
-// nothing renders once opening finishes.
+// The fall itself needs no code - the Tiled object sits directly over a
+// genuine gap in the `terrain` layer, so gravity does the work. This class is
+// purely the visual cue: closed -> opening (one-shot break) -> gone, nothing
+// renders once opening finishes.
 export class Trapdoor extends Entity {
     /**
+     * Creates a closed trapdoor at a fixed position.
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {number} width - Width from the Tiled object.
      * @param {number} height - Height from the Tiled object.
-     * @param {{closed: HTMLImageElement, opens: HTMLImageElement, opensFrameCount: number, opensFps: number}} sprites
+     * @param {{closed: HTMLImageElement, opens: HTMLImageElement, opensFrameCount: number, opensFps: number}} sprites - Closed/opening sprite sheets.
      * @param {string} greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
      */
     constructor(x, y, width, height, sprites, greyFilterCSS) {
@@ -35,6 +34,7 @@ export class Trapdoor extends Entity {
     }
 
     /**
+     * Advances the opening animation.
      * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
@@ -45,6 +45,7 @@ export class Trapdoor extends Entity {
     }
 
     /**
+     * Draws the trapdoor for its current state; renders nothing once gone.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

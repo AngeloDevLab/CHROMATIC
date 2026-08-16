@@ -12,8 +12,8 @@ export const INTERACT_RANGE_PX = 40;
 /**
  * Builds one of the [E]-prompt elements (Portal/Merchant/SecretDoor/
  * BuffTerminal) - an icon button plus label on touch, plain text on desktop.
- * @param {Game} game
- * @param {string} text
+ * @param {Game} game - Owning Game instance, for its overlay/input.
+ * @param {string} text - Prompt label text (desktop "[E] ..." form).
  * @returns {HTMLElement}
  */
 export function createInteractPrompt(game, text) {
@@ -26,9 +26,10 @@ export function createInteractPrompt(game, text) {
 }
 
 /**
- * @param {HTMLElement} el
- * @param {Game} game
- * @param {string} text
+ * Fills the prompt with a touch button (if applicable) and its label.
+ * @param {HTMLElement} el - Prompt element to fill.
+ * @param {Game} game - Owning Game instance, for its overlay/input.
+ * @param {string} text - Prompt label text (desktop "[E] ..." form).
  */
 function _fillPromptContent(el, game, text) {
     const touch = isTouchCapable();
@@ -44,7 +45,7 @@ function _fillPromptContent(el, game, text) {
 
 /**
  * The tappable icon button shown instead of the desktop "[E]" hint.
- * @param {Game} game
+ * @param {Game} game - Owning Game instance, for its input.
  * @returns {HTMLElement}
  */
 function _buildTouchButton(game) {
@@ -59,10 +60,10 @@ function _buildTouchButton(game) {
 /**
  * Positions a prompt element at a world point, converting through the same
  * camera zoom/offset transform LevelSession uses to render the world.
- * @param {HTMLElement} el
- * @param {Camera} camera
- * @param {number} worldX
- * @param {number} worldY
+ * @param {HTMLElement} el - Prompt element to position.
+ * @param {Camera} camera - Camera to convert the world point through.
+ * @param {number} worldX - World X to position the prompt at.
+ * @param {number} worldY - World Y to position the prompt at.
  */
 export function positionInteractPrompt(el, camera, worldX, worldY) {
     el.style.left = `${(worldX - camera.x) * camera.zoom}px`;

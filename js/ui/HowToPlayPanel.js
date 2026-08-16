@@ -1,6 +1,3 @@
-/**
- * Content for docs/GDD/07_ui-hud.md 8.1.
- */
 const SECTIONS = [
     {
         title: 'The Color Trail',
@@ -31,6 +28,7 @@ const SECTIONS = [
  */
 export class HowToPlayPanel {
     /**
+     * Stores the injected Panel to open into.
      * @param {Panel} panel - Panel instance to open into (owned by the caller).
      */
     constructor(panel) {
@@ -39,7 +37,8 @@ export class HowToPlayPanel {
     }
 
     /**
-     * @param {object} [options]
+     * Opens the How to Play panel.
+     * @param {object} [options] - Optional settings.
      * @param {() => void} [options.onClose] - Forwarded to Panel.open(), for
      *   callers that need to return to their own previous view.
      * @param {boolean} [options.closeOnEscape=true] - Set false by callers
@@ -61,6 +60,7 @@ export class HowToPlayPanel {
     }
 
     /**
+     * Builds the section list markup.
      * @returns {string} The full section list markup.
      */
     _buildBodyHTML() {

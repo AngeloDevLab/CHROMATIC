@@ -14,8 +14,7 @@ const ATTACK_FRAME_HEIGHT = 96;
 const AFK_FRAME_SIZE = 64;
 
 /**
- * Player action smoke (entities/VfxEffect.js, Player.js's pendingVfx
- * mailbox); all three sheets are 64x64 frames.
+ * Player action smoke VFX; all three sheets are 64x64 frames.
  */
 export const VFX_FRAME_SIZE = 64;
 export const VFX_CLIPS = {
@@ -25,7 +24,8 @@ export const VFX_CLIPS = {
 };
 
 /**
- * @param {AssetLoader} assets
+ * Builds the player's full sprite-animation set.
+ * @param {AssetLoader} assets - Loader holding the player's sprite sheets.
  * @returns {object} Named SpriteAnimation set for guardian-idle/running/jump/attack/dead.
  */
 export function buildPlayerAnimations(assets) {
@@ -41,8 +41,8 @@ export function buildPlayerAnimations(assets) {
 }
 
 /**
- * Wraith.js's 6-clip-as-6-states shape; each a distinct drawn pose, not a generic looping cycle.
- * @param {AssetLoader} assets
+ * 7-clip shape; each a distinct drawn pose, not a generic looping cycle.
+ * @param {AssetLoader} assets - Loader holding the Wraith's sprite sheets.
  * @returns {object} Named SpriteAnimation set for the Wraith's state machine.
  */
 export function buildWraithAnimations(assets) {
@@ -58,8 +58,8 @@ export function buildWraithAnimations(assets) {
 }
 
 /**
- * Same 7-clip-as-7-states shape as buildWraithAnimations(), sized for the lv_6_boss sheets' 96x150 frames.
- * @param {AssetLoader} assets
+ * Same 7-clip shape as buildWraithAnimations(), for the lv_6_boss sheets.
+ * @param {AssetLoader} assets - Loader holding the Templateboss's sprite sheets.
  * @returns {object} Named SpriteAnimation set for the Templateboss's state machine.
  */
 export function buildTemplatebossAnimations(assets) {
@@ -75,8 +75,9 @@ export function buildTemplatebossAnimations(assets) {
 }
 
 /**
- * @param {AssetLoader} assets
- * @param {'jump'|'landing'|'dash'} key
+ * Builds a single VFX clip's SpriteAnimation from VFX_CLIPS.
+ * @param {AssetLoader} assets - Loader holding the VFX sprite sheets.
+ * @param {'jump'|'landing'|'dash'} key - Which VFX clip to build.
  * @returns {SpriteAnimation}
  */
 export function buildVfxAnimation(assets, key) {

@@ -5,14 +5,16 @@ import { PLAYER_REVEAL_RADIUS } from './LevelSession.js';
 // passed in and owns nothing else.
 export class LevelSessionRenderer {
     /**
-     * @param {LevelSession} session
+     * Binds this renderer to the LevelSession it draws.
+     * @param {LevelSession} session - Owning LevelSession to read state from.
      */
     constructor(session) {
         this.session = session;
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws the camera-transformed world, then the screen-space HUD bars.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         const session = this.session;
@@ -32,7 +34,7 @@ export class LevelSessionRenderer {
      * buried enemies -> the baked level canvas -> the color mechanic ->
      * interactables/enemies/projectiles -> the player (or its death ghost).
      * Buried enemies draw before the terrain layer so it occludes them.
-     * @param {CanvasRenderingContext2D} ctx
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     _renderWorld(ctx) {
         this._renderBackground(ctx);
@@ -41,7 +43,8 @@ export class LevelSessionRenderer {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws buried enemies, the baked level canvas, then the color zone.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     _renderBackground(ctx) {
         const session = this.session;
@@ -53,7 +56,8 @@ export class LevelSessionRenderer {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws interactables, non-buried enemies with their HP bars, combat projectiles, and player FX.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     _renderEntities(ctx) {
         const session = this.session;
@@ -68,7 +72,8 @@ export class LevelSessionRenderer {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws the death ghost while active, otherwise the player.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     _renderPlayerOrGhost(ctx) {
         const session = this.session;
@@ -81,7 +86,7 @@ export class LevelSessionRenderer {
 
     /**
      * No liveGlow while dead, to avoid punching a hole at the death spot every frame during the full-darken effect.
-     * @param {CanvasRenderingContext2D} ctx
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     _renderColorZone(ctx) {
         const session = this.session;
@@ -98,7 +103,7 @@ export class LevelSessionRenderer {
 
     /**
      * Dev Panel toggle - draws each combat-relevant entity's actual Collision/Combat box, not its usually-larger sprite frame.
-     * @param {CanvasRenderingContext2D} ctx
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     _renderHitboxes(ctx) {
         ctx.save();
@@ -110,7 +115,8 @@ export class LevelSessionRenderer {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Outlines the player's hitbox.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     _renderPlayerHitbox(ctx) {
         const player = this.session.player;
@@ -119,7 +125,8 @@ export class LevelSessionRenderer {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Outlines every living, non-buried enemy's hitbox.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     _renderEnemyHitboxes(ctx) {
         ctx.strokeStyle = '#ffe75c';
@@ -131,7 +138,7 @@ export class LevelSessionRenderer {
 
     /**
      * Player and enemy projectiles share one color.
-     * @param {CanvasRenderingContext2D} ctx
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     _renderProjectileHitboxes(ctx) {
         const session = this.session;

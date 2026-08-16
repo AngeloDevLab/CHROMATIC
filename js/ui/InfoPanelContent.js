@@ -47,7 +47,8 @@ const PRIVACY_POLICY_BODY = `
 `;
 
 /**
- * @param {{title:string,url:string,author:string,authorUrl:string,license:string,licenseUrl:string}} credit
+ * Builds one Freesound clip's credit line.
+ * @param {{title:string,url:string,author:string,authorUrl:string,license:string,licenseUrl:string}} credit - Asset credit entry to render.
  * @returns {string}
  */
 function buildFreesoundCreditRow(credit) {
@@ -59,6 +60,7 @@ function buildFreesoundCreditRow(credit) {
 }
 
 /**
+ * Builds one third-party asset's credit row.
  * @param {{name:string,detail:string,license:string|null,licenseUrl:string|null,licenseNote:string}} entry - detail carries its own author link(s) as inline `<a>` markup.
  * @returns {string}
  */

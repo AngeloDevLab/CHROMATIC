@@ -5,22 +5,17 @@ import { GHOST_FRAME_SIZE } from '../mechanics/DeathSequence.js';
 import { LevelSessionSetup } from './LevelSessionSetup.js';
 import { LevelSessionRenderer } from './LevelSessionRenderer.js';
 
-/**
- * Slack past the level's bottom edge before a fall counts as death.
- */
 const FALL_DEATH_MARGIN_PX = 64;
 
 /**
- * Player's live-glow/permanent color trail radius (03_mechanics.md 4.1),
- * shared with Interactables.js's revealRadius option.
+ * Player's live-glow/permanent color trail radius, shared with Interactables.js's revealRadius option.
  */
 export const PLAYER_REVEAL_RADIUS = 55;
 
 /**
  * Real Prologue levels (Tiled exports, assets/levels/Lv_N.json).
- * Player/enemy spawn positions come from each level's PlayerStart/
- * EnemySpawn objects (10_technical-architecture.md 11.6.2); an
- * unrecognized EnemySpawn name is skipped with a console warning.
+ * Player/enemy spawn positions come from each level's PlayerStart/EnemySpawn
+ * objects; an unrecognized EnemySpawn name is skipped with a console warning.
  */
 export const LEVEL_JSON_KEYS = {
     1: 'lv1-level',
@@ -34,8 +29,8 @@ export const LEVEL_JSON_KEYS = {
 /**
  * Loads a throwaway Level for a quick property check (isBossLevel() below,
  * BossState.js's arena-sizing) before the real LevelSession builds its own.
- * @param {AssetLoader} assets
- * @param {number} levelNumber
+ * @param {AssetLoader} assets - Loader to read level JSON/tilesets from.
+ * @param {number} levelNumber - Level number to load.
  * @returns {Level|null}
  */
 export function loadLevelPreview(assets, levelNumber) {
@@ -49,8 +44,8 @@ export function loadLevelPreview(assets, levelNumber) {
  * Decides GameState vs BossState routing at level-load time, before a
  * LevelSession exists to ask - reads the same miniboss/templateboss spawn
  * names EnemyRoster.js uses to actually spawn a boss.
- * @param {AssetLoader} assets
- * @param {number} levelNumber
+ * @param {AssetLoader} assets - Loader to read level JSON/tilesets from.
+ * @param {number} levelNumber - Level number to check.
  * @returns {boolean}
  */
 export function isBossLevel(assets, levelNumber) {
@@ -62,9 +57,7 @@ export function isBossLevel(assets, levelNumber) {
 // enemies/HUD/interactables/combat - extracted out of GameState.js. Not a
 // State (no enter()/exit()), just a plain constructor + update()/render()/
 // destroy(), driven by whichever State owns it (GameState for a normal
-// level, BossState for a boss arena). Construction (LevelSessionSetup.js)
-// and rendering (LevelSessionRenderer.js) are composed onto this class the
-// same way Player.js composes PlayerHealth/PlayerRenderer/PlayerMovement.
+// level, BossState for a boss arena).
 //
 // A few non-obvious choices, gathered here instead of scattered near their
 // call sites: the constructor leaves Camera's zoom at its default (1) even
@@ -77,6 +70,7 @@ export function isBossLevel(assets, levelNumber) {
 // rise-and-fade would spawn off-screen.
 export class LevelSession {
     /**
+     * Loads the level and builds every system a running level needs.
      * @param {Game} game - Owning Game instance.
      * @param {{chapterId: string, level: number}} params - Level to load.
      */
@@ -113,6 +107,7 @@ export class LevelSession {
     }
 
     /**
+     * Routes the frame to dialogue/freeze handling, or a normal world update.
      * @param {number} dt - Fixed timestep in seconds.
      */
     update(dt) {
@@ -147,8 +142,8 @@ export class LevelSession {
 
     /**
      * Freezes gameplay the same way Pause does; [E] here advances the dialogue instead of interacting with the level.
-     * @param {number} dt
-     * @param {MerchantDialogue} merchantDialogue
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {MerchantDialogue} merchantDialogue - Open dialogue to advance/update.
      */
     _updateMerchantDialogue(dt, merchantDialogue) {
         if (this.game.input.consumeInteractPress()) merchantDialogue.advance();
@@ -158,7 +153,7 @@ export class LevelSession {
     /**
      * The rest of a normal frame - player/enemies/interactables/combat, the
      * color mechanic, death, camera, and HUD text, in that order.
-     * @param {number} dt
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateWorld(dt) {
         this._updatePlayer(dt);
@@ -168,7 +163,8 @@ export class LevelSession {
     }
 
     /**
-     * @param {number} dt
+     * Re-applies unlocked abilities, then updates the player and its FX/secret-door block.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updatePlayer(dt) {
         this.player.godmode = this.game.devPanel.godmode;
@@ -179,7 +175,8 @@ export class LevelSession {
     }
 
     /**
-     * @param {number} dt
+     * Updates enemies and interactables, then checks for a fall death.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateEnemiesAndInteractables(dt) {
         this.enemyRoster.updateEnemies(dt, this.combat, this.colorZone, PLAYER_REVEAL_RADIUS);
@@ -188,7 +185,8 @@ export class LevelSession {
     }
 
     /**
-     * @param {number} dt
+     * Resolves combat and color reveal, then checks boss/level-complete and the death sequence.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateCombatAndReveal(dt) {
         this.combat.update(dt, this.game.difficulty);
@@ -199,7 +197,8 @@ export class LevelSession {
     }
 
     /**
-     * @param {number} dt
+     * Follows the camera, then updates prompts/color zone/damage numbers/HUD text.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateCameraAndHud(dt) {
         this.camera.follow(this.player, this.level.pixelWidth, this.level.pixelHeight);
@@ -220,7 +219,7 @@ export class LevelSession {
 
     /**
      * Starts the ghost-rise once the fall animation finishes, then pushes GameOverState once its fade-out completes.
-     * @param {number} dt
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateDeathSequence(dt) {
         if (!this.deathSequence.active && this.player.dead && this.player.deathAnimationFinished) {
@@ -243,7 +242,7 @@ export class LevelSession {
     /**
      * Stops feeding position updates once the death sequence's full-darken
      * sweep finishes, to avoid punching a fresh colored hole at the frozen death spot.
-     * @param {number} dt
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateColorZone(dt) {
         if (!this.deathSequence.active || this.colorZone.isTransitioning) {
@@ -285,7 +284,8 @@ export class LevelSession {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Delegates to the renderer.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         this.renderer.render(ctx);

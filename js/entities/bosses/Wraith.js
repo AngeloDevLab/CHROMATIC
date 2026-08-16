@@ -15,22 +15,16 @@ import {
     ENRAGE_WALK_SPEED_PX_PER_SEC,
 } from './WraithConstants.js';
 
-// Wraith of the Shifting Sands (Lvl 3 Miniboss) - also the shared base
-// moveset WraithTemplateboss.js (Lvl 6, Wraith of the Grey City) extends,
-// per 05_enemies-bosses.md 6.3.1.
+// Wraith of the Shifting Sands (Lvl 3 Miniboss); also the shared base moveset
+// WraithTemplateboss.js (Lvl 6) extends.
 //
-// State machine, one state per sprite clip (see LoadingState.js's
-// 'boss-wraith-*' keys):
-//   idle (loop, ground level) -> toFiring (rises to the top edge) ->
-//   firing (static pose at the top, beam starts) -> toVulnerable (glides
-//   back down while still firing) -> vulnerable (static pose at ground
-//   level, double damage window) -> toIdle (pose morph, no movement) ->
-//   walking (glide to the arena's other fixed side) -> idle (repeat).
+// State machine, one state per sprite clip: idle -> toFiring -> firing ->
+// toVulnerable -> vulnerable -> toIdle -> walking -> idle.
 //
-// Phase 2 (Boss.js's `enraged`, HP <= 50%) shortens the three hold timers
-// (via `timeScale`) and speeds up the walk (via its own dedicated value).
+// Phase 2 (enraged, HP <= 50%) shortens the hold timers and speeds up the walk.
 export class Wraith extends Boss {
     /**
+     * Sets up Wraith's stats, arena anchors, and state machine.
      * @param {number} x - World X spawn position.
      * @param {number} y - World Y spawn position (Tiled's EnemySpawn row).
      * @param {Collision} collision - Level collision, for ground/wall scans.
@@ -52,9 +46,7 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Starting pose/timer, plus transition-state-only bookkeeping
-     * (toFiring/toVulnerable/toIdle - see _enterTransition()/
-     * _updateTransitionMove()).
+     * Sets initial pose/timer and transition-glide bookkeeping.
      */
     _initStateMachine() {
         this.state = 'idle';
@@ -77,7 +69,8 @@ export class Wraith extends Boss {
     }
 
     /**
-     * @param {number} dt
+     * Runs one Wraith frame.
+     * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
         this._tickTimers(dt);
@@ -94,7 +87,8 @@ export class Wraith extends Boss {
     }
 
     /**
-     * @param {number} dt
+     * Counts down hit-flash and knockback timers.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _tickTimers(dt) {
         if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
@@ -122,10 +116,9 @@ export class Wraith extends Boss {
     }
 
     /**
-     * State machine dispatch (see the class comment above for the full
-     * sequence). `default` is reachable only via subclasses;
-     * WraithTemplateboss.js's 'firingSweep' lands there.
-     * @param {number} dt
+     * State machine dispatch. `default` is reachable only via subclasses
+     * (WraithTemplateboss.js's 'firingSweep').
+     * @param {number} dt - Elapsed time in seconds.
      * @param {SpriteAnimation} [anim] - The currently playing clip, if animations are wired up.
      */
     _updateState(dt, anim) {
@@ -142,7 +135,8 @@ export class Wraith extends Boss {
     }
 
     /**
-     * @param {number} dt
+     * Counts down the idle hold, then starts rising to firing.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateIdleState(dt) {
         this._stateTimer -= dt;
@@ -150,8 +144,9 @@ export class Wraith extends Boss {
     }
 
     /**
-     * @param {number} dt
-     * @param {SpriteAnimation} [anim]
+     * Advances the rise glide, firing once it completes.
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {SpriteAnimation} [anim] - The currently playing clip.
      */
     _updateToFiringState(dt, anim) {
         this._updateTransitionMove(dt);
@@ -159,7 +154,8 @@ export class Wraith extends Boss {
     }
 
     /**
-     * @param {number} dt
+     * Counts down the firing hold, then starts descending to vulnerable.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateFiringState(dt) {
         this._stateTimer -= dt;
@@ -167,8 +163,9 @@ export class Wraith extends Boss {
     }
 
     /**
-     * @param {number} dt
-     * @param {SpriteAnimation} [anim]
+     * Advances the descent glide, exposing the weak spot once it completes.
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {SpriteAnimation} [anim] - The currently playing clip.
      */
     _updateToVulnerableState(dt, anim) {
         this._updateTransitionMove(dt);
@@ -176,7 +173,8 @@ export class Wraith extends Boss {
     }
 
     /**
-     * @param {number} dt
+     * Counts down the vulnerable window, then starts returning to idle.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateVulnerableState(dt) {
         this._stateTimer -= dt;
@@ -184,8 +182,9 @@ export class Wraith extends Boss {
     }
 
     /**
-     * @param {number} dt
-     * @param {SpriteAnimation} [anim]
+     * Advances the idle-return glide, then starts walking once it completes.
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {SpriteAnimation} [anim] - The currently playing clip.
      */
     _updateToIdleState(dt, anim) {
         this._updateTransitionMove(dt);
@@ -193,8 +192,9 @@ export class Wraith extends Boss {
     }
 
     /**
-     * @param {number} dt
-     * @param {SpriteAnimation} [anim]
+     * No-op; overridden by subclasses for extra states.
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {SpriteAnimation} [anim] - The currently playing clip.
      */
     _updateCustomState(dt, anim) {}
 
@@ -212,6 +212,7 @@ export class Wraith extends Boss {
     applyKnockback() {}
 
     /**
+     * Switches to an animation and restarts it.
      * @param {string} key - Animation key to switch to and restart.
      */
     _setAnimation(key) {
@@ -221,9 +222,9 @@ export class Wraith extends Boss {
 
     /**
      * Shared entry for all three one-shot glides (toFiring/toVulnerable/toIdle).
-     * @param {'toFiring'|'toVulnerable'|'toIdle'} state
-     * @param {number} fromY
-     * @param {number} toY
+     * @param {'toFiring'|'toVulnerable'|'toIdle'} state - Transition state to enter.
+     * @param {number} fromY - Y position to glide from.
+     * @param {number} toY - Y position to glide to.
      */
     _enterTransition(state, fromY, toY) {
         this.state = state;
@@ -238,10 +239,9 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Linear glide over the clip's own playback duration rather than a
-     * fixed speed constant. A no-op when fromY === toY (toIdle), holding
-     * position steady while the pose morphs.
-     * @param {number} dt
+     * Linear glide over the clip's playback duration, not a fixed speed.
+     * No-ops when fromY === toY (toIdle), holding position while the pose morphs.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateTransitionMove(dt) {
         this._transitionElapsed += dt;
@@ -251,7 +251,7 @@ export class Wraith extends Boss {
 
     /**
      * Fires the beam and kicks off the room-darken.
-     * @param {'horizontal'|'vertical'} [axis='horizontal'] - Only 'horizontal' is reachable from this base class; WraithTemplateboss.js's _onRiseComplete() is the only caller that ever passes 'vertical'.
+     * @param {'horizontal'|'vertical'} [axis='horizontal'] - 'vertical' is only used by WraithTemplateboss.js.
      */
     _enterFiring(axis = 'horizontal') {
         this.telegraphing = false;
@@ -268,8 +268,7 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Ends the active beam and enters the vulnerable state. The only place
-     * that sets `vulnerable = true` (Boss.takeDamage() reads it directly).
+     * Ends the active beam and enters vulnerable state; the only place `vulnerable` is set to true.
      */
     _enterVulnerable() {
         if (this._activeBeam) {
@@ -284,8 +283,8 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Heads for whichever of the two fixed anchors it isn't currently on,
-     * facing the walk direction. Reuses the idle animation (no dedicated walk clip).
+     * Heads for the fixed anchor it isn't currently on, facing that direction.
+     * Reuses the idle animation (no dedicated walk clip).
      */
     _enterWalking() {
         this.state = 'walking';
@@ -295,9 +294,8 @@ export class Wraith extends Boss {
     }
 
     /**
-     * X-interpolation toward _walkTargetX, shared by 'walking' and (via
-     * WraithTemplateboss.js) 'firingSweep' - only arrival behavior differs, see _onArrived().
-     * @param {number} dt
+     * Moves toward `_walkTargetX`, shared by 'walking' and (via subclass) 'firingSweep'.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateWalk(dt) {
         const dx = this._walkTargetX - this.x;
@@ -313,9 +311,8 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Reached _walkTargetX - the Miniboss always resumes idle;
-     * WraithTemplateboss.js overrides this to fire the vertical sweep's
-     * beam-off/descend transition instead, when arriving from 'firingSweep'.
+     * Reached `_walkTargetX`; resumes idle. Overridden by WraithTemplateboss.js
+     * for the firingSweep arrival.
      */
     _onArrived() {
         this._enterIdle();

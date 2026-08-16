@@ -1,29 +1,20 @@
 import { Enemy, HIT_FLASH_SECONDS } from './Enemy.js';
 
-/**
- * 05_enemies-bosses.md 6.2.1: hitting the weak spot during its vulnerable window deals bonus damage.
- */
 const VULNERABLE_DAMAGE_MULTIPLIER = 2;
-
-/**
- * 05_enemies-bosses.md 6.2.1: boss attack cycle speeds up once HP drops to half or below.
- */
 const ENRAGE_HP_FRACTION = 0.5;
 const ENRAGE_TIME_SCALE = 0.5;
 
 // Entity -> Enemy -> Boss -> Templateboss. This layer holds what every boss
 // tier shares: the vulnerability-window damage bonus, phase/enrage timing,
-// and non-square rendering for tall/wide boss sheets. No sprite/animations
-// are wired up for any Boss subclass yet - render() falls back to
-// _renderPlaceholder()'s tinted box until then.
+// and non-square rendering for tall/wide boss sheets.
 export class Boss extends Enemy {
     /**
-     * Landed/exposed window (05_enemies-bosses.md 6.2.1), flipped by subclasses during their own state machine.
+     * Landed/exposed window, flipped by subclasses during their own state machine.
      */
     vulnerable = false;
 
     /**
-     * Windup telegraph (05_enemies-bosses.md 6.3.1). Only used by _renderPlaceholder() until real animations exist.
+     * Windup telegraph, also used by _renderPlaceholder()'s tint.
      */
     telegraphing = false;
 
@@ -38,6 +29,7 @@ export class Boss extends Enemy {
     tokenReward = 1;
 
     /**
+     * Passes through to Enemy's base setup.
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {HTMLImageElement} sprite - Fallback static sprite.
@@ -58,6 +50,7 @@ export class Boss extends Enemy {
     }
 
     /**
+     * Whether HP has dropped to the enrage threshold or below.
      * @returns {boolean}
      */
     get enraged() {
@@ -73,6 +66,7 @@ export class Boss extends Enemy {
     }
 
     /**
+     * Draws the current animation frame, or a placeholder if none is wired up.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
@@ -112,7 +106,8 @@ export class Boss extends Enemy {
     }
 
     /**
-     * @param {SpriteAnimation} anim
+     * Computes the frame's render rect and hit-flash amount.
+     * @param {SpriteAnimation} anim - Animation to draw the current frame of.
      * @returns {{renderWidth:number, renderHeight:number, drawX:number, drawY:number, flashAmount:number}}
      */
     _computeBossFrameRect(anim) {

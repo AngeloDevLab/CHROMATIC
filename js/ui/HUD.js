@@ -1,8 +1,7 @@
 import { Boss } from '../entities/Boss.js';
 
 /**
- * Bar position/size, exported so GameState's HTML value labels can align to
- * this canvas draw call (10_technical-architecture.md 11.8).
+ * Bar position/size, exported so GameState's HTML value labels can align to this canvas draw call.
  */
 export const HEALTH_BAR = { x: 8, y: 8, width: 72, height: 8 };
 export const SHIELD_BAR = { x: 8, y: 22, width: 72, height: 8 };
@@ -12,8 +11,8 @@ const ENEMY_BAR_HEIGHT = 4;
 const ENEMY_BAR_GAP_PX = 6;
 
 /**
- * BossState.js's top-center HP bar. Horizontally centered dynamically (see
- * renderBossBar()), since BossState's own buffer width varies per arena.
+ * BossState.js's top-center HP bar, horizontally centered dynamically (see
+ * renderBossBar()) since BossState's own buffer width varies per arena.
  * HEIGHT/TOP_PX exported so BossState's name/HP labels can align to this bar.
  */
 const BOSS_BAR_WIDTH = 200;
@@ -24,15 +23,15 @@ export const BOSS_BAR_TOP_PX = 26;
  * Scales a screen-fixed rect's position/size by Game.hudScale. Shared by
  * renderPlayerBars()/renderBossBar() below and by LevelSession.js/
  * BossState.js's own HTML label positioning.
- * @param {{x:number,y:number,width:number,height:number}} rect
- * @param {number} scale
+ * @param {{x:number,y:number,width:number,height:number}} rect - Screen-fixed rect to scale.
+ * @param {number} scale - Game.hudScale.
  * @returns {{x:number,y:number,width:number,height:number}}
  */
 export function scaleRect(rect, scale) {
     return { x: rect.x * scale, y: rect.y * scale, width: rect.width * scale, height: rect.height * scale };
 }
 
-// HUD bar fills are canvas rectangles, not text (11.8.1) - numbers/labels are
+// HUD bar fills are canvas rectangles, not text - numbers/labels are
 // the caller's HTML overlay job. Dormant enemies stay hidden until risen, so
 // no bar spoils a buried ambush. Enemy.js's visualTopY already falls back to
 // enemy.y when there's no reference animation (e.g. Boss.js placeholders).
@@ -40,7 +39,7 @@ export class HUD {
     /**
      * Screen-fixed - call outside the camera-translated block.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
-     * @param {Player} player
+     * @param {Player} player - Player whose Health/Shield bars to draw.
      * @param {number} [scale=1] - Game.hudScale.
      */
     renderPlayerBars(ctx, player, scale = 1) {
@@ -52,7 +51,7 @@ export class HUD {
      * World-space (follows the enemy) - call inside the camera-translated
      * block, alongside enemy rendering. Skipped for Boss/Templateboss instances.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
-     * @param {Enemy} enemy
+     * @param {Enemy} enemy - Enemy whose HP bar to draw.
      */
     renderEnemyBar(ctx, enemy) {
         if (enemy.dead || enemy.dormant || enemy instanceof Boss) return;
@@ -70,7 +69,7 @@ export class HUD {
      * Draws the boss HP bar fill, horizontally centered on the current
      * buffer width. Fill color shifts to the enrage color once `boss.enraged` is true.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
-     * @param {Enemy} boss
+     * @param {Enemy} boss - Boss whose HP bar to draw.
      * @param {number} gameWidth - Current buffer width (varies per boss arena).
      * @param {number} [scale=1] - Game.hudScale.
      */
@@ -87,6 +86,7 @@ export class HUD {
     }
 
     /**
+     * Draws a background-plus-fill bar with a 1px border.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {{x:number,y:number,width:number,height:number}} rect - Bar bounds.
      * @param {number} ratio - Fill ratio, clamped to 0-1.

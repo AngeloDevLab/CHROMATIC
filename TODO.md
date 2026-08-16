@@ -9,7 +9,6 @@ Working list of what's next. Update together at the end of a session (see `CHANG
 
 ## Code Style / Open Questions
 
-- JSDoc/comment cleanup pass still needed across the codebase - Same bar as before: trim to what's genuinely non-obvious, don't just convert inline comments to JSDoc verbatim (see CLAUDE.md's Code Style section).
 - Open question, not decided yet: should every method only called from within its own class get a `_` prefix (currently inconsistent across the codebase, ~54 files affected) - parked pending outside clarification (Loom).
 - Open question, not decided yet: script file naming (`PascalCase` for classes, e.g. `Main.js`/`Level.js`, vs. a stated convention that scripts are always `camelCase`) - parked pending outside clarification.
 - Feedback claimed no boss enemy exists - both do (Lvl 3 Miniboss, Lvl 6 Templateboss), reachable via DevPanel (Backquote key), already noted in the submission but apparently missed.

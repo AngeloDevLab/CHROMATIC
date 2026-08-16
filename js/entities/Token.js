@@ -5,13 +5,12 @@ const GRAVITY = 700;
 const BOB_AMPLITUDE_PX = 4;
 const BOB_SPEED = 3;
 
-// Dropped at a boss's death position once it's defeated (see
-// Interactables.js's onBossDefeated()) - falls under gravity onto the floor
-// below it, then bobs gently in place until collected. A plain proximity
-// pickup, no [E] prompt - collected the instant the player's hitbox
-// overlaps it (Interactables.js's _updateToken()).
+// Dropped at a boss's death position; falls under gravity onto the floor,
+// then bobs gently until collected. A plain proximity pickup, no [E] prompt -
+// collected the instant the player's hitbox overlaps it.
 export class Token extends Entity {
     /**
+     * Creates a token centered on the boss's death position.
      * @param {number} centerX - Boss's centerX at time of death.
      * @param {number} centerY - Boss's centerY at time of death.
      * @param {HTMLImageElement} sprite - Static token sprite.
@@ -25,6 +24,7 @@ export class Token extends Entity {
     }
 
     /**
+     * Falls until landed, then bobs in place.
      * @param {number} dt - Elapsed time in seconds.
      * @param {Collision} collision - For falling onto the level's floor.
      */
@@ -38,6 +38,7 @@ export class Token extends Entity {
     }
 
     /**
+     * Applies gravity and checks for landing.
      * @param {number} dt - Elapsed time in seconds.
      * @param {Collision} collision - For falling onto the level's floor.
      */
@@ -48,7 +49,7 @@ export class Token extends Entity {
     }
 
     /**
-     * Draws below its native 64x64 (SIZE), with imageSmoothingEnabled off so the downscale stays crisp.
+     * Draws scaled down to SIZE (48px) from the sprite's native 64x64, with imageSmoothingEnabled off to keep the downscale crisp.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

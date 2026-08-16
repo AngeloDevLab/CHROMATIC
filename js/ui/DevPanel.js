@@ -3,8 +3,7 @@ import { LEVEL_JSON_KEYS, isBossLevel } from '../states/LevelSession.js';
 const TOGGLE_KEY_CODE = 'Backquote';
 
 /**
- * Prologue only, matches WorldmapState's level-skip target
- * (11_scope-milestones.md 12.1).
+ * Prologue only, matches WorldmapState's level-skip target.
  */
 const CHAPTER_ID = 'prologue';
 const LEVEL_COUNT = 6;
@@ -12,13 +11,14 @@ const LEVEL_COUNT = 6;
 /**
  * In-game debug panel (backtick key to toggle): level skip, hitbox/godmode
  * toggles, and dev-only Token/ability grants that bypass the real Merchant
- * flow for testing. Appended straight to document.body, outside #ui-overlay.
+ * flow for testing - appended straight to document.body, outside #ui-overlay.
  * Interactive buttons blur themselves on click, since Space is both the jump
  * key and the browser's native "activate focused button" key - an unblurred
  * button would otherwise re-fire on the next jump-release.
  */
 export class DevPanel {
     /**
+     * Sets up default debug state and the toggle-key listener.
      * @param {Game} game - Owning Game instance.
      */
     constructor(game) {
@@ -32,7 +32,8 @@ export class DevPanel {
     }
 
     /**
-     * @param {KeyboardEvent} e
+     * Toggles the panel open/closed on the backtick key.
+     * @param {KeyboardEvent} e - The browser keydown event.
      */
     _onKeyDown(e) {
         if (e.code !== TOGGLE_KEY_CODE) return;
@@ -67,6 +68,7 @@ export class DevPanel {
     }
 
     /**
+     * Builds the level-skip button row.
      * @returns {string} One button per level, disabled if not yet registered.
      */
     _buildLevelButtons() {
@@ -79,6 +81,7 @@ export class DevPanel {
     }
 
     /**
+     * Builds the panel's full markup.
      * @returns {string} The full panel markup.
      */
     _buildMarkup() {
@@ -155,7 +158,10 @@ export class DevPanel {
         }
     }
 
-    /** @param {HTMLButtonElement} button */
+    /**
+     * Syncs an ability button's locked/unlocked look to actual ownership.
+     * @param {HTMLButtonElement} button - Ability button to sync locked/unlocked state for.
+     */
     _syncAbilityButton(button) {
         const unlocked = this.game.abilities.has(button.dataset.ability);
         button.classList.toggle('locked', !unlocked);

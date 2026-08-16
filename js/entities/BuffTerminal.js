@@ -5,6 +5,7 @@ import { Entity } from './Entity.js';
 // door already being open; this class only tracks whether it's been used.
 export class BuffTerminal extends Entity {
     /**
+     * Creates a buff terminal at a fixed position.
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {number} width - Width from the Tiled object.
@@ -18,6 +19,7 @@ export class BuffTerminal extends Entity {
     }
 
     /**
+     * Draws the terminal sprite, dimmed once used.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

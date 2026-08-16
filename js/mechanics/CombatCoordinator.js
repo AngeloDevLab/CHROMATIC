@@ -10,25 +10,12 @@ import {
     RANGED_ATTACK_COOLDOWN_SECONDS,
 } from './Combat.js';
 
-// Combat feel: a brief total freeze the instant a hit lands. LevelSession.
-// update() early-returns while isFrozen is true (render() keeps drawing the
-// last frame).
 const HIT_STOP_SECONDS = 0.06;
 
 // Sequences the player's per-frame attack decision (melee vs the ranged
 // thrown-sword) and both projectile pools (the player's own throw, and
 // enemy-fired shots/beams) through Combat.js's pure resolve* functions,
-// extracted out of LevelSession.js. Owns the hit-stop timer too -
-// LevelSession only ever needs to ask isFrozen() and call tickFrozen(dt).
-//
-// Contact damage (Combat.js's resolveContactDamage) is bidirectional: the
-// player's share is displayed directly, the enemy's share is folded into the
-// shared per-frame hits array so it goes through the same sfx/hit-stop path
-// as melee/projectile hits. A charging enemy's own side is 0 for that tick,
-// filtered out so it doesn't display a stray "0".
-//
-// Attack resolution (03_mechanics.md 4.3): melee if the nearest enemy is in
-// reach, a thrown-sword projectile otherwise. The ranged throw has its own cooldown.
+// extracted out of LevelSession.js.
 export class CombatCoordinator {
     projectiles = [];
 
@@ -42,14 +29,15 @@ export class CombatCoordinator {
     _rangedCooldownTimer = 0;
 
     /**
-     * @param {Player} player
+     * Wires up the player/enemies/collision this coordinator resolves attacks against.
+     * @param {Player} player - Player whose attacks this coordinates.
      * @param {Enemy[]} enemies - Same array reference LevelSession itself iterates.
      * @param {Collision} collision - For resolving projectile flight against terrain.
-     * @param {object} options
-     * @param {DamageNumbers} options.damageNumbers
-     * @param {HTMLImageElement} options.thrownSwordSprite
-     * @param {HTMLImageElement} options.thrownSwordTrailSprite
-     * @param {SoundManager} options.sound
+     * @param {object} options - Construction settings.
+     * @param {DamageNumbers} options.damageNumbers - For spawning floating hit numbers.
+     * @param {HTMLImageElement} options.thrownSwordSprite - Sprite for the ranged thrown-sword projectile.
+     * @param {HTMLImageElement} options.thrownSwordTrailSprite - Trail sprite for the thrown sword.
+     * @param {SoundManager} options.sound - For hit/attack sound effects.
      */
     constructor(player, enemies, collision, { damageNumbers, thrownSwordSprite, thrownSwordTrailSprite, sound }) {
         this.player = player;
@@ -62,7 +50,8 @@ export class CombatCoordinator {
     }
 
     /**
-     * @returns {boolean} Whether a hit-stop freeze is currently active.
+     * Whether a hit-stop freeze is currently active.
+     * @returns {boolean}
      */
     get isFrozen() {
         return this._hitStopTimer > 0;
@@ -70,14 +59,15 @@ export class CombatCoordinator {
 
     /**
      * Counts down the active freeze - only meaningful while isFrozen.
-     * @param {number} dt
+     * @param {number} dt - Elapsed time in seconds.
      */
     tickFrozen(dt) {
         this._hitStopTimer = Math.max(0, this._hitStopTimer - dt);
     }
 
     /**
-     * @param {number} dt
+     * Runs one frame of attack/projectile/contact-damage resolution.
+     * @param {number} dt - Elapsed time in seconds.
      * @param {string} difficulty - Game.difficulty, for incoming-damage scaling (Combat.js).
      */
     update(dt, difficulty) {
@@ -90,9 +80,9 @@ export class CombatCoordinator {
     }
 
     /**
-     * Resolves contact damage between the player and enemies this frame, displaying the player's share and returning the enemy's share.
-     * @param {number} dt
-     * @param {string} difficulty
+     * Resolves contact damage between the player and enemies this frame, displaying the player's share and returning the enemy's share. A charging enemy's own side is filtered out at 0.
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {string} difficulty - Game.difficulty, for incoming-damage scaling (Combat.js).
      * @returns {{enemy:Enemy,amount:number}[]} Enemy-side contact hits this frame.
      */
     _resolveContactDamage(dt, difficulty) {
@@ -107,7 +97,7 @@ export class CombatCoordinator {
 
     /**
      * Spawns damage numbers on the player for each contact hit received this frame.
-     * @param {{enemy:Enemy,playerAmount:number,enemyAmount:number}[]} contactHits
+     * @param {{enemy:Enemy,playerAmount:number,enemyAmount:number}[]} contactHits - Contact hits landed on the player this frame.
      */
     _displayContactHitsOnPlayer(contactHits) {
         for (const hit of contactHits) {
@@ -132,7 +122,8 @@ export class CombatCoordinator {
     }
 
     /**
-     * @param {Enemy} target
+     * Spawns a thrown-sword projectile toward the target, if off cooldown.
+     * @param {Enemy} target - Enemy the thrown sword is aimed at.
      */
     _throwSwordAt(target) {
         if (this._rangedCooldownTimer > 0) {
@@ -148,7 +139,8 @@ export class CombatCoordinator {
     }
 
     /**
-     * @param {number} dt
+     * Advances the player's thrown-sword projectiles and resolves their hits.
+     * @param {number} dt - Elapsed time in seconds.
      * @returns {{enemy:Enemy,amount:number}[]} Thrown-sword hits against enemies this frame.
      */
     _updateProjectiles(dt) {
@@ -160,8 +152,8 @@ export class CombatCoordinator {
 
     /**
      * Updates enemy-fired projectiles and resolves their hits against the player.
-     * @param {number} dt
-     * @param {string} difficulty
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {string} difficulty - Game.difficulty, for incoming-damage scaling (Combat.js).
      */
     _updateEnemyProjectiles(dt, difficulty) {
         for (const projectile of this.enemyProjectiles) projectile.update(dt, this.collision);
@@ -177,6 +169,7 @@ export class CombatCoordinator {
     }
 
     /**
+     * Spawns damage numbers and hit feedback for enemy hits landed this frame.
      * @param {{enemy:Enemy,amount:number}[]} hits - Melee/projectile/contact hits landed on enemies this frame.
      */
     _displayEnemyHits(hits) {
@@ -190,7 +183,8 @@ export class CombatCoordinator {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws both projectile pools.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         for (const projectile of this.projectiles) projectile.render(ctx);

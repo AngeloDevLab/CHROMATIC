@@ -4,6 +4,14 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.19.1] - 2026-08-16
+
+### Changed
+- JSDoc/comment density trimmed across the entire rest of the codebase (~75 files) - continuing 0.19.0's start in `js/world/`. Every function now carries a short 1-2 sentence description instead of none or a multi-sentence essay; comment blocks that only restated a name/value, duplicated a sibling method's own doc, or cited a GDD section without adding behavioral context were cut.
+
+### Fixed
+- A handful of stale/incorrect comments found during the pass: `Boss.js` claimed no boss subclass had sprite/animations wired up, though both `Wraith.js`/`WraithTemplateboss.js` have had real art for a while; `Charger.js` compared its HP against the wrong `Enemy.js` baseline (50 instead of the actual 30); `WraithTemplateboss.js` cited the wrong Signature Hit Damage value (70 instead of the actual 80); `CharacterAnimations.js` miscounted Wraith's animation clips (6 instead of the actual 7, now consistent with Templateboss's own count).
+
 ## [0.19.0] - 2026-08-13
 
 ### Added

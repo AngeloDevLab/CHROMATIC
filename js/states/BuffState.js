@@ -1,18 +1,16 @@
 import { State } from './State.js';
 import { Panel } from '../ui/Panel.js';
 
-// Secret Room reward (docs/GDD/02_game-structure.md 2.5) - pushed on top of
-// GameState from BuffTerminalInteractable's [E] handler.
+// Secret Room reward - pushed on top of GameState from BuffTerminalInteractable's [E] handler.
 //
 // Dismissible: the terminal stays unused until a buff is chosen, so the
 // player can walk away and try again later. No explicit Escape handling is
 // needed - GameState doesn't tick while this is current, so nothing
-// competes with Panel's own dismiss/Escape listener. onClose fires
-// regardless of which dismiss path closed the panel and is the one place
-// that pops the state.
+// competes with Panel's own dismiss/Escape listener.
 export class BuffState extends State {
     /**
-     * @param {{player: import('../entities/Player.js').Player, buffTerminal: import('../entities/BuffTerminal.js').BuffTerminal, levelNumber: number}} params
+     * Opens the buff-choice panel for the terminal that triggered it.
+     * @param {{player: import('../entities/Player.js').Player, buffTerminal: import('../entities/BuffTerminal.js').BuffTerminal, levelNumber: number}} params - Terminal/level state forwarded from BuffTerminalInteractable.
      */
     enter({ player, buffTerminal, levelNumber }) {
         this._player = player;

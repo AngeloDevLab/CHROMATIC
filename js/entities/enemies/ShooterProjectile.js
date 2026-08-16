@@ -1,18 +1,15 @@
 import { Entity } from '../Entity.js';
 import { SpriteAnimation } from '../../utils/SpriteAnimation.js';
 
-// shooter-projectile.png is a 512x64 strip, 8 frames of 64x64 - a baked spin
-// cycle (unlike the player's thrown_sword.png, spun via code in
-// Projectile.js). Kept as a separate, simpler class rather than added to
-// Projectile.js.
+// shooter-projectile.png is a baked spin-cycle strip, unlike the player's
+// code-spun thrown_sword.png - kept as its own simpler class rather than folded into Projectile.js.
 const FRAME_SIZE = 64;
 const FRAME_COUNT = 8;
 const FPS = 16;
 
 /**
- * Collision hitbox, smaller than FRAME_SIZE - the sprite's actual dot only
- * fills a fraction of its 64x64 frame. Render size stays FRAME_SIZE; only
- * the hitbox shrinks.
+ * The sprite's actual dot only fills a fraction of its frame; render size
+ * stays FRAME_SIZE, only the hitbox shrinks.
  */
 const HITBOX_SIZE = 28;
 
@@ -22,7 +19,7 @@ const HITBOX_SIZE = 28;
 const SPEED = 180;
 
 /**
- * Despawns without a hit past this distance - a bit more than Shooter.js's own SHOOTER_RANGE_PX (260).
+ * A bit more than Shooter.js's own SHOOTER_RANGE_PX (260).
  */
 const MAX_TRAVEL_PX = 300;
 
@@ -34,6 +31,7 @@ const SWEEP_STEP_PX = 4;
 
 export class ShooterProjectile extends Entity {
     /**
+     * Spawns a projectile traveling in one direction.
      * @param {number} spawnCenterX - Spawn center X.
      * @param {number} spawnCenterY - Spawn center Y.
      * @param {1|-1} direction - Travel direction.
@@ -90,6 +88,7 @@ export class ShooterProjectile extends Entity {
     }
 
     /**
+     * Draws the spin animation, mirrored horizontally for leftward travel.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

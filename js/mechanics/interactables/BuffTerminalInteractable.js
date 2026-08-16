@@ -14,11 +14,12 @@ import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from 
 // since no further update() calls happen afterward to hide it later.
 export class BuffTerminalInteractable {
     /**
-     * @param {Game} game
-     * @param {Level} level
-     * @param {Player} player
-     * @param {object} options
-     * @param {number} options.levelNumber
+     * Builds the terminal from the level's BuffTerminal marker, if any.
+     * @param {Game} game - Owning Game instance.
+     * @param {Level} level - The loaded level, for its BuffTerminal marker.
+     * @param {Player} player - For proximity/range checks.
+     * @param {object} options - Construction settings.
+     * @param {number} options.levelNumber - This level's number, to key `Game.claimedSecretRoomBuffs`.
      * @param {() => boolean} options.isDoorOpen - SecretDoorInteractable's isOpen getter.
      */
     constructor(game, level, player, { levelNumber, isDoorOpen }) {
@@ -38,8 +39,9 @@ export class BuffTerminalInteractable {
     }
 
     /**
-     * @param {Camera} camera
-     * @param {boolean} interactPressed
+     * Shows the prompt in range and pushes BuffState on interact.
+     * @param {Camera} camera - Camera to position the prompt against.
+     * @param {boolean} interactPressed - Whether Interact was pressed this frame.
      */
     updatePrompt(camera, interactPressed) {
         if (!this._buffTerminal) return;
@@ -57,7 +59,8 @@ export class BuffTerminalInteractable {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws the terminal, if it has one.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         this._buffTerminal?.render(ctx);

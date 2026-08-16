@@ -1,18 +1,15 @@
-// `finished` (non-looping only) goes true once the last frame has held for
-// its full duration, so callers know when to switch back to normal
-// locomotion. topRatio/groundLineRatio locate where the actual artwork
-// starts/ends within a frame's transparent padding, so callers can align to
-// the visible character instead of the frame's raw edges. draw()'s
-// flashAmount tints the frame white on a scratch canvas first, so the
-// source-atop compositing only affects this frame's own opaque pixels.
+// topRatio/groundLineRatio locate the actual artwork within a frame's
+// transparent padding, so callers can align to the visible character instead
+// of the frame's raw edges.
 export class SpriteAnimation {
     /**
+     * Sets up playback state and auto-detects the artwork's opaque bounds within a frame.
      * @param {HTMLImageElement} image - Sprite sheet, frames laid out left to right.
      * @param {number} frameWidth - Width of one frame, in pixels.
      * @param {number} frameHeight - Height of one frame, in pixels.
      * @param {number} frameCount - Number of frames in the sheet.
      * @param {number} [fps=10] - Playback speed, frames per second.
-     * @param {object} [options]
+     * @param {object} [options] - Optional settings.
      * @param {boolean} [options.loop=true] - Whether the animation repeats.
      */
     constructor(image, frameWidth, frameHeight, frameCount, fps = 10, { loop = true } = {}) {
@@ -32,6 +29,7 @@ export class SpriteAnimation {
     }
 
     /**
+     * Finds the vertical bounds of the first frame's actual artwork.
      * @returns {{top: number, bottom: number}} First/last rows containing an opaque pixel.
      */
     _detectOpaqueBounds() {
@@ -95,6 +93,7 @@ export class SpriteAnimation {
     }
 
     /**
+     * Moves to the next frame, or loops/finishes if it was the last one.
      * @returns {boolean} Whether playback just finished (non-looping, last frame held).
      */
     _advanceFrame() {
@@ -130,6 +129,7 @@ export class SpriteAnimation {
     }
 
     /**
+     * Lazily creates the scratch canvas used to composite the flash tint.
      * @returns {CanvasRenderingContext2D} A scratch canvas sized to one frame, created lazily.
      */
     _getFlashContext() {
@@ -143,7 +143,8 @@ export class SpriteAnimation {
     }
 
     /**
-     * Composites the current frame tinted white onto the scratch canvas, then draws it.
+     * Composites the current frame tinted white onto the scratch canvas
+     * (source-atop keeps the tint confined to the frame's opaque pixels), then draws it.
      * @param {CanvasRenderingContext2D} ctx - Destination context.
      * @param {number} sx - Source X (current frame's offset into the sheet).
      * @param {number} dx - Destination X.

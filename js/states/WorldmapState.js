@@ -4,8 +4,7 @@ import { ColorZone } from '../mechanics/ColorZone.js';
 import { MENU_ZONE, MENU_TRACK_KEYS } from '../core/MusicPlaylist.js';
 
 /**
- * 02_game-structure.md 2.1 - only Prologue is active at game start, the
- * rest unlock as previous chapters are completed.
+ * Only Prologue is active at game start, the rest unlock as previous chapters are completed.
  */
 const CHAPTERS = [
     { id: 'prologue', label: 'Prologue', available: true },
@@ -20,8 +19,7 @@ const CHAPTERS = [
  * Positions along the path, as a fraction of the SOURCE worldmap image
  * (768x256), converted to screen coordinates via _layoutNodes()'s
  * contain-fit offset/scale. Rough estimate tracing the visible path, tune
- * further once checked against the art. Slots match 02_game-structure.md
- * 2.6 (Prologue, 1 Template, 6 levels).
+ * further once checked against the art.
  */
 const PROLOGUE_NODES = [
     { level: 1, type: 'Combat (Tutorial)', hasSecret: false, x: 0.06, y: 0.40 },
@@ -37,10 +35,9 @@ const NODE_SIZE = 64;
 /**
  * Worldmap screen: shows Prologue level nodes over a background image
  * split into per-node color zones (see _initColorZone()) that reveal as
- * levels are completed (02_game-structure.md 2.1). Rebuilt on every
- * enter()/exit(); completedLevels reads Game.completedLevels directly
- * (persisted via SaveSystem) rather than owning a local copy, since a copy
- * would forget completions between visits. Shares the Menu's music zone.
+ * levels are completed. Rebuilt on every enter()/exit(); completedLevels
+ * reads Game.completedLevels directly (persisted via SaveSystem) rather
+ * than owning a local copy, since a copy would forget completions between visits.
  */
 export class WorldmapState extends State {
     /**
@@ -80,7 +77,7 @@ export class WorldmapState extends State {
      * Reveals every already-completed zone, hard-edged and flush against
      * any neighboring zone. justCompletedLevel's own zone animates as a
      * left-to-right wipe instead of popping in instantly.
-     * @param {number|null} justCompletedLevel
+     * @param {number|null} justCompletedLevel - Level number just finished, whose zone animates in; null if none.
      */
     _revealCompletedZones(justCompletedLevel) {
         const bounds = this._computeZoneBounds();
@@ -125,10 +122,10 @@ export class WorldmapState extends State {
     }
 
     /**
-     * Top-left, only way back to MenuState from here (PauseState/
-     * GameOverState's own "Main Menu" choice only exists inside a level) -
-     * same change('menu') target, same .chapter-button look, just
-     * repositioned (.worldmap-back-button) instead of sitting in the bar.
+     * Top-left, the only way back to MenuState from here since Pause/
+     * GameOverState's own "Main Menu" choice only exists inside a level.
+     * Same change('menu') target and .chapter-button look as the chapter
+     * bar, just repositioned via .worldmap-back-button.
      */
     _buildBackButton() {
         this.backButtonEl = document.createElement('button');
@@ -149,7 +146,8 @@ export class WorldmapState extends State {
     }
 
     /**
-     * @param {{label: string, available: boolean}} chapter
+     * Builds one chapter-bar button, disabled if unavailable.
+     * @param {{label: string, available: boolean}} chapter - Chapter to build a button for.
      * @returns {HTMLButtonElement}
      */
     _buildChapterButton(chapter) {
@@ -175,6 +173,7 @@ export class WorldmapState extends State {
     }
 
     /**
+     * Builds one level node button that selects itself on click.
      * @param {number} index - Index into PROLOGUE_NODES, selected on click.
      * @returns {HTMLButtonElement}
      */
@@ -206,6 +205,7 @@ export class WorldmapState extends State {
     }
 
     /**
+     * Converts a node's fractional position into screen coordinates.
      * @param {number} index - Index into PROLOGUE_NODES.
      * @returns {{x:number,y:number}} Screen-space position of that node.
      */
@@ -229,6 +229,7 @@ export class WorldmapState extends State {
     }
 
     /**
+     * Selects a node and shows its info card, unless locked.
      * @param {number} index - Index into PROLOGUE_NODES.
      */
     _selectNode(index) {
@@ -256,6 +257,7 @@ export class WorldmapState extends State {
     }
 
     /**
+     * Opens the info card for a node.
      * @param {number} index - Index into PROLOGUE_NODES.
      */
     _showInfoCard(index) {
@@ -271,6 +273,7 @@ export class WorldmapState extends State {
     }
 
     /**
+     * Builds the info card's markup.
      * @param {{level:number,type:string,hasSecret:boolean}} data - This node's static data.
      * @returns {string} Info card markup.
      */
@@ -287,6 +290,7 @@ export class WorldmapState extends State {
     }
 
     /**
+     * Wires the info card's start/close buttons.
      * @param {number} index - Index into PROLOGUE_NODES.
      */
     _wireInfoCard(index) {
@@ -315,6 +319,7 @@ export class WorldmapState extends State {
     }
 
     /**
+     * Starts the chosen level, routing bosses to BossState.
      * @param {number} index - Index into PROLOGUE_NODES.
      */
     _enterLevel(index) {
@@ -355,6 +360,7 @@ export class WorldmapState extends State {
     }
 
     /**
+     * Advances the color zone's zone-wipe transition, if active.
      * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
@@ -362,6 +368,7 @@ export class WorldmapState extends State {
     }
 
     /**
+     * Draws the background and its color overlay, contain-fit.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

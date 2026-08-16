@@ -5,16 +5,12 @@ import { PlayerMovement } from './PlayerMovement.js';
 import { DoubleJumpAbility } from './DoubleJumpAbility.js';
 import { DashAbility } from './DashAbility.js';
 
-/**
- * Collision hitbox, intentionally narrower than the full render size due to
- * sprite padding (10_technical-architecture.md 11.7.2).
- */
 const HITBOX_WIDTH = 32;
 const HITBOX_HEIGHT = 64;
 
 /**
- * attack.png frame where the blade reaches full extension - the swing
- * resolves its hit exactly once, here, via consumeAttackImpact() (Combat.js).
+ * attack.png frame where the blade reaches full extension; the swing
+ * resolves its hit exactly once, here.
  */
 const ATTACK_IMPACT_FRAME = 4;
 
@@ -24,23 +20,17 @@ const ATTACK_IMPACT_FRAME = 4;
  */
 const KNOCKBACK_LOCK_SECONDS = 0.15;
 
-// Three mutually-exclusive movement modes, set once by whichever enableX()
-// the caller uses: autopilot (menu bounce-between-bounds demo), freeRun
-// (menu living-background scripted pass, no physics), controlled (real
-// keyboard play, see enableControl()/PlayerMovement.js's update()).
-// Health/Shield/buff bookkeeping, the sprite-drawing pipeline, and the real
-// keyboard-movement logic live on composed sub-objects (PlayerHealth.js/
-// PlayerRenderer.js/PlayerMovement.js); most getters below are thin
-// delegates onto those.
+// autopilot/freeRun/controlled are mutually exclusive, set once by whichever
+// enableX() the caller uses. Health/Shield/buff bookkeeping, rendering, and
+// keyboard movement live on composed sub-objects; most getters below are thin delegates.
 //
-// pendingVfx is a mailbox (same pattern as Wraith.js's pendingProjectile),
-// drained every frame by LevelSession's _drainPlayerVfx(). _wasGrounded
-// tracks the previous frame's grounded state and starts `null` rather than
-// `false`, so the level's first resolve() doesn't read as a landing.
+// pendingVfx is a per-frame VFX mailbox drained by LevelSession. `_wasGrounded`
+// starts `null`, not `false`, so the first resolve() doesn't read as a landing.
 export class Player extends Entity {
     /**
-     * @param {number} x
-     * @param {number} y
+     * Builds the composed sub-objects and initializes movement/attack/ability/VFX state.
+     * @param {number} x - Spawn X position.
+     * @param {number} y - Spawn Y position.
      * @param {object} animations - Keyed by animation name, see SpriteAnimation.js.
      */
     constructor(x, y, animations) {
@@ -66,13 +56,13 @@ export class Player extends Entity {
         this._wasGrounded = null;
     }
 
-    /** @see unlockAbility */
+    /** Creates the ability instances. @see unlockAbility */
     _initAbilityState() {
         this.doubleJump = new DoubleJumpAbility();
         this.dash = new DashAbility();
     }
 
-    /** @see enableAutopilot, enableFreeRun, enableControl */
+    /** Initializes movement-mode flags and timers. @see enableAutopilot, enableFreeRun, enableControl */
     _initMovementState() {
         this.autopilot = false;
         this._autopilotSpeed = 0;
@@ -86,45 +76,44 @@ export class Player extends Entity {
         this.afkTimer = 0;
     }
 
-    /** @see consumeAttackImpact, PlayerMovement.js's _startAttack */
+    /** Initializes attack-in-progress state. @see consumeAttackImpact */
     _initAttackState() {
         this.attacking = false;
         this._attackImpactResolved = false;
     }
 
-    /** @returns {number} */
+    /** Current health. @returns {number} */
     get health() { return this.healthState.health; }
 
-    /** @returns {number} */
+    /** Current max health. @returns {number} */
     get maxHealth() { return this.healthState.maxHealth; }
 
-    /** @returns {number} */
+    /** Current shield. @returns {number} */
     get shield() { return this.healthState.shield; }
 
-    /** @returns {number} */
+    /** Current max shield. @returns {number} */
     get maxShield() { return this.healthState.maxShield; }
 
-    /** @returns {boolean} */
+    /** Whether the player has died. @returns {boolean} */
     get dead() { return this.healthState.dead; }
 
     /** Synced from GameState.update() every frame via the Dev Panel toggle. @returns {boolean} */
     get godmode() { return this.healthState.godmode; }
 
-    /** @param {boolean} value */
+    /** Enables or disables godmode. @param {boolean} value - Whether godmode is enabled. */
     set godmode(value) { this.healthState.godmode = value; }
 
     /**
-     * @param {'maxHealth'|'shieldRegen'|'maxShield'} buffId
+     * Applies a chosen buff to PlayerHealth.
+     * @param {'maxHealth'|'shieldRegen'|'maxShield'} buffId - Buff to apply.
      */
     applyBuff(buffId) {
         this.healthState.applyBuff(buffId);
     }
 
     /**
-     * Called by the Merchant shop on a successful purchase, and by
-     * DevPanel.js's ability buttons as a free testing shortcut. One-way (no
-     * re-lock) and idempotent.
-     * @param {'doubleJump'|'dash'} id
+     * Marks an ability as permanently unlocked.
+     * @param {'doubleJump'|'dash'} id - Ability to unlock.
      */
     unlockAbility(id) {
         if (id === 'doubleJump') this.doubleJump.unlocked = true;
@@ -148,8 +137,7 @@ export class Player extends Entity {
     }
 
     /**
-     * True once the fall animation has played out (or immediately if this
-     * Player has no 'dead' animation wired, e.g. MenuState's decorative characters).
+     * True once the fall animation has played out, or immediately if none is wired.
      * @returns {boolean}
      */
     get deathAnimationFinished() {
@@ -157,7 +145,8 @@ export class Player extends Entity {
     }
 
     /**
-     * @param {number} amount
+     * Applies damage and enters the death animation if it was fatal.
+     * @param {number} amount - Damage amount.
      */
     takeDamage(amount) {
         if (this.healthState.takeDamage(amount)) this._enterDeathAnimation();
@@ -165,7 +154,7 @@ export class Player extends Entity {
 
     /**
      * Applies a brief knockback push (see Combat.js callers).
-     * @param {number} vx
+     * @param {number} vx - Horizontal velocity to apply.
      */
     applyKnockback(vx) {
         this.vx = vx;
@@ -173,7 +162,8 @@ export class Player extends Entity {
     }
 
     /**
-     * @param {number} amount
+     * Spends shield to absorb damage, if enough is available.
+     * @param {number} amount - Damage amount to try to absorb.
      * @returns {boolean}
      */
     consumeShield(amount) {
@@ -181,9 +171,7 @@ export class Player extends Entity {
     }
 
     /**
-     * True exactly once per swing, the instant the blade reaches full
-     * extension - callers (Combat.js's resolveMeleeAttack) resolve the
-     * actual hit-detection against enemies from here.
+     * True exactly once per swing, the instant the blade reaches full extension.
      * @returns {boolean}
      */
     consumeAttackImpact() {
@@ -194,8 +182,9 @@ export class Player extends Entity {
     }
 
     /**
-     * @param {number} speed
-     * @param {{minX:number, maxX:number}} bounds
+     * Starts a scripted bounce-between-bounds run.
+     * @param {number} speed - Horizontal run speed, in pixels/second.
+     * @param {{minX:number, maxX:number}} bounds - X range to bounce between.
      */
     enableAutopilot(speed, bounds) {
         this.autopilot = true;
@@ -206,10 +195,8 @@ export class Player extends Entity {
     }
 
     /**
-     * Scripted constant-velocity run (menu living background, 08_menu-flow.md) -
-     * unlike autopilot there's no bounds/bounce, and unlike controlled
-     * there's no gravity/collision; the caller drives entrances/exits itself.
-     * @param {number} vx
+     * Starts a scripted constant-velocity run, with no gravity or collision.
+     * @param {number} vx - Constant horizontal velocity.
      */
     enableFreeRun(vx) {
         this.freeRun = true;
@@ -220,9 +207,9 @@ export class Player extends Entity {
 
     /**
      * Real keyboard-driven movement (Run/Jump/Drop Through Platform), used by GameState.
-     * @param {InputHandler} input
-     * @param {Collision} collision
-     * @param {{moveSpeed?:number, jumpSpeed?:number, gravity?:number}} [options]
+     * @param {InputHandler} input - Input handler to read held/pressed actions from.
+     * @param {Collision} collision - Level collision to resolve movement against.
+     * @param {{moveSpeed?:number, jumpSpeed?:number, gravity?:number}} [options] - Optional movement tuning.
      */
     enableControl(input, collision, { moveSpeed = 150, jumpSpeed = 379, gravity = 700 } = {}) {
         this.controlled = true;
@@ -234,7 +221,8 @@ export class Player extends Entity {
     }
 
     /**
-     * @param {number} dt
+     * Advances health/animation state and whichever movement mode is active.
+     * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
         this.healthState.tickHitFlash(dt);
@@ -250,7 +238,8 @@ export class Player extends Entity {
     }
 
     /**
-     * @param {number} dt
+     * Dispatches update() to whichever of autopilot/controlled/freeRun is active.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateMovementMode(dt) {
         if (this.autopilot) {
@@ -279,14 +268,15 @@ export class Player extends Entity {
         }
     }
 
-    /** @returns {number} */
+    /** Topmost visible pixel row. @returns {number} */
     get visualTopY() { return this.renderer.visualTopY; }
 
-    /** @returns {number} */
+    /** Vertical center of the visible sprite. @returns {number} */
     get visualCenterY() { return this.renderer.visualCenterY; }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Delegates to PlayerRenderer's sprite-drawing pipeline.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         this.renderer.render(ctx);

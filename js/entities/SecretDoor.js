@@ -1,23 +1,20 @@
 import { Entity } from './Entity.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 
-/**
- * docs/GDD/02_game-structure.md 2.5: costs 50 Shield/Prisma to open.
- */
 export const SECRET_DOOR_PRISMA_COST = 50;
 
-// Secret Room entrance (Lvl 5) - same closed -> opening -> open lifecycle and
-// color-mechanic participation (greyFilterCSS/revealed) as Portal.js, but
-// gated on the player affording the Prisma cost above instead of "all
-// enemies dead". GameState owns the actual Prisma-spend + interact-range
-// logic (see _updateSecretDoor()); this class only tracks/renders state.
+// Secret Room entrance; same closed -> opening -> open lifecycle as
+// Portal.js, but gated on the player affording the Prisma cost instead of
+// all enemies dead. GameState owns the actual spend/interact logic - this
+// class only tracks/renders state.
 export class SecretDoor extends Entity {
     /**
+     * Creates a closed secret door at a fixed position.
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {number} width - Width from the Tiled object.
      * @param {number} height - Height from the Tiled object.
-     * @param {{closed: HTMLImageElement, open: HTMLImageElement, opens: HTMLImageElement, opensFrameCount: number, opensFps: number}} sprites
+     * @param {{closed: HTMLImageElement, open: HTMLImageElement, opens: HTMLImageElement, opensFrameCount: number, opensFps: number}} sprites - Closed/open/opening sprite sheets.
      * @param {string} greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
      */
     constructor(x, y, width, height, sprites, greyFilterCSS) {
@@ -30,6 +27,7 @@ export class SecretDoor extends Entity {
     }
 
     /**
+     * True once the door has fully opened.
      * @returns {boolean}
      */
     get isOpen() {
@@ -46,6 +44,7 @@ export class SecretDoor extends Entity {
     }
 
     /**
+     * Advances the opening animation.
      * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
@@ -56,6 +55,7 @@ export class SecretDoor extends Entity {
     }
 
     /**
+     * Draws the door for its current state, greyed out until revealed.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

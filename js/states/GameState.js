@@ -9,6 +9,7 @@ import { LevelSession } from './LevelSession.js';
 // left in it.
 export class GameState extends State {
     /**
+     * Builds the level session for the requested level.
      * @param {{chapterId: string, level: number}} params - Forwarded to LevelSession.
      */
     enter(params) {
@@ -23,6 +24,7 @@ export class GameState extends State {
     }
 
     /**
+     * Delegates to the level session's own update.
      * @param {number} dt - Fixed timestep in seconds.
      */
     update(dt) {
@@ -30,6 +32,7 @@ export class GameState extends State {
     }
 
     /**
+     * Delegates to the level session's own render.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

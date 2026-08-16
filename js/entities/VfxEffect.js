@@ -1,13 +1,12 @@
 import { Entity } from './Entity.js';
 
 // Lightweight one-shot visual effect (player action smoke: jump/landing/
-// dash, see Player.js's pendingVfx mailbox and LevelSession.js's
-// _drainPlayerVfx()) - same shape as Projectile.js (own `dead` flag, no
-// physics/collision), driven entirely by its own SpriteAnimation. Anchors
-// to the animation's own auto-detected ground line (SpriteAnimation's
-// groundLineRatio) rather than assuming the artwork sits centered in its frame.
+// dash); own `dead` flag, no physics/collision, driven entirely by its
+// SpriteAnimation. Anchors to the animation's auto-detected ground line
+// rather than assuming the artwork sits centered in its frame.
 export class VfxEffect extends Entity {
     /**
+     * Creates a VFX clip anchored to a ground contact point.
      * @param {number} groundX - World X to center the effect on.
      * @param {number} groundY - World Y of the ground contact point to anchor the effect's own ground line to.
      * @param {SpriteAnimation} animation - One-shot (loop: false) clip to play.
@@ -21,7 +20,8 @@ export class VfxEffect extends Entity {
     }
 
     /**
-     * @param {number} dt
+     * Advances the animation and marks itself dead once finished.
+     * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
         this.animation.update(dt);
@@ -29,7 +29,8 @@ export class VfxEffect extends Entity {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws the current animation frame.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         if (this.dead) return;

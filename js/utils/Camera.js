@@ -1,13 +1,10 @@
-// 10_technical-architecture.md 11.7.3: a boss fight's zoom-out is a camera
-// parameter, not a change to the base 640x360 resolution - GameState.render()
-// applies `zoom` as a ctx.scale() around the world draw. 1 = normal (32px/
-// tile); below 1 fits more world into the same buffer (e.g. 0.75 -> ~24px/
-// tile, more field of view). follow() divides viewWidth/viewHeight by zoom
-// to convert screen-space bounds into the matching world-space bounds before
-// centering/clamping against the level.
-
+// Boss zoom-out is a camera param, not a resolution change - `zoom` is
+// applied via ctx.scale() elsewhere (1 = normal 32px/tile, e.g. 0.75 ->
+// ~24px/tile for more FOV). follow() divides viewWidth/viewHeight by zoom
+// to convert screen-space bounds into world-space before clamping.
 export class Camera {
     /**
+     * Sets up the camera at the origin with no zoom.
      * @param {number} viewWidth - Viewport width in screen pixels (640 at base resolution).
      * @param {number} viewHeight - Viewport height in screen pixels (360 at base resolution).
      */

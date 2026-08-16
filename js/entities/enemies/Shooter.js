@@ -2,39 +2,31 @@ import { Enemy } from '../Enemy.js';
 import { ShooterProjectile } from './ShooterProjectile.js';
 
 /**
- * 05_enemies-bosses.md 6.5. Contact/projectile damage both unified
- * (matches every other enemy type's contact hit).
+ * Contact and projectile damage both match every other enemy type's contact hit.
  */
 const SHOOTER_HP = 20;
 const SHOOTER_CONTACT_DAMAGE = 20;
 const SHOOTER_PROJECTILE_DAMAGE = 20;
 
 /**
- * "Keeps distance" (05_enemies-bosses.md 6.1) - engages from farther out
- * than Charger's own 190px charge range.
+ * Engages from farther out than Charger's own 190px charge range.
  */
 const SHOOTER_RANGE_PX = 260;
 const SHOOTER_HEIGHT_TOLERANCE_PX = 24;
 
 /**
- * After a shot (windup + recovery), how long before the next. Paired with
- * the projectile speed (ShooterProjectile.js).
+ * Paired with the projectile speed (ShooterProjectile.js).
  */
 const DEFAULT_SHOT_COOLDOWN_SECONDS = 2;
 
 /**
- * Frame within the 6-frame shoot animation the projectile spawns at -
- * mirrors Player.js's ATTACK_IMPACT_FRAME.
+ * 6-frame shoot animation; mirrors Player.js's ATTACK_IMPACT_FRAME.
  */
 const SHOT_IMPACT_FRAME = 3;
 
-// Shooter behavior (05_enemies-bosses.md 6.1: "Keeps distance, fires
-// projectiles"). Patrols like the base Enemy/Patroller until the player
-// comes within range on roughly the same floor, then holds position and
-// fires - overrides _updatePatrol() rather than duplicating it, same
-// pattern as Charger.js. Once a shot starts, facing locks and it always
-// plays out; a hit landing mid-windup can shove it around but doesn't
-// cancel the shot.
+// Patrols like the base Enemy until the player comes within range on roughly
+// the same floor, then holds position and fires. Once a shot starts, facing
+// locks and it always plays out - a hit mid-windup can shove it around but won't cancel it.
 export class Shooter extends Enemy {
     /**
      * GameState's mailbox for a newly-spawned shot - read and cleared there right after enemy.update().
@@ -42,6 +34,7 @@ export class Shooter extends Enemy {
     pendingProjectile = null;
 
     /**
+     * Sets Shooter's HP/contact-damage and default shooting state.
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {HTMLImageElement} sprite - Fallback static sprite.
@@ -63,10 +56,11 @@ export class Shooter extends Enemy {
     }
 
     /**
+     * Arms this Shooter to track a player and fire projectiles.
      * @param {Player} player - Player instance to watch for range/line of sight.
      * @param {HTMLImageElement} projectileSprite - Sprite for spawned shots.
-     * @param {object} [options]
-     * @param {number} [options.cooldownSeconds=DEFAULT_SHOT_COOLDOWN_SECONDS]
+     * @param {object} [options] - Optional settings.
+     * @param {number} [options.cooldownSeconds=DEFAULT_SHOT_COOLDOWN_SECONDS] - Seconds between shots.
      */
     enableShoot(player, projectileSprite, { cooldownSeconds = DEFAULT_SHOT_COOLDOWN_SECONDS } = {}) {
         this.player = player;
@@ -75,8 +69,7 @@ export class Shooter extends Enemy {
     }
 
     /**
-     * _updateShooting() is checked unconditionally, independent of
-     * knockback/movement below - the shot is purely animation-frame driven.
+     * Applies gravity, ticks the shot, moves, and resolves collision for one frame.
      * @param {number} dt - Elapsed time in seconds.
      */
     _updatePatrol(dt) {
@@ -92,9 +85,7 @@ export class Shooter extends Enemy {
     }
 
     /**
-     * Decides this frame's velocity: knockback overrides everything else,
-     * holding still while mid-shot, starting a new shot the instant the
-     * player comes into view off cooldown, otherwise falls back to normal patrol.
+     * Priority: knockback, then an active shot, then starting one, then patrol fallback.
      * @param {number} dt - Elapsed time in seconds.
      */
     _updateMovement(dt) {
@@ -121,8 +112,7 @@ export class Shooter extends Enemy {
     }
 
     /**
-     * Spawns the actual projectile at SHOT_IMPACT_FRAME, and ends the shot
-     * (starting the cooldown) once the animation finishes.
+     * Drives the shot through its spawn and end checks.
      */
     _updateShooting() {
         const shootAnim = this.animations.shoot;
@@ -137,7 +127,7 @@ export class Shooter extends Enemy {
 
     /**
      * Fires the pending projectile once, at the animation's impact frame.
-     * @param {SpriteAnimation} shootAnim
+     * @param {SpriteAnimation} shootAnim - Active shoot animation to read the impact frame from.
      */
     _trySpawnProjectile(shootAnim) {
         if (this._shotFired || shootAnim.currentFrame < SHOT_IMPACT_FRAME) return;
@@ -148,7 +138,7 @@ export class Shooter extends Enemy {
 
     /**
      * Ends the shot and starts the cooldown once the animation finishes.
-     * @param {SpriteAnimation} shootAnim
+     * @param {SpriteAnimation} shootAnim - Active shoot animation to check for completion.
      */
     _tryEndShot(shootAnim) {
         if (!shootAnim.finished) return;
@@ -157,7 +147,7 @@ export class Shooter extends Enemy {
     }
 
     /**
-     * Swaps to the shooting sprite while shooting, resetting on switch so it never starts mid-frame.
+     * Swaps to the shooting sprite while shooting, resetting on switch.
      */
     _updateAnimationState() {
         if (!this.animations?.shoot) return;
@@ -170,6 +160,7 @@ export class Shooter extends Enemy {
     }
 
     /**
+     * Checks whether the player is within shooting range and height.
      * @returns {boolean}
      */
     _canSeePlayer() {

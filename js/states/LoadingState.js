@@ -1,37 +1,11 @@
 import { State } from './State.js';
 
-// Full-manifest loading screen: images/JSON (_loadManifest()) block state
-// entry; sounds (_loadSounds()) load in two waves - the first OST track
-// plus every SFX block too, the rest of the OST rotation loads unblocked in
-// the background afterward (_loadBackgroundMusic()), since
-// MusicPlaylist.js doesn't reach them until minutes into playback.
-// Progress (_onAssetLoaded()) is counted by manifest entry, not by byte.
-//
-// The final state transition waits for one user gesture
-// (_waitForContinue()): both the saved fullscreen preference and the
-// SoundManager's AudioContext can only be (re-)applied/resumed inside a
-// click/keypress handler. Listens for `pointerup` rather than `pointerdown`
-// since Chrome's Web Audio autoplay unlock isn't reliably granted until a
-// gesture completes (https://developer.chrome.com/blog/autoplay/#web_audio).
-//
-// _loadManifest()'s asset notes:
-// - Tileset images are resolved to the right image/gid-range per tile by
-//   world/TilesetRegistry.js, not hardcoded to one shared tileset per level.
-// - trapdoor (Lvl 4 Gimmick, Trapdoor.js): closed is a single 128x32 frame,
-//   opens is a 10-frame 128x32 strip (1280x32).
-// - secretdoor (Lvl 5 Secret Room, SecretDoor.js): closed/open are single
-//   32x64 frames, opens is a 7-frame 32x64 strip (224x64).
-// - buffterminal (Lvl 5 Secret Room, BuffTerminal.js), merchant (post-boss,
-//   Merchant.js), and token (boss-drop pickup, Token.js) are all single
-//   static frames, no animation.
-// - boss-wraith-* (Lvl 3 Miniboss, entities/bosses/Wraith.js) and
-//   boss-templateboss-* (Lvl 6 Templateboss, WraithTemplateboss.js) share
-//   the same 7-clip shape (idle loops, the rest are one-shot transitions
-//   between held end-poses); the Templateboss frame is smaller (96x150 vs
-//   128x256), see CharacterAnimations.js's buildTemplatebossAnimations().
-// - vfx-* (player action VFX, VfxEffect.js) are 64x64 frames, triggered via
-//   Player.js's pendingVfx mailbox (PlayerFx.js).
-// - credits (MenuState.js's Info panel) is the single source of truth for Credits.
+// Images/JSON and the first OST track + all SFX block state entry; the rest
+// of the OST rotation loads in the background afterward, since
+// MusicPlaylist.js doesn't reach it until minutes into playback.
+// The final transition waits for one user gesture (`pointerup`, not
+// `pointerdown` - Chrome's autoplay unlock isn't granted until a gesture
+// completes) to apply the saved fullscreen preference and resume the AudioContext.
 export class LoadingState extends State {
     /**
      * Shows the loading label and kicks off asset/sound loading.
@@ -41,7 +15,6 @@ export class LoadingState extends State {
         this.label.className = 'loading-label';
         this.label.textContent = 'Loading... 0%';
         this.game.overlay.appendChild(this.label);
-
         this._progress = { done: 0, total: 0 };
         this._load();
     }
@@ -226,6 +199,7 @@ export class LoadingState extends State {
     }
 
     /**
+     * Fills the canvas with the loading screen's background color.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

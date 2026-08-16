@@ -4,14 +4,13 @@ export const GHOST_FRAME_SIZE = 64;
 const GHOST_RISE_SPEED = 25;
 const GHOST_FADE_DURATION_SECONDS = 2.5;
 
-// Player death (04_health-save-system.md) - float-and-fade ghost, driven by
-// GameState once Player.deathAnimationFinished (the fall animation played
-// out). Mirrors triggerFullReveal's victory beat in ColorZone.js: instead of
-// the level bursting into color, it darkens fully while this rises from the
-// death spot and fades out, then GameState opens the Game Over panel once
-// update() reports finished.
+// Float-and-fade ghost, driven by GameState once Player.deathAnimationFinished.
+// Mirrors triggerFullReveal's victory beat in ColorZone.js: it darkens the
+// level instead of bursting into color, then GameState opens the Game Over
+// panel once update() reports finished.
 export class DeathSequence {
     /**
+     * Sets up the ghost animation and inactive default state.
      * @param {HTMLImageElement} ghostImage - Ghost sprite sheet.
      */
     constructor(ghostImage) {
@@ -24,6 +23,7 @@ export class DeathSequence {
     }
 
     /**
+     * Activates the ghost at the death spot, resetting its animation.
      * @param {number} x - World X of the death spot.
      * @param {number} y - World Y of the death spot.
      */
@@ -37,6 +37,7 @@ export class DeathSequence {
     }
 
     /**
+     * Rises and ages the ghost.
      * @param {number} dt - Elapsed time in seconds.
      * @returns {boolean} True exactly once, the frame the fade-out completes.
      */
@@ -53,6 +54,7 @@ export class DeathSequence {
     }
 
     /**
+     * Draws the ghost, fading out as it ages.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

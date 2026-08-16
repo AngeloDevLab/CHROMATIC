@@ -8,12 +8,12 @@ const TITLE = 'Unknown Merchant';
 const PORTRAIT_SRC = 'assets/images/objects/merchant-dialog-portrait.png';
 
 // Single-panel typewriter dialogue (Miniboss tier) that can optionally carry
-// an ability shop (Templateboss/Chapterboss tier). The shop grid is built
-// hidden alongside the text and unhidden once the typewriter finishes.
-// Reuses Panel.js for the backdrop/box chrome; drives its own typewriter
-// reveal on top, the same way CutsceneState.js does for cutscene text.
+// an ability shop (Templateboss/Chapterboss tier). Reuses Panel.js for the
+// backdrop/box chrome; drives its own typewriter reveal on top, the same way
+// CutsceneState.js does for cutscene text.
 export class MerchantDialogue {
     /**
+     * Sets up empty dialogue/shop state; call open() to actually show it.
      * @param {HTMLElement} overlayRoot - Element to mount the panel into.
      */
     constructor(overlayRoot) {
@@ -35,7 +35,7 @@ export class MerchantDialogue {
      * @param {string} text - Dialogue line to reveal.
      * @param {object} [shop] - When given, its option grid is revealed in the
      *   same panel once `text` finishes typing (see _revealShopIfNeeded()).
-     * @param {{id: string, label: string, description: string, cost: number}[]} shop.options
+     * @param {{id: string, label: string, description: string, cost: number}[]} shop.options - Purchasable ability options.
      * @param {() => number} shop.getTokens - Reads the player's current Token count.
      * @param {(id: string) => boolean} shop.isOwned - Whether an option is already unlocked.
      * @param {(id: string, cost: number) => boolean} shop.buy - Attempts a purchase, returns success.
@@ -56,6 +56,7 @@ export class MerchantDialogue {
     }
 
     /**
+     * Locks the panel's height and wires shop buttons once mounted.
      * @param {HTMLElement} root - The mounted panel's root element.
      * @param {string} text - The full dialogue line, forwarded to _lockHeight().
      */
@@ -79,6 +80,7 @@ export class MerchantDialogue {
     }
 
     /**
+     * Builds the portrait/name/text markup, plus a hidden shop section if attached.
      * @returns {string} Portrait + name + (initially empty) text paragraph, plus a hidden shop section if `shop` was passed to open().
      */
     _buildBodyHTML() {
@@ -103,6 +105,7 @@ export class MerchantDialogue {
     }
 
     /**
+     * Whether the typewriter has revealed every character.
      * @returns {boolean}
      */
     get _fullyRevealed() {
@@ -126,6 +129,7 @@ export class MerchantDialogue {
     }
 
     /**
+     * Advances the typewriter reveal by one tick.
      * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
@@ -151,6 +155,7 @@ export class MerchantDialogue {
     }
 
     /**
+     * Builds the shop's option grid markup.
      * @returns {string} The option grid - no separate Token-count readout, each option shows its own cost (see _buildShopOptionHTML()).
      */
     _buildShopSectionHTML() {
@@ -158,7 +163,8 @@ export class MerchantDialogue {
     }
 
     /**
-     * @param {{id: string, label: string, description: string, cost: number}} opt
+     * Builds one shop option's markup, styled by owned/affordable state.
+     * @param {{id: string, label: string, description: string, cost: number}} opt - Shop option to render.
      * @returns {string}
      */
     _buildShopOptionHTML(opt) {
@@ -193,7 +199,7 @@ export class MerchantDialogue {
     /**
      * Rebuilds the shop section in place on a successful purchase, so every
      * option's owned/afford state and the token count reflect the new totals.
-     * @param {string} id
+     * @param {string} id - Ability option id being purchased.
      */
     _handleShopBuy(id) {
         const option = this._shop.options.find((o) => o.id === id);

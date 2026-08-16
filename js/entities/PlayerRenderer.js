@@ -1,24 +1,21 @@
 const TARGET_VISIBLE_HEIGHT = 64;
 
 /**
- * Poses whose sheet doesn't share idle's padding-to-character ratio, mapped
- * to the animation whose bounds should drive their render scale (see
- * _renderDimensions()). afk shares afkEnter's bounds to avoid a size pop
- * when the loop takes over.
+ * afk maps to afkEnter's bounds (not its own) to avoid a size pop when the loop takes over.
  */
 const OWN_BOUNDS_SOURCE = { attack: 'attack', afkEnter: 'afkEnter', afk: 'afkEnter' };
 
 /**
- * Max AFK art-alignment nudge, in pixels - ramped up 1px per afkEnter frame (see _afkYOffset()).
+ * Max AFK art-alignment nudge, in pixels.
  */
 const AFK_Y_OFFSET = 5;
 
-// Player's sprite-drawing pipeline, composed onto Player rather than mixed
-// into its movement/health state - reads position/size/facing/animation off
-// the player reference passed in and owns nothing else.
+// Reads position/size/facing/animation off the player reference passed in;
+// owns nothing else besides renderSize.
 export class PlayerRenderer {
     /**
-     * @param {Player} player
+     * Binds this renderer to the Player it draws and computes its base render size.
+     * @param {Player} player - Owning Player instance to draw.
      */
     constructor(player) {
         this.player = player;
@@ -28,7 +25,7 @@ export class PlayerRenderer {
     /**
      * Scales the render size so the *visible* character (excluding the
      * sprite's own padding) measures TARGET_VISIBLE_HEIGHT, instead of the whole padded frame.
-     * @param {object} animations
+     * @param {object} animations - Named SpriteAnimation set, see SpriteAnimation.js.
      * @returns {number}
      */
     _computeRenderSize(animations) {
@@ -40,8 +37,8 @@ export class PlayerRenderer {
     /**
      * Anchored to idle's feet position, not the current animation's own -
      * e.g. jump's tucked-legs pose has a much higher lowest-opaque-pixel than idle.
-     * @param {SpriteAnimation} [referenceAnim]
-     * @param {number} [renderSize]
+     * @param {SpriteAnimation} [referenceAnim] - Animation whose feet position to anchor to.
+     * @param {number} [renderSize] - Render size to compute the draw Y for.
      * @returns {number}
      */
     _drawY(referenceAnim = this.player.animations.idle, renderSize = this.renderSize) {
@@ -51,7 +48,7 @@ export class PlayerRenderer {
 
     /**
      * Centers the wider sprite over the narrower hitbox, instead of aligning left edges.
-     * @param {number} [renderWidth]
+     * @param {number} [renderWidth] - Sprite render width to center over the hitbox.
      * @returns {number}
      */
     _drawX(renderWidth = this.renderSize) {
@@ -59,8 +56,7 @@ export class PlayerRenderer {
     }
 
     /**
-     * Topmost visible pixel row (accounting for sprite padding), mirrors
-     * Enemy.js's visualTopY - used to sit UI just above the player's head instead of the raw hitbox.
+     * Topmost visible pixel row, accounting for sprite padding, used to sit UI above the player's head instead of the raw hitbox.
      * @returns {number}
      */
     get visualTopY() {
@@ -85,7 +81,8 @@ export class PlayerRenderer {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws the player's current animation frame at its resolved position/size.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         const anim = this.player.animations[this.player.currentAnimation];
@@ -112,9 +109,9 @@ export class PlayerRenderer {
     }
 
     /**
-     * Computes the render width/height for the current animation, scaled from boundsAnim's bounds when the pose uses a differently-padded sheet.
-     * @param {SpriteAnimation} anim
-     * @param {?SpriteAnimation} boundsAnim
+     * Scales from boundsAnim's bounds when the pose uses a differently-padded sheet, falling back to renderSize otherwise.
+     * @param {SpriteAnimation} anim - Animation being drawn this frame.
+     * @param {?SpriteAnimation} boundsAnim - Animation to source bounds from, if the pose shares another sheet's.
      * @returns {{width:number, height:number}}
      */
     _renderDimensions(anim, boundsAnim) {
@@ -128,13 +125,13 @@ export class PlayerRenderer {
     /**
      * Facing -1 mirrors the sprite horizontally via a canvas transform
      * instead of a separate flipped asset.
-     * @param {CanvasRenderingContext2D} ctx
-     * @param {SpriteAnimation} anim
-     * @param {number} drawX
-     * @param {number} drawY
-     * @param {number} renderWidth
-     * @param {number} renderHeight
-     * @param {number} flashAmount
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     * @param {SpriteAnimation} anim - Animation to draw the current frame of.
+     * @param {number} drawX - X position to draw at.
+     * @param {number} drawY - Y position to draw at.
+     * @param {number} renderWidth - Width to draw the sprite at.
+     * @param {number} renderHeight - Height to draw the sprite at.
+     * @param {number} flashAmount - Hit-flash intensity, 0 to 1.
      */
     _drawSprite(ctx, anim, drawX, drawY, renderWidth, renderHeight, flashAmount) {
         ctx.save();

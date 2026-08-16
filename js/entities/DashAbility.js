@@ -3,14 +3,12 @@ const DASH_DURATION_SECONDS = 0.18;
 const DASH_COOLDOWN_SECONDS = 0.6;
 const DOUBLE_TAP_WINDOW_SECONDS = 0.25;
 
-// Composed onto Player as this.dash (Player.js's _initAbilityState()).
-// Detects its own "double-tap A or D" trigger by comparing input.isDown()
-// frame-to-frame (see update()). PlayerMovement._updateHorizontalVelocity()
-// freezes vx/facing for the burst's duration, same as it does for knockback.
+// Composed onto Player as this.dash. Detects its own double-tap trigger by
+// comparing input state frame-to-frame; PlayerMovement freezes vx/facing for
+// the burst's duration, same as it does for knockback.
 export class DashAbility {
     /**
-     * unlocked gates update() entirely (see Player.unlockAbility()); the
-     * rest is timer/tap-detection state.
+     * Sets up unlock/timer/tap-detection state.
      */
     constructor() {
         this.unlocked = false;
@@ -23,8 +21,9 @@ export class DashAbility {
     }
 
     /**
+     * Ticks dash timers and checks for a double-tap trigger.
      * @param {number} dt - Elapsed time in seconds.
-     * @param {Player} player
+     * @param {Player} player - Player performing the dash.
      */
     update(dt, player) {
         if (!this.unlocked) return;
@@ -37,6 +36,7 @@ export class DashAbility {
     }
 
     /**
+     * Counts down the dash/cooldown timers and tap windows.
      * @param {number} dt - Elapsed time in seconds.
      */
     _tickTimers(dt) {
@@ -47,9 +47,10 @@ export class DashAbility {
     }
 
     /**
-     * @param {Player} player
-     * @param {boolean} left
-     * @param {boolean} right
+     * Checks left/right for a fresh keydown against the tap window.
+     * @param {Player} player - Player performing the dash.
+     * @param {boolean} left - Whether the left action is currently held.
+     * @param {boolean} right - Whether the right action is currently held.
      */
     _detectDoubleTap(player, left, right) {
         if (left && !this._prevLeft) this._registerTap(player, -1, '_leftTapWindow');
@@ -57,9 +58,10 @@ export class DashAbility {
     }
 
     /**
-     * @param {Player} player
+     * Starts the tap window, or triggers the dash if already primed.
+     * @param {Player} player - Player performing the dash.
      * @param {number} direction - -1 (left) or 1 (right).
-     * @param {'_leftTapWindow'|'_rightTapWindow'} windowField
+     * @param {'_leftTapWindow'|'_rightTapWindow'} windowField - Which tap-window field to check/reset.
      */
     _registerTap(player, direction, windowField) {
         if (this[windowField] > 0 && this.cooldownTimer <= 0 && !player.attacking) {
@@ -70,7 +72,8 @@ export class DashAbility {
     }
 
     /**
-     * @param {Player} player
+     * Fires the dash: sets velocity, facing, and cooldown.
+     * @param {Player} player - Player performing the dash.
      * @param {number} direction - -1 (left) or 1 (right).
      */
     _trigger(player, direction) {

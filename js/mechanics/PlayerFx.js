@@ -12,6 +12,7 @@ const FOOTSTEP_INTERVAL_SECONDS = 0.40;
 // the player, its own VfxEffect pool, and the sound bus.
 export class PlayerFx {
     /**
+     * Sets up an empty VFX pool and action-SFX tracking state.
      * @param {Game} game - For assets/sound.
      * @param {Player} player - Read for pendingVfx/attacking/grounded/vx/dead.
      */
@@ -24,7 +25,8 @@ export class PlayerFx {
     }
 
     /**
-     * @param {number} dt
+     * Spawns new VFX, advances/prunes the pool, and updates action SFX.
+     * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
         this._drainPendingVfx();
@@ -47,7 +49,7 @@ export class PlayerFx {
 
     /**
      * Attack's swing sound and the running footstep loop - neither has a matching VfxEffect.
-     * @param {number} dt
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateActionSfx(dt) {
         if (this.player.attacking && !this._wasAttacking) this.game.sound.playSfx('swoosh');
@@ -58,7 +60,7 @@ export class PlayerFx {
     /**
      * Repeats every FOOTSTEP_INTERVAL_SECONDS while actually running under
      * control. Resets so the next step fires immediately once running starts again.
-     * @param {number} dt
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateFootstepSfx(dt) {
         const running = this.player.grounded && !this.player.dead && !this.player.attacking && this.player.vx !== 0;
@@ -73,7 +75,8 @@ export class PlayerFx {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws every active VFX.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         for (const vfx of this.vfx) vfx.render(ctx);

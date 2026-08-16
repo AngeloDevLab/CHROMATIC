@@ -19,8 +19,7 @@ export const LEVEL_MUSIC_ZONES = {
 
 /**
  * Cycles sequentially through whichever zone's track list is currently
- * active, crossfading into the next track once the current one ends.
- * setZone() no-ops if the requested zone is already active.
+ * active, moving to the next track once the current one ends.
  */
 export class MusicPlaylist {
     zone = null;
@@ -39,6 +38,7 @@ export class MusicPlaylist {
     _generation = 0;
 
     /**
+     * Stores the SoundManager this playlist plays through.
      * @param {SoundManager} sound - Owning SoundManager.
      */
     constructor(sound) {
@@ -46,11 +46,10 @@ export class MusicPlaylist {
     }
 
     /**
-     * Switches to a named zone's track list, starting from its first track.
-     * A no-op if this zone is already active; before start() has run, just
-     * records which zone should play.
-     * @param {string} zone
-     * @param {string[]} trackKeys
+     * Switches to a named zone's track list. No-ops if already active; before
+     * start() has run, just records the pending zone.
+     * @param {string} zone - Zone identifier to switch to.
+     * @param {string[]} trackKeys - Track keys making up the zone's rotation.
      */
     setZone(zone, trackKeys) {
         if (zone === this.zone) return;
@@ -69,9 +68,8 @@ export class MusicPlaylist {
     }
 
     /**
-     * Stops the playlist from chaining in further tracks. The currently
-     * playing track keeps ringing out; call SoundManager.stopMusic() too if
-     * it should also be cut short (e.g. right before a boss track starts).
+     * Stops the playlist from chaining further tracks; the current track keeps
+     * ringing out. Call SoundManager.stopMusic() too to cut it short instead.
      */
     pause() {
         this.paused = true;

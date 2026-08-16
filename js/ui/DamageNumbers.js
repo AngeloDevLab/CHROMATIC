@@ -9,6 +9,7 @@ const STATUS_DURATION_SECONDS = 1.2;
 // every frame to stay aligned with the canvas's own scaling.
 export class DamageNumbers {
     /**
+     * Sets up an empty popup pool over the given overlay.
      * @param {HTMLElement} overlay - Element to spawn popups into.
      */
     constructor(overlay) {
@@ -17,6 +18,7 @@ export class DamageNumbers {
     }
 
     /**
+     * Spawns a floating damage number.
      * @param {number} worldX - World X to float up from.
      * @param {number} worldY - World Y to float up from.
      * @param {number} amount - Damage amount, rounded for display.
@@ -37,6 +39,7 @@ export class DamageNumbers {
     }
 
     /**
+     * Creates and tracks one popup element.
      * @param {number} worldX - World X to float up from.
      * @param {number} worldY - World Y to float up from.
      * @param {string} text - Text to display.
@@ -52,6 +55,7 @@ export class DamageNumbers {
     }
 
     /**
+     * Rises, fades, and repositions every active popup, pruning expired ones.
      * @param {number} dt - Elapsed time in seconds.
      * @param {Camera} camera - Camera to project world coordinates through.
      */

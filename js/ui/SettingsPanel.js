@@ -71,8 +71,8 @@ function buildDisplaySection() {
 
 /**
  * Mirrors InputHandler.js's KEY_MAP plus its two hardcoded keys (KeyP/KeyE)
- * and the mouse-click attack (03_mechanics.md 4.3) - read-only, no rebinding
- * logic here. Key rebinding UI is planned for Phase 2, not built yet.
+ * and the mouse-click attack - read-only, no rebinding logic here. Key
+ * rebinding UI is planned for Phase 2, not built yet.
  */
 const CONTROLS = [
     { label: 'Run', keys: 'A / D or Left/Right Arrow' },

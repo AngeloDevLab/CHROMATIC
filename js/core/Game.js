@@ -1,15 +1,6 @@
 import { StateMachine } from './StateMachine.js';
 import { isTouchCapable } from '../ui/TouchControls.js';
 
-// _handleResize() snaps to the nearest whole-number scale rather than an
-// exact fractional fit: pixelated nearest-neighbor upscaling at a
-// non-integer factor causes a Firefox performance/shimmer issue. Touch
-// devices skip that rounding and always fill the screen exactly, since
-// filling the viewport matters more there than avoiding the shimmer.
-//
-// resizeBuffer() swaps the canvas's width/height mid-game, which resets
-// the 2D context state; safe since every frame redraws from scratch.
-
 /**
  * Fixed gameplay timestep, independent of the display's frame rate.
  */
@@ -58,6 +49,7 @@ export class Game {
     claimedSecretRoomBuffs = new Set();
 
     /**
+     * Sets up the canvas/overlay DOM refs and state machine, then starts listening for resize.
      * @param {string} canvasId - DOM id of the game <canvas>.
      * @param {string} overlayId - DOM id of the HTML UI overlay.
      */
@@ -140,6 +132,7 @@ export class Game {
     }
 
     /**
+     * Rounds down to a whole-number scale to avoid a Firefox upscaling shimmer, except on touch devices where filling the viewport exactly matters more.
      * @param {number} rawScale - Exact fit-to-window scale factor.
      * @returns {number} Whole-number scale on non-touch devices, exact fractional scale on touch.
      */
@@ -157,12 +150,11 @@ export class Game {
     }
 
     /**
-     * Switches the internal render buffer to a new resolution (e.g.
-     * BossState's arena-sized buffer), animated by default.
-     * @param {number} width
-     * @param {number} height
-     * @param {object} [options]
-     * @param {boolean} [options.animate=true]
+     * Switches the internal render buffer to a new resolution (e.g. BossState's arena-sized buffer), animated by default. Safe to swap mid-game since every frame redraws from scratch.
+     * @param {number} width - New render buffer width, in pixels.
+     * @param {number} height - New render buffer height, in pixels.
+     * @param {object} [options] - Optional settings.
+     * @param {boolean} [options.animate=true] - Whether to animate the viewport transition.
      */
     resizeBuffer(width, height, { animate = true } = {}) {
         if (animate) {

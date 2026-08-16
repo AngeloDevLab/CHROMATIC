@@ -14,6 +14,7 @@ export class SoundManager {
     }
 
     /**
+     * Builds the Master bus and the three sub-buses connected into it.
      * @returns {{master: GainNode, music: GainNode, sfx: GainNode, ambience: GainNode}}
      */
     _createBuses() {
@@ -28,6 +29,7 @@ export class SoundManager {
     }
 
     /**
+     * Creates a new gain node and wires it into a destination.
      * @param {AudioNode} destination - Node to connect the new gain into.
      * @returns {GainNode} A gain node already wired to destination.
      */
@@ -38,8 +40,7 @@ export class SoundManager {
     }
 
     /**
-     * Fetches and decodes an audio file, storing it under a key for
-     * playback. Missing/corrupt files are logged and skipped rather than thrown.
+     * Fetches and decodes an audio file, storing it under a key for playback.
      * @param {string} key - Identifier used by playMusic()/playSfx().
      * @param {string} src - URL/path to the audio file.
      */
@@ -87,10 +88,9 @@ export class SoundManager {
     }
 
     /**
-     * Crossfades from whatever's currently playing on the Music bus into a
-     * new track. Non-looping tracks (loop: false) fire onEnded when they finish.
+     * Crossfades from whatever's currently playing on the Music bus into a new track.
      * @param {string} key - Key a track was loaded under.
-     * @param {object} [options]
+     * @param {object} [options] - Optional playback settings.
      * @param {number} [options.fadeSeconds=1] - Crossfade duration, in seconds.
      * @param {boolean} [options.loop=true] - Whether the track repeats itself.
      * @param {() => void} [options.onEnded] - Called when a non-looping track finishes.

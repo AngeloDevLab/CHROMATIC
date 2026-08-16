@@ -8,10 +8,10 @@ const MENU_ITEMS = [
 
 export class MenuButtons {
     /**
+     * Stores mount settings; call mount() to actually build the buttons.
      * @param {HTMLElement} overlayRoot - Element to mount the button list into.
-     * @param {object} [options]
-     * @param {boolean} [options.hasSave=false] - Whether Continue stays
-     *   enabled (08_menu-flow.md 9.3).
+     * @param {object} [options] - Optional settings.
+     * @param {boolean} [options.hasSave=false] - Whether Continue stays enabled.
      * @param {(id: string) => void} [options.onSelect] - Called with a menu item's id on click.
      */
     constructor(overlayRoot, { hasSave = false, onSelect } = {}) {
@@ -36,6 +36,7 @@ export class MenuButtons {
     }
 
     /**
+     * Builds one menu button, disabled for Continue without a save.
      * @param {{id: string, label: string}} item - Menu item to build a button for.
      * @returns {HTMLButtonElement}
      */

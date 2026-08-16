@@ -1,17 +1,18 @@
 import { Portal } from '../../entities/Portal.js';
 import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from './InteractPrompt.js';
 
-// Level-end portal (01_core-gameplay-loop.md) - locked until every enemy is
-// dead, then interactable via [E] in range. Not every level places one in
-// Tiled, hence the null-tolerant this._portal checks throughout.
+// Level-end portal - locked until every enemy is dead, then interactable via
+// [E] in range. Not every level places one in Tiled, hence the null-tolerant
+// this._portal checks throughout.
 export class PortalInteractable {
     /**
-     * @param {Game} game
-     * @param {Level} level
-     * @param {Player} player
-     * @param {object} options
-     * @param {string} options.greyFilterCSS
-     * @param {number} options.revealRadius
+     * Builds the portal (if the level has one) and its prompt element.
+     * @param {Game} game - Owning Game instance.
+     * @param {Level} level - The loaded level, for its ExitPortal marker.
+     * @param {Player} player - For proximity/range checks.
+     * @param {object} options - Construction settings.
+     * @param {string} options.greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
+     * @param {number} options.revealRadius - LevelSession's PLAYER_REVEAL_RADIUS.
      * @param {() => void} options.onComplete - Called when the player exits through the completed level's portal.
      */
     constructor(game, level, player, { greyFilterCSS, revealRadius, onComplete }) {
@@ -24,9 +25,10 @@ export class PortalInteractable {
     }
 
     /**
-     * @param {Game} game
-     * @param {Level} level
-     * @param {string} greyFilterCSS
+     * Builds the Portal entity from the level's ExitPortal marker, if any.
+     * @param {Game} game - Owning Game instance.
+     * @param {Level} level - The loaded level, for its ExitPortal marker.
+     * @param {string} greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
      * @returns {Portal|null}
      */
     _buildPortal(game, level, greyFilterCSS) {
@@ -50,7 +52,8 @@ export class PortalInteractable {
     }
 
     /**
-     * @param {number} dt
+     * Advances the portal's animation, if it has one.
+     * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
         this._portal?.update(dt);
@@ -58,9 +61,9 @@ export class PortalInteractable {
 
     /**
      * Locked until levelFullyRevealed (all enemies dead).
-     * @param {Camera} camera
-     * @param {boolean} interactPressed
-     * @param {boolean} levelFullyRevealed
+     * @param {Camera} camera - Camera to position the prompt against.
+     * @param {boolean} interactPressed - Whether Interact was pressed this frame.
+     * @param {boolean} levelFullyRevealed - Whether every enemy in the level is dead.
      */
     updatePrompt(camera, interactPressed, levelFullyRevealed) {
         if (!this._portal) return;
@@ -83,6 +86,7 @@ export class PortalInteractable {
     }
 
     /**
+     * Checks whether the player can currently interact with the open portal.
      * @returns {boolean}
      */
     _isInRange() {
@@ -99,7 +103,8 @@ export class PortalInteractable {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws the portal, if it has one.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         this._portal?.render(ctx);

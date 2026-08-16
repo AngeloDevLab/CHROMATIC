@@ -16,6 +16,7 @@ const ENEMY_DARKEN_RADIUS = 65;
 const ENEMY_DEATH_REVEAL_RADIUS = 90;
 
 /**
+ * Checks whether an EnemySpawn name refers to a boss.
  * @param {string} [name] - EnemySpawn's Tiled Name field.
  * @returns {boolean}
  */
@@ -25,10 +26,10 @@ export function isBossSpawnName(name) {
 }
 
 // Spawns and per-frame bookkeeping for a level's enemy roster (regular
-// enemies + the one optional Miniboss/Templateboss) - extracted out of
-// LevelSession.js, same motivation as Interactables.js/CombatCoordinator.js.
+// enemies + the one optional Miniboss/Templateboss), extracted out of LevelSession.js.
 export class EnemyRoster {
     /**
+     * Spawns every enemy from the level's EnemySpawn markers.
      * @param {Game} game - For assets/sound.
      * @param {Level} level - For its EnemySpawn markers.
      * @param {Player} player - Handed to each spawned enemy for aim/tracking.
@@ -45,7 +46,8 @@ export class EnemyRoster {
     }
 
     /**
-     * @returns {boolean} Whether every enemy is dead (the level's color-explosion trigger).
+     * True once every enemy is dead, the level's color-explosion trigger.
+     * @returns {boolean}
      */
     get levelFullyRevealed() {
         return this._levelFullyRevealed;
@@ -79,6 +81,7 @@ export class EnemyRoster {
     }
 
     /**
+     * Same as _spawnWraith(), for the Templateboss tier.
      * @param {object} spawn - EnemySpawn Tiled object.
      * @returns {WraithTemplateboss}
      */
@@ -93,9 +96,9 @@ export class EnemyRoster {
     /**
      * Drains each enemy's pendingProjectile (Shooter's shots, the boss's
      * beam) into combat's pool, and pendingRoomDarken (Wraith.js's beam-fire room-darken beat).
-     * @param {number} dt
-     * @param {CombatCoordinator} combat
-     * @param {ColorZone} colorZone
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {CombatCoordinator} combat - Combat pool to drain enemy projectiles into.
+     * @param {ColorZone} colorZone - Color mechanic, for beam-fire room-darken beats.
      * @param {number} safeRevealRadius - Matches the player's own everyday reveal radius.
      */
     updateEnemies(dt, combat, colorZone, safeRevealRadius) {
@@ -114,12 +117,8 @@ export class EnemyRoster {
     }
 
     /**
-     * 03_mechanics.md 4.1: "Enemy crosses a colored area -> the area turns
-     * back to dark" - dying reverses that once, revealing back what it had
-     * darkened (plus a bit more) instead of leaving a dark patch behind.
-     * 'enemy-death' sfx is reused for the boss too until a dedicated
-     * boss-death cue exists.
-     * @param {ColorZone} colorZone
+     * Dying reverses the enemy's own darkening once, revealing back what it had darkened plus a bit more instead of leaving a dark patch behind. The 'enemy-death' sfx is reused for the boss too until a dedicated boss-death cue exists.
+     * @param {ColorZone} colorZone - Color mechanic to darken/reveal against.
      */
     updateColorReveal(colorZone) {
         for (const enemy of this.enemies) {
@@ -134,11 +133,9 @@ export class EnemyRoster {
     }
 
     /**
-     * Standing in for "Boss defeated" (03_mechanics.md 4.1) since Lv_1 has
-     * no boss yet: clearing every enemy triggers the same color-explosion
-     * reveal, once. Also marks the portal revealed.
-     * @param {ColorZone} colorZone
-     * @param {Interactables} interactables
+     * Standing in for a "boss defeated" trigger since Lv_1 has no boss yet: clearing every enemy triggers the same color-explosion reveal, once. Also marks the portal revealed.
+     * @param {ColorZone} colorZone - Color mechanic to trigger the full reveal on.
+     * @param {Interactables} interactables - Interactables set, to mark the portal revealed.
      */
     checkLevelFullyRevealed(colorZone, interactables) {
         if (this._levelFullyRevealed || this.enemies.length === 0 || !this.enemies.every((enemy) => enemy.dead)) return;
@@ -151,7 +148,7 @@ export class EnemyRoster {
     /**
      * Drops the boss's Token the frame its death animation finishes -
      * separate from checkLevelFullyRevealed() above, which fires on every enemy dead (including non-boss levels).
-     * @param {Interactables} interactables
+     * @param {Interactables} interactables - Interactables set, to notify MerchantInteractable of the drop.
      */
     checkBossDefeated(interactables) {
         if (this._bossDefeated || !this.boss || !this.boss.dead || !this.boss.deathAnimationFinished) return;

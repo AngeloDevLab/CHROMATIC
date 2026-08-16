@@ -2,8 +2,8 @@ import { ColorZoneTransitions } from './ColorZoneTransitions.js';
 
 /**
  * CSS `filter` string for the grey/desaturated look.
- * @param {number} greyBrightness
- * @param {{sepia:number, hueRotate:number, saturate:number}|null} greyTint
+ * @param {number} greyBrightness - CSS brightness() value for the desaturated look.
+ * @param {{sepia:number, hueRotate:number, saturate:number}|null} greyTint - Optional sepia/hue-rotate/saturate tint, or null for plain grey.
  * @returns {string}
  */
 export function buildGreyFilter(greyBrightness, greyTint) {
@@ -18,20 +18,20 @@ export function buildGreyFilter(greyBrightness, greyTint) {
 
 // Permanent mode (default, fadeDurationSeconds = Infinity) punches directly
 // into the persistent overlay and stays revealed forever - the real trail
-// mechanic (03_mechanics.md 4.1). Fade mode (a finite fadeDurationSeconds) is
-// for decorative uses only (e.g. the menu background): ages stamps and
-// rebuilds the overlay from the grey template each frame, dissolving back to
-// grey instead of staying revealed.
+// mechanic. Fade mode (a finite fadeDurationSeconds) is for decorative uses
+// only (e.g. the menu background): ages stamps and rebuilds the overlay from
+// the grey template each frame, dissolving back to grey instead of staying revealed.
 export class ColorZone {
     /**
-     * @param {number} width
-     * @param {number} height
-     * @param {number} [revealRadius=24]
-     * @param {object} [options]
-     * @param {number} [options.fadeDurationSeconds=Infinity]
+     * Sets up the grey/overlay/scratch canvases and desaturation filter.
+     * @param {number} width - Canvas width, in pixels.
+     * @param {number} height - Canvas height, in pixels.
+     * @param {number} [revealRadius=24] - Default reveal/darken radius, in pixels.
+     * @param {object} [options] - Optional settings.
+     * @param {number} [options.fadeDurationSeconds=Infinity] - How long a fade-mode stamp takes to dissolve; Infinity for permanent mode.
      * @param {number} [options.stampIntervalSeconds=0.1] - Fade mode only.
-     * @param {number} [options.greyBrightness=1]
-     * @param {{sepia:number, hueRotate:number, saturate:number}|null} [options.greyTint=null]
+     * @param {number} [options.greyBrightness=1] - CSS brightness() value for the desaturated look.
+     * @param {{sepia:number, hueRotate:number, saturate:number}|null} [options.greyTint=null] - Optional sepia/hue-rotate/saturate tint.
      */
     constructor(width, height, revealRadius = 24, {
         fadeDurationSeconds = Infinity,
@@ -54,12 +54,9 @@ export class ColorZone {
     }
 
     /**
-     * greyTemplateCanvas is the untouched desaturated render; overlayCanvas is
-     * the persistent punched result drawn every frame; _scratchCanvas is a
-     * reusable patch-sized buffer for darken()/render()'s liveGlow, sized to
-     * just the local patch (see _patchBounds()).
-     * @param {number} width
-     * @param {number} height
+     * Creates the grey template canvas, the persistent overlay canvas, and a reusable scratch canvas sized per-patch for punch operations.
+     * @param {number} width - Canvas width, in pixels.
+     * @param {number} height - Canvas height, in pixels.
      */
     _initCanvases(width, height) {
         this.greyTemplateCanvas = document.createElement('canvas');
@@ -83,7 +80,7 @@ export class ColorZone {
     /**
      * Rebuilds the grey template from a fresh render of the color source, then
      * resets the overlay to match it (fully grey, nothing revealed yet).
-     * @param {HTMLCanvasElement} colorSourceCanvas
+     * @param {HTMLCanvasElement} colorSourceCanvas - Fully-colored canvas to desaturate a render of.
      */
     paintGreyFrom(colorSourceCanvas) {
         const templateCtx = this.greyTemplateCanvas.getContext('2d');
@@ -101,9 +98,9 @@ export class ColorZone {
 
     /**
      * Advances the overlay for the current frame at the live reveal point.
-     * @param {number} dt
-     * @param {number} x
-     * @param {number} y
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} x - Live reveal point's world X.
+     * @param {number} y - Live reveal point's world Y.
      */
     update(dt, x, y) {
         if (this._transitions.isActive) {
@@ -122,8 +119,8 @@ export class ColorZone {
     /**
      * Skips re-stamping an unchanged position - repeated punches at the same
      * spot compound destination-out alpha into a hard cutoff instead of a soft falloff.
-     * @param {number} x
-     * @param {number} y
+     * @param {number} x - Live reveal point's world X.
+     * @param {number} y - Live reveal point's world Y.
      */
     _updatePermanent(x, y) {
         const last = this._lastPermanentPunch;
@@ -135,9 +132,9 @@ export class ColorZone {
 
     /**
      * Ages/expires stamps, then repaints the overlay from them.
-     * @param {number} dt
-     * @param {number} x
-     * @param {number} y
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} x - Live reveal point's world X.
+     * @param {number} y - Live reveal point's world Y.
      */
     _updateFade(dt, x, y) {
         this._ageStamps(dt, x, y);
@@ -147,9 +144,9 @@ export class ColorZone {
     /**
      * Adds a new stamp every stampIntervalSeconds and drops ones that have
      * fully faded.
-     * @param {number} dt
-     * @param {number} x
-     * @param {number} y
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} x - Live reveal point's world X.
+     * @param {number} y - Live reveal point's world Y.
      */
     _ageStamps(dt, x, y) {
         this._timeSinceLastStamp += dt;
@@ -165,8 +162,8 @@ export class ColorZone {
     /**
      * Rebuilds the overlay from scratch (grey template plus every live
      * stamp), then punches the leading edge at (x, y).
-     * @param {number} x
-     * @param {number} y
+     * @param {number} x - Live reveal point's world X.
+     * @param {number} y - Live reveal point's world Y.
      */
     _repaintFade(x, y) {
         this.overlayCtx.clearRect(0, 0, this.width, this.height);
@@ -179,10 +176,10 @@ export class ColorZone {
     }
 
     /**
-     * Bounding box of a radius around (x, y), clamped to the canvas. Shared by darken()/render().
-     * @param {number} x
-     * @param {number} y
-     * @param {number} radius
+     * Bounding box of a radius around (x, y), clamped to the canvas.
+     * @param {number} x - Center world X.
+     * @param {number} y - Center world Y.
+     * @param {number} radius - Radius around the center point.
      * @returns {{x:number, y:number, width:number, height:number}}
      */
     _patchBounds(x, y, radius) {
@@ -194,12 +191,10 @@ export class ColorZone {
     }
 
     /**
-     * 03_mechanics.md 4.1: "Enemy crosses a colored area -> the area turns
-     * back to dark". Inverse of _punch(): repaints the grey template back
-     * onto the overlay in a soft-edged patch instead of erasing it.
-     * @param {number} x
-     * @param {number} y
-     * @param {number} [radius]
+     * Inverse of _punch(): repaints the grey template back onto the overlay in a soft-edged patch instead of erasing it.
+     * @param {number} x - World X to darken around.
+     * @param {number} y - World Y to darken around.
+     * @param {number} [radius] - Darken radius, in pixels.
      */
     darken(x, y, radius = this.revealRadius) {
         const patch = this._patchBounds(x, y, radius);
@@ -215,11 +210,12 @@ export class ColorZone {
     }
 
     /**
-     * @param {{x:number,y:number,width:number,height:number}} patch
-     * @param {number} localX
-     * @param {number} localY
-     * @param {number} radius
-     * @param {CanvasGradient} gradient
+     * Masks a scratch copy of the grey template with a radial gradient, leaving a soft-edged hole.
+     * @param {{x:number,y:number,width:number,height:number}} patch - Patch rect within the full canvas.
+     * @param {number} localX - Punch center X, relative to the patch.
+     * @param {number} localY - Punch center Y, relative to the patch.
+     * @param {number} radius - Punch radius, in pixels.
+     * @param {CanvasGradient} gradient - Radial gradient to mask with.
      */
     _maskScratchWithGradient(patch, localX, localY, radius, gradient) {
         this._scratchCtx.drawImage(this.greyTemplateCanvas, patch.x, patch.y, patch.width, patch.height, 0, 0, patch.width, patch.height);
@@ -234,9 +230,9 @@ export class ColorZone {
     /**
      * One-time reveal punch (e.g. an enemy's death spot) that leaves the hole
      * exactly as it is afterward, unlike update()'s continuous per-frame reveal.
-     * @param {number} x
-     * @param {number} y
-     * @param {number} [radius]
+     * @param {number} x - World X to reveal around.
+     * @param {number} y - World Y to reveal around.
+     * @param {number} [radius] - Reveal radius, in pixels.
      */
     reveal(x, y, radius = this.revealRadius) {
         this._punch(this.overlayCtx, x, y, 1, radius);
@@ -251,18 +247,18 @@ export class ColorZone {
     }
 
     /**
-     * @see ColorZoneTransitions.triggerFullReveal
-     * @param {number} originX
-     * @param {number} originY
+     * Delegates to ColorZoneTransitions.triggerFullReveal().
+     * @param {number} originX - World X the reveal circle expands from.
+     * @param {number} originY - World Y the reveal circle expands from.
      */
     triggerFullReveal(originX, originY) {
         this._transitions.triggerFullReveal(originX, originY);
     }
 
     /**
-     * @see ColorZoneTransitions.triggerFullDarken
-     * @param {number} originX
-     * @param {number} originY
+     * Delegates to ColorZoneTransitions.triggerFullDarken().
+     * @param {number} originX - World X the darken circle expands from.
+     * @param {number} originY - World Y the darken circle expands from.
      */
     triggerFullDarken(originX, originY) {
         this._transitions.triggerFullDarken(originX, originY);
@@ -272,8 +268,8 @@ export class ColorZone {
      * One-time full-height vertical-slice reveal, hard-edged rather than a
      * soft circular punch. Coordinates are pixel-rounded to avoid an
      * anti-aliased seam once scaled up.
-     * @param {number} xStart
-     * @param {number} xEnd
+     * @param {number} xStart - Left edge of the reveal slice.
+     * @param {number} xEnd - Right edge of the reveal slice.
      */
     revealZone(xStart, xEnd) {
         const left = Math.round(xStart);
@@ -287,9 +283,9 @@ export class ColorZone {
     }
 
     /**
-     * @see ColorZoneTransitions.triggerZoneWipe
-     * @param {number} xStart
-     * @param {number} xEnd
+     * Delegates to ColorZoneTransitions.triggerZoneWipe().
+     * @param {number} xStart - Left edge of the reveal sweep.
+     * @param {number} xEnd - Right edge of the reveal sweep.
      */
     triggerZoneWipe(xStart, xEnd) {
         this._transitions.triggerZoneWipe(xStart, xEnd);
@@ -299,11 +295,11 @@ export class ColorZone {
      * Radial gradient instead of a flat fill: fully erases up to 55% of the
      * radius, then fades to no effect at the edge, for a soft transition
      * instead of a hard circle. `strength` scales this down as a fade stamp ages.
-     * @param {CanvasRenderingContext2D} ctx
-     * @param {number} x
-     * @param {number} y
-     * @param {number} strength
-     * @param {number} [radius]
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to punch into.
+     * @param {number} x - Punch center world X.
+     * @param {number} y - Punch center world Y.
+     * @param {number} strength - Punch opacity, 0 to 1.
+     * @param {number} [radius] - Punch radius, in pixels.
      */
     _punch(ctx, x, y, strength, radius = this.revealRadius) {
         const gradient = this._buildPunchGradient(ctx, x, y, radius, strength);
@@ -317,14 +313,12 @@ export class ColorZone {
     }
 
     /**
-     * Shared 3-stop black gradient (opaque center/mid, fading to transparent
-     * at the edge) - used both by _punch() (erases the overlay directly) and
-     * darken() (masks a scratch copy of the grey template instead).
-     * @param {CanvasRenderingContext2D} ctx
-     * @param {number} x
-     * @param {number} y
-     * @param {number} radius
-     * @param {number} strength
+     * Shared 3-stop black gradient: opaque through the middle, fading to transparent at the edge.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to build the gradient for.
+     * @param {number} x - Gradient center X.
+     * @param {number} y - Gradient center Y.
+     * @param {number} radius - Gradient radius, in pixels.
+     * @param {number} strength - Opacity at the gradient's core, 0 to 1.
      * @returns {CanvasGradient}
      */
     _buildPunchGradient(ctx, x, y, radius, strength) {
@@ -338,9 +332,9 @@ export class ColorZone {
     /**
      * Wraith.js beam-fire beat: desaturates the whole room in one instant
      * snap except a safe pocket around the player.
-     * @param {number} safeX
-     * @param {number} safeY
-     * @param {number} safeRadius
+     * @param {number} safeX - World X of the untouched safe pocket's center.
+     * @param {number} safeY - World Y of the untouched safe pocket's center.
+     * @param {number} safeRadius - Radius of the untouched safe pocket.
      */
     darkenAllExcept(safeX, safeY, safeRadius) {
         this.overlayCtx.drawImage(this.greyTemplateCanvas, 0, 0);
@@ -348,10 +342,9 @@ export class ColorZone {
     }
 
     /**
-     * Draws the overlay. With `liveGlow` ({x, y, radius}), also punches an
-     * extra hole for this frame only, on a scratch copy never written back into overlayCanvas.
-     * @param {CanvasRenderingContext2D} ctx
-     * @param {{x:number, y:number, radius?:number}|null} [liveGlow]
+     * Draws the overlay, or with `liveGlow` ({x, y, radius}) punches an extra hole into a scratch copy that's never written back into overlayCanvas.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     * @param {{x:number, y:number, radius?:number}|null} [liveGlow] - Extra this-frame-only reveal hole to punch, if any.
      */
     render(ctx, liveGlow = null) {
         if (!liveGlow) {
@@ -368,12 +361,11 @@ export class ColorZone {
      * Clips the base overlay draw to exclude the patch rect - drawing the
      * full overlay underneath first would leave opaque pixels behind the
      * hole, since transparent-over-opaque is a no-op. Then blits in a
-     * scratch copy of that patch with the live-glow hole punched into it,
-     * leaving the real overlayCanvas untouched.
-     * @param {CanvasRenderingContext2D} ctx
-     * @param {{x:number, y:number, width:number, height:number}} patch
-     * @param {{x:number, y:number, radius?:number}} liveGlow
-     * @param {number} radius
+     * scratch copy of that patch with the live-glow hole punched into it.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
+     * @param {{x:number, y:number, width:number, height:number}} patch - Patch rect around the live glow.
+     * @param {{x:number, y:number, radius?:number}} liveGlow - Extra this-frame-only reveal hole to punch.
+     * @param {number} radius - Live glow punch radius, in pixels.
      */
     _renderWithLiveGlow(ctx, patch, liveGlow, radius) {
         ctx.save();

@@ -9,19 +9,18 @@ const SIZE = 128;
 const OPENS_FRAME_COUNT = 10;
 const OPENS_FPS = 12;
 
-// Marks a level's end (01_core-gameplay-loop.md). Three states: closed ->
-// opening (plays portal-opens.png once) -> open, driven by GameState
-// flipping `active` once every enemy is dead. Interact range/[E] handling
-// lives in GameState; this class only tracks/renders the state.
-// greyFilterCSS is GameState's own ColorZone.greyFilterCSS, matching the
-// terrain's grey treatment. The portal sits at one fixed world position, so
-// a simple one-way `revealed` flag tracks its reveal instead of a real
-// per-pixel mechanism.
+// Marks a level's end. Three states: closed -> opening -> open, driven by
+// GameState flipping `active` once every enemy is dead; this class only
+// tracks/renders the state.
+//
+// The portal sits at one fixed position, so a one-way `revealed` flag tracks
+// its color reveal instead of a real per-pixel mechanism.
 export class Portal extends Entity {
     /**
+     * Creates a closed portal at a fixed position.
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
-     * @param {{closed: HTMLImageElement, open: HTMLImageElement, opens: HTMLImageElement}} sprites
+     * @param {{closed: HTMLImageElement, open: HTMLImageElement, opens: HTMLImageElement}} sprites - Closed/open/opening sprite sheets.
      * @param {string} greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
      */
     constructor(x, y, sprites, greyFilterCSS) {
@@ -36,8 +35,7 @@ export class Portal extends Entity {
     }
 
     /**
-     * Only true once the opening animation has fully played. GameState
-     * gates the [E] interact prompt on this rather than on `active` directly.
+     * True once the opening animation has fully played.
      * @returns {boolean}
      */
     get isOpen() {
@@ -45,6 +43,7 @@ export class Portal extends Entity {
     }
 
     /**
+     * Advances the portal's state machine and opening animation.
      * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
@@ -60,6 +59,7 @@ export class Portal extends Entity {
     }
 
     /**
+     * Draws the portal for its current state, greyed out until revealed.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

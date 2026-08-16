@@ -1,22 +1,11 @@
 import { Entity } from '../Entity.js';
 
-// Full-extent beam, not a slow travelling bolt (contrast
-// entities/enemies/ShooterProjectile.js). Position/extent re-derive every
-// frame via track(), since the wraith keeps firing while it moves. update()
-// is a no-op - the owning boss drives this entirely through track().
-//
-// `axis` ('horizontal' or 'vertical') decides which coordinate sweeps and
-// which stays fixed at THICKNESS_PX. Both axes use the same wall-only check
-// (isWallAt(), ignoring the one-way `terrain` layer).
-//
-// Same x/y/width/height/damage/direction/dead/update/render shape as
-// ShooterProjectile.js, so it plugs into LevelSession's existing
-// enemyProjectiles pipeline (Combat.js's resolveEnemyProjectileHits) unchanged.
 const THICKNESS_PX = 36;
 const STEP_PX = 8;
 
 export class WraithBeam extends Entity {
     /**
+     * Spawns a beam and does its first scan for a wall to stop at.
      * @param {number} spawnCenterX - World X the beam fires from (fixed for a horizontal beam, live for a vertical one).
      * @param {number} spawnCenterY - World Y (center) the beam starts at.
      * @param {1|-1} direction - Which way a horizontal beam fires; ignored for 'vertical' (always reaches downward).
@@ -37,9 +26,10 @@ export class WraithBeam extends Entity {
     }
 
     /**
-     * @param {number} spawnCenterX
-     * @param {number} spawnCenterY
-     * @param {'horizontal'|'vertical'} axis
+     * Builds the zero-length starting rect for the given axis.
+     * @param {number} spawnCenterX - World X the beam fires from.
+     * @param {number} spawnCenterY - World Y (center) the beam starts at.
+     * @param {'horizontal'|'vertical'} axis - Which way the beam sweeps.
      * @returns {[number, number, number, number]} Entity's (x, y, width, height) constructor args.
      */
     static _initialBounds(spawnCenterX, spawnCenterY, axis) {
@@ -50,6 +40,7 @@ export class WraithBeam extends Entity {
     }
 
     /**
+     * Dispatches to the axis-specific rescan.
      * @param {number} centerX - The beam source's current center X.
      * @param {number} centerY - The beam source's current center Y.
      */
@@ -60,7 +51,7 @@ export class WraithBeam extends Entity {
 
     /**
      * Re-derives the beam's x/y/width for the wraith's current height.
-     * @param {number} centerY
+     * @param {number} centerY - The beam source's current center Y.
      */
     _rescanHorizontal(centerY) {
         const levelEdgeX = this.direction === 1 ? this._collision.level.pixelWidth : 0;
@@ -78,11 +69,10 @@ export class WraithBeam extends Entity {
     }
 
     /**
-     * Same idea as _rescanHorizontal(), axis-swapped: always reaches from
-     * the source's current position straight down toward the level's bottom
-     * edge, stopping at the first `walls` tile in that column.
-     * @param {number} centerX
-     * @param {number} centerY
+     * Reaches straight down from the source's current position to the first
+     * `walls` tile, or the level's bottom edge.
+     * @param {number} centerX - The beam source's current center X.
+     * @param {number} centerY - The beam source's current center Y.
      */
     _rescanVertical(centerX, centerY) {
         const levelBottomY = this._collision.level.pixelHeight;
@@ -101,8 +91,8 @@ export class WraithBeam extends Entity {
 
     /**
      * Checks whether a wall tile blocks the beam at the given point, across its full cross-section.
-     * @param {number} x
-     * @param {number} y
+     * @param {number} x - World X to check.
+     * @param {number} y - World Y to check.
      * @param {'x'|'y'} crossAxis - Which coordinate the THICKNESS_PX span applies to.
      * @returns {boolean}
      */
@@ -119,22 +109,22 @@ export class WraithBeam extends Entity {
     }
 
     /**
-     * The owning boss calls this every frame while firing/descending. A
-     * horizontal beam ignores centerX (its source X is fixed at fire time);
-     * a vertical beam uses it as its live moving source column.
-     * @param {number} centerX
-     * @param {number} centerY
+     * Called every frame while firing/descending. Horizontal beams ignore
+     * centerX (fixed at fire time); vertical beams use it as the live source column.
+     * @param {number} centerX - The beam source's current center X.
+     * @param {number} centerY - The beam source's current center Y.
      */
     track(centerX, centerY) {
         this._rescan(centerX, centerY);
     }
 
     /**
-     * No-op - the owning boss drives this entirely through track() (see the top-of-file note).
+     * No-op - the owning boss drives this entirely through track().
      */
     update() {}
 
     /**
+     * Draws the beam as a gradient-filled rect, skipping zero-length or dead beams.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
@@ -148,10 +138,9 @@ export class WraithBeam extends Entity {
     }
 
     /**
-     * Fades out across the beam's own cross-section (perpendicular to
-     * travel) rather than along its length - a thin opaque core with soft
-     * edges, same look for either axis.
-     * @param {CanvasRenderingContext2D} ctx
+     * Fades out across the beam's cross-section, not its length, for a thin
+     * opaque core with soft edges.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to build the gradient for.
      * @returns {CanvasGradient}
      */
     _buildGradient(ctx) {

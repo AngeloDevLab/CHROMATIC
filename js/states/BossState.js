@@ -11,9 +11,8 @@ const BOSS_HP_VALUE_TOP_PX = BOSS_BAR_TOP_PX + BOSS_BAR_HEIGHT + 2;
 
 // A boss-level session - same LevelSession as a normal level, with two
 // boss-specific additions: a dedicated render buffer sized to match the
-// arena (docs/GDD/10_technical-architecture.md 11.7.2's Boss level type),
-// and the top-center HP bar + name label. Routed to instead of GameState at
-// level-load time via isBossLevel(), not a mid-session trigger.
+// arena, and the top-center HP bar + name label. Routed to instead of
+// GameState at level-load time via isBossLevel(), not a mid-session trigger.
 //
 // The buffer resize happens in enter() before the session (and its Camera,
 // which reads game.width/height) is constructed.
@@ -37,7 +36,7 @@ export class BossState extends State {
 
     /**
      * A hidden-until-boss-visible HUD label, appended to the overlay.
-     * @param {string} className
+     * @param {string} className - CSS class for the new label element.
      * @returns {HTMLDivElement}
      */
     _buildHiddenLabel(className) {
@@ -59,6 +58,7 @@ export class BossState extends State {
     }
 
     /**
+     * Delegates to the level session's own update.
      * @param {number} dt - Fixed timestep in seconds.
      */
     update(dt) {
@@ -66,6 +66,7 @@ export class BossState extends State {
     }
 
     /**
+     * Renders the session, then the boss HP bar and its labels while the boss is alive.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
@@ -84,8 +85,8 @@ export class BossState extends State {
 
     /**
      * Positions/fills the name + HP-value labels around HUD.js's renderBossBar().
-     * @param {Enemy} boss
-     * @param {number} scale
+     * @param {Enemy} boss - Boss whose name/HP to display.
+     * @param {number} scale - Current HUD scale factor.
      */
     _renderLabels(boss, scale) {
         const centerX = this.game.width / 2;

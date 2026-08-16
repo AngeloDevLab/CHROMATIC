@@ -1,5 +1,6 @@
 export class Entity {
     /**
+     * Sets up position, size, and zeroed velocity.
      * @param {number} x - World X position (top-left).
      * @param {number} y - World Y position (top-left).
      * @param {number} width - Bounding box width, in pixels.
@@ -31,6 +32,7 @@ export class Entity {
     render(ctx) {}
 
     /**
+     * Horizontal center of the bounding box.
      * @returns {number} World X of the bounding box's horizontal center.
      */
     get centerX() {
@@ -38,6 +40,7 @@ export class Entity {
     }
 
     /**
+     * Vertical center of the bounding box.
      * @returns {number} World Y of the bounding box's vertical center.
      */
     get centerY() {

@@ -18,24 +18,22 @@ import { LEVEL_JSON_KEYS, PLAYER_REVEAL_RADIUS } from './LevelSession.js';
 const FALLBACK_SPAWN = { x: 64, y: 0 };
 
 // LevelSession's constructor-time build-out, composed onto it the same way
-// LevelSessionRenderer.js owns rendering. Each method mutates the session
+// LevelSessionRenderer.js owns rendering - each method mutates the session
 // reference passed in, in the fixed order the constructor calls them.
 // enemyRoster is created between spawnPlayer() and initInteractablesAndHud()
 // since Interactables needs it, so that step stays inline in the
 // constructor instead of moving here.
 export class LevelSessionSetup {
     /**
-     * @param {LevelSession} session
+     * Binds this setup helper to the LevelSession it builds.
+     * @param {LevelSession} session - Owning LevelSession to build state onto.
      */
     constructor(session) {
         this.session = session;
     }
 
     /**
-     * Loads the Tiled level JSON and builds its Collision/Camera. "terrain"
-     * is one-way; the optional "walls" layer stays fully solid regardless;
-     * the optional "noDrop" layer exempts specific one-way floors from
-     * Drop-Through-Platform. All three tolerate not existing in a given level.
+     * Loads the Tiled level JSON and builds its Collision/Camera.
      */
     loadLevel() {
         const session = this.session;
@@ -81,7 +79,7 @@ export class LevelSessionSetup {
     }
 
     /**
-     * The color mechanic (03_mechanics.md 4.1) - a permanent color trail, unlike MenuState's decorative fading-bubble ColorZone.
+     * The color mechanic - a permanent color trail, unlike MenuState's decorative fading-bubble ColorZone.
      */
     initColorZone() {
         const session = this.session;
@@ -128,8 +126,7 @@ export class LevelSessionSetup {
     }
 
     /**
-     * Builds Interactables (Portal/Merchant/Trapdoor/SecretDoor/
-     * BuffTerminal, see Interactables.js).
+     * Builds the level's Interactables set.
      */
     _buildInteractables() {
         const session = this.session;
@@ -174,7 +171,7 @@ export class LevelSessionSetup {
     /**
      * Kept aligned to the (also scaled, via Game.hudScale) canvas-drawn bar via scaleRect().
      * @param {{x:number,y:number,width:number,height:number}} bar - HEALTH_BAR or SHIELD_BAR (HUD.js).
-     * @param {'health'|'shield'} variant
+     * @param {'health'|'shield'} variant - Which stat this label displays.
      * @returns {HTMLElement} The attached, positioned label element.
      */
     _createHudValueLabel(bar, variant) {
@@ -193,7 +190,7 @@ export class LevelSessionSetup {
     /**
      * Creates an icon element that clips slightly into the bar.
      * @param {{x:number,y:number,width:number,height:number}} bar - HEALTH_BAR or SHIELD_BAR (HUD.js).
-     * @param {'health'|'shield'} variant
+     * @param {'health'|'shield'} variant - Which stat this icon represents.
      * @returns {HTMLElement} The attached, positioned icon element.
      */
     _createHudBarIcon(bar, variant) {

@@ -1,14 +1,11 @@
 /**
  * Generic modal panel (backdrop + title + body) used for Pause, Game Over,
  * Buff choices, Settings, etc. onClose fires exactly once per close, however
- * it happens (explicit close(), x, backdrop click, or Escape). dismissible=
- * false omits x/backdrop/Escape (e.g. Game Over). closeOnEscape can be
- * forced off independently of dismissible, for callers that handle Escape
- * themselves. close({silent: true}) skips onClose, for teardown paths that
- * shouldn't trigger a sub-panel's own "go back" behavior.
+ * it happens (explicit close(), x, backdrop click, or Escape).
  */
 export class Panel {
     /**
+     * Stores the mount target; call open() to actually show a panel.
      * @param {HTMLElement} overlayRoot - Element to mount the panel into.
      */
     constructor(overlayRoot) {
@@ -19,13 +16,14 @@ export class Panel {
 
     /**
      * Opens the panel, replacing any panel currently open.
-     * @param {string} title
-     * @param {string} bodyHTML
-     * @param {object} [options]
+     * @param {string} title - Panel title text.
+     * @param {string} bodyHTML - Panel body HTML content.
+     * @param {object} [options] - Optional settings.
      * @param {(root: HTMLElement) => void} [options.onMount] - Wires up interactive content inside bodyHTML.
      * @param {() => void} [options.onClose] - Called when the panel closes.
      * @param {boolean} [options.dismissible=true] - Show the × button and allow backdrop/Escape close.
-     * @param {boolean} [options.closeOnEscape=dismissible] - Whether Escape closes the panel.
+     * @param {boolean} [options.closeOnEscape=dismissible] - Whether Escape
+     *   closes the panel; settable independently of dismissible for callers that handle Escape themselves.
      */
     open(title, bodyHTML, { onMount, onClose, dismissible = true, closeOnEscape = dismissible } = {}) {
         this.close();
@@ -37,8 +35,9 @@ export class Panel {
     }
 
     /**
-     * @param {string} title
-     * @param {string} bodyHTML
+     * Builds the panel's backdrop/box/title/body markup.
+     * @param {string} title - Panel title text.
+     * @param {string} bodyHTML - Panel body HTML content.
      * @param {boolean} dismissible - Whether to include the × close button.
      * @returns {HTMLElement} The unattached panel-backdrop element.
      */
@@ -56,6 +55,7 @@ export class Panel {
     }
 
     /**
+     * Wires backdrop-click/×/Escape dismissal, per the given flags.
      * @param {boolean} dismissible - Whether backdrop-click/× should close the panel.
      * @param {boolean} closeOnEscape - Whether Escape should close the panel.
      */
@@ -73,7 +73,7 @@ export class Panel {
 
     /**
      * Closes the panel, if open, and fires its onClose callback unless silent.
-     * @param {object} [options]
+     * @param {object} [options] - Optional settings.
      * @param {boolean} [options.silent=false] - Skip the onClose callback.
      */
     close({ silent = false } = {}) {
@@ -87,7 +87,8 @@ export class Panel {
     }
 
     /**
-     * @param {KeyboardEvent} event
+     * Closes the panel on Escape.
+     * @param {KeyboardEvent} event - The browser keydown event.
      */
     _onKeyDown(event) {
         if (event.key === 'Escape') this.close();
@@ -97,8 +98,8 @@ export class Panel {
      * Convenience wrapper around open() for the common "title + a list of
      * buttons" shape (Pause/Game Over/Buff choice) - builds the buttons'
      * markup and wires each one's onClick.
-     * @param {string} title
-     * @param {{id: string, label: string, onClick: () => void}[]} choices
+     * @param {string} title - Panel title text.
+     * @param {{id: string, label: string, onClick: () => void}[]} choices - Buttons to render, each with its own click handler.
      * @param {object} [options] - Forwarded to open() (dismissible, closeOnEscape, onClose).
      */
     openChoices(title, choices, options = {}) {

@@ -31,8 +31,6 @@ The Prologue - v1's full scope - is playable start to finish: all 6 levels, both
 
 Deliberately kept disciplined: v1 is a complete **Prologue** - 1 template, 6 levels, combat system, color mechanic, shield system, boss hierarchy, and token economy. Chapter 1 and beyond (3 more templates, ~20 levels) is intentionally out of scope for this project rather than an unfinished stretch goal - the Prologue proves the reusable system end to end, everything beyond it would be content scaling, not new architectural risk.
 
-Targeted for 3–5 weeks (3 weeks full-time baseline, realistically 4–5 due to a training program running in parallel).
-
 ## Tech Stack
 
 - **Rendering:** HTML5 Canvas, internal resolution 640×360, fractional window-fill scaling everywhere (no exceptions, avoids state-switch jumps and large letterbox bars) + fullscreen toggle (`image-rendering: pixelated`)

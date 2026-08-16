@@ -5,17 +5,13 @@ import { Shooter } from './enemies/Shooter.js';
 import { SpriteAnimation } from '../utils/SpriteAnimation.js';
 
 /**
- * Enemy sheets (assets/images/enemys/<type>/) are their own 64x64
- * convention, independent of the player's 96x96 one.
+ * Enemy sprite sheets use their own 64x64 convention, independent of the player's 96x96 one.
  */
 const ENEMY_FRAME_SIZE = 64;
 
 /**
- * Maps an EnemySpawn object's Tiled Name field to its asset keys - add an
- * entry here once a new enemy type actually exists in code. `charge` is
- * Charger-only (its distinct rush sprite, see enemies/Charger.js); `shoot`/
- * `projectile` are Shooter-only (its distinct firing sprite and the bolt it
- * fires, see enemies/Shooter.js) - absent for types that don't use them.
+ * Maps an EnemySpawn's Tiled Name field to its asset keys. `charge` is
+ * Charger-only and `shoot`/`projectile` are Shooter-only - absent for types that don't use them.
  */
 const ENEMY_SPRITE_SETS = {
     patroller: { running: 'enemy-patroller-walking-idle', dead: 'enemy-patroller-dead' },
@@ -56,6 +52,7 @@ export function createEnemy(assets, collision, player, spawn) {
 }
 
 /**
+ * Maps a lowercased type name to its Enemy subclass.
  * @param {string} typeName - Lowercased EnemySpawn name.
  * @returns {typeof Enemy} The enemy subclass to instantiate.
  */
@@ -89,7 +86,7 @@ function _buildAnimations(assets, sprite, spriteSet) {
 }
 
 /**
- * Wires each enemy's movement/aggro behavior. Sentinel never patrols (05_enemies-bosses.md 6.1: "Static").
+ * Wires each enemy's movement/aggro behavior; Sentinel never patrols.
  * @param {Enemy} enemy - Freshly constructed enemy to wire up.
  * @param {Collision} collision - Level collision for patrol/charge movement.
  * @param {Player} player - Player instance enemies aggro/react to.

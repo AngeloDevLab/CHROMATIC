@@ -1,25 +1,15 @@
-/**
- * 03_mechanics.md 4.1: "Boss defeated -> the entire level turns colorful -
- * color explosion". Duration of the sweep triggered by triggerFullReveal().
- */
 const FULL_REVEAL_DURATION_SECONDS = 1.5;
 
-/**
- * 02_game-structure.md 2.1: Worldmap's "connecting paths turn colorful" -
- * duration of the horizontal sweep triggered by triggerZoneWipe().
- */
 const ZONE_WIPE_DURATION_SECONDS = 1.5;
 
 // ColorZone.js's triggered, one-time sweep animations (full-level reveal/
 // darken on boss-defeat/player-death, Worldmap's zone-wipe), as opposed to
 // that file's own continuous per-frame trail mechanism - each has its own
-// elapsed/progress state that the other group never needs. Holds a
-// reference back to the owning ColorZone instance to reuse its shared
-// drawing primitives (_punch()/darken()/revealZone()/overlayCtx) rather than
-// duplicating them here.
+// elapsed/progress state that the other group never needs.
 export class ColorZoneTransitions {
     /**
-     * @param {ColorZone} colorZone
+     * Starts with no sweep active.
+     * @param {ColorZone} colorZone - Owning ColorZone to reuse drawing primitives from.
      */
     constructor(colorZone) {
         this._colorZone = colorZone;
@@ -29,8 +19,7 @@ export class ColorZoneTransitions {
     }
 
     /**
-     * Whether a sweep is still playing out - ColorZone.isTransitioning
-     * delegates here.
+     * Whether a sweep is still playing out.
      * @returns {boolean}
      */
     get isActive() {
@@ -38,13 +27,11 @@ export class ColorZoneTransitions {
     }
 
     /**
-     * 03_mechanics.md 4.1: "Boss defeated -> the entire level turns
-     * colorful". Expands a full-strength reveal circle from (originX,
-     * originY) past the whole canvas over FULL_REVEAL_DURATION_SECONDS,
-     * then clears the overlay outright (a growing circle never quite
-     * reaches the corners).
-     * @param {number} originX
-     * @param {number} originY
+     * Expands a full-strength reveal circle from (originX, originY) past the
+     * whole canvas, then clears the overlay outright (a growing circle never
+     * quite reaches the corners).
+     * @param {number} originX - World X the reveal circle expands from.
+     * @param {number} originY - World Y the reveal circle expands from.
      */
     triggerFullReveal(originX, originY) {
         const zone = this._colorZone;
@@ -54,8 +41,8 @@ export class ColorZoneTransitions {
     /**
      * Player death - inverse of triggerFullReveal(): repaints the grey
      * template outward from (originX, originY) until the level is grey again.
-     * @param {number} originX
-     * @param {number} originY
+     * @param {number} originX - World X the darken circle expands from.
+     * @param {number} originY - World Y the darken circle expands from.
      */
     triggerFullDarken(originX, originY) {
         const zone = this._colorZone;
@@ -63,19 +50,17 @@ export class ColorZoneTransitions {
     }
 
     /**
-     * Animated version of ColorZone.revealZone() - sweeps the revealed
-     * strip from xStart to xEnd (left to right) over
-     * ZONE_WIPE_DURATION_SECONDS, for the Worldmap's "just completed this
-     * level" flourish.
-     * @param {number} xStart
-     * @param {number} xEnd
+     * Animated version of ColorZone.revealZone(): sweeps the revealed strip from xStart to xEnd over time, for the Worldmap's level-complete flourish.
+     * @param {number} xStart - Left edge of the reveal sweep.
+     * @param {number} xEnd - Right edge of the reveal sweep.
      */
     triggerZoneWipe(xStart, xEnd) {
         this._zoneWipe = { xStart, xEnd, elapsed: 0 };
     }
 
     /**
-     * @param {number} dt
+     * Advances whichever sweep is currently active.
+     * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
         if (this._fullReveal) {
@@ -88,7 +73,8 @@ export class ColorZoneTransitions {
     }
 
     /**
-     * @param {number} dt
+     * Grows the reveal circle, clearing the overlay outright once it completes.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateFullReveal(dt) {
         const zone = this._colorZone;
@@ -105,7 +91,8 @@ export class ColorZoneTransitions {
     }
 
     /**
-     * @param {number} dt
+     * Grows the darken circle, repainting the full grey template once it completes.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateFullDarken(dt) {
         const zone = this._colorZone;
@@ -122,7 +109,8 @@ export class ColorZoneTransitions {
     }
 
     /**
-     * @param {number} dt
+     * Sweeps the revealed strip's right edge toward xEnd.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateZoneWipe(dt) {
         this._zoneWipe.elapsed += dt;

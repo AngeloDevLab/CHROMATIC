@@ -63,7 +63,8 @@ export class CutsceneState extends State {
     }
 
     /**
-     * @param {KeyboardEvent} event
+     * Skips the cutscene on Escape/Enter/Space.
+     * @param {KeyboardEvent} event - The browser keydown event.
      */
     _onKeyDown(event) {
         if (event.key === 'Escape' || event.key === 'Enter' || event.key === ' ') this._finish();
@@ -99,6 +100,7 @@ export class CutsceneState extends State {
     }
 
     /**
+     * Advances the typewriter reveal by one tick.
      * @param {number} dt - Elapsed time in seconds.
      */
     _updateText(dt) {
@@ -113,6 +115,7 @@ export class CutsceneState extends State {
     }
 
     /**
+     * Advances the animation, text, and phase timer.
      * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
@@ -133,6 +136,7 @@ export class CutsceneState extends State {
     }
 
     /**
+     * Draws the cover background, then the current phase.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
@@ -143,6 +147,7 @@ export class CutsceneState extends State {
     }
 
     /**
+     * Draws whichever phase is currently active.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {number} w - Canvas width.
      * @param {number} h - Canvas height.
@@ -207,8 +212,7 @@ export class CutsceneState extends State {
     }
 
     /**
-     * Draws the iris darkening effect at the given progress (see the
-     * top-of-file note on the mask-compositing approach).
+     * Draws the iris darkening effect at the given progress.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {number} w - Canvas width.
      * @param {number} h - Canvas height.
@@ -225,6 +229,7 @@ export class CutsceneState extends State {
     }
 
     /**
+     * Lazily creates the scratch canvas used for the iris mask.
      * @param {number} w - Canvas width.
      * @param {number} h - Canvas height.
      * @returns {CanvasRenderingContext2D} A scratch canvas sized to the scene, created lazily.
@@ -239,6 +244,7 @@ export class CutsceneState extends State {
     }
 
     /**
+     * Paints every blob onto the mask, snapping to solid black near full darken.
      * @param {CanvasRenderingContext2D} maskCtx - Mask canvas context.
      * @param {number} w - Canvas width.
      * @param {number} h - Canvas height.
@@ -257,6 +263,7 @@ export class CutsceneState extends State {
     }
 
     /**
+     * Paints one blob as a radial gradient growing from its fixed origin.
      * @param {CanvasRenderingContext2D} maskCtx - Mask canvas context.
      * @param {number} w - Canvas width.
      * @param {number} h - Canvas height.
@@ -281,6 +288,7 @@ export class CutsceneState extends State {
     }
 
     /**
+     * Draws the idle Guardian centered near the bottom of the frame.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {number} w - Canvas width.
      * @param {number} h - Canvas height.

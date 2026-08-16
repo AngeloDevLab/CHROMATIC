@@ -2,13 +2,12 @@ const TILE_SIZE = 32;
 
 // Tiled numbers gids as one continuous sequence across a level's tilesets,
 // in firstgid order; _tilesetFor() finds the tileset that started most
-// recently at or before a given gid. getTileTopPadding()/findGroundSurfaceY()
-// exist because tile art can leave transparent padding within its cell, so
-// grounding uses where the artwork visually starts, not the raw grid line.
+// recently at or before a given gid.
 export class Level {
     /**
+     * Parses a Tiled JSON export into tilesets, layers, and object markers.
      * @param {object} data - Raw Tiled JSON export.
-     * @param {Object<string, {image: HTMLImageElement, columns: number}>} tilesetRegistry - See the top-of-file note.
+     * @param {Object<string, {image: HTMLImageElement, columns: number}>} tilesetRegistry - Loaded tileset images keyed by basename (see TilesetRegistry.js).
      * @param {number} [tileSize=TILE_SIZE] - Tile edge length, in pixels.
      */
     constructor(data, tilesetRegistry, tileSize = TILE_SIZE) {
@@ -23,8 +22,9 @@ export class Level {
     }
 
     /**
+     * Resolves each Tiled tileset reference against the registry.
      * @param {object} data - Raw Tiled JSON export.
-     * @param {Object<string, {image: HTMLImageElement, columns: number}>} tilesetRegistry
+     * @param {Object<string, {image: HTMLImageElement, columns: number}>} tilesetRegistry - Loaded tileset images keyed by basename.
      * @returns {{firstGid: number, image: HTMLImageElement, columns: number}[]} Sorted ascending by firstGid.
      */
     _buildTilesets(data, tilesetRegistry) {
@@ -58,8 +58,7 @@ export class Level {
     }
 
     /**
-     * Flattens Tiled's `properties: [{name, type, value}]` array into a
-     * plain object (10_technical-architecture.md 11.6.2).
+     * Flattens Tiled's `properties: [{name, type, value}]` array into a plain object.
      * @param {object} obj - Raw Tiled object from an objectgroup.
      * @returns {{id: number, type: string, name: string, x: number, y: number, width: number, height: number, properties: object}}
      */
@@ -72,6 +71,7 @@ export class Level {
     }
 
     /**
+     * Looks up every spawn marker of a given type.
      * @param {string} type - Object marker type (e.g. 'PlayerStart', 'EnemySpawn').
      * @returns {object[]} Matching flattened objects.
      */
@@ -80,9 +80,10 @@ export class Level {
     }
 
     /**
+     * Builds a Level from a JSON already loaded via AssetLoader.
      * @param {AssetLoader} assetLoader - Loader holding the level's JSON.
      * @param {string} jsonKey - Key the level JSON was loaded under.
-     * @param {Object<string, {image: HTMLImageElement, columns: number}>} tilesetRegistry
+     * @param {Object<string, {image: HTMLImageElement, columns: number}>} tilesetRegistry - Loaded tileset images keyed by basename.
      * @returns {Level}
      */
     static load(assetLoader, jsonKey, tilesetRegistry) {
@@ -94,6 +95,7 @@ export class Level {
     }
 
     /**
+     * Finds which tileset a global tile id falls into.
      * @param {number} gid - Tiled global tile id.
      * @returns {{firstGid: number, image: HTMLImageElement, columns: number}} The tileset this gid belongs to.
      */
@@ -107,6 +109,7 @@ export class Level {
     }
 
     /**
+     * Converts a global tile id into its pixel source rect on the sheet.
      * @param {number} gid - Tiled global tile id.
      * @returns {{image: HTMLImageElement, sx: number, sy: number}} Source rect within that tileset's image.
      */
@@ -121,6 +124,7 @@ export class Level {
     }
 
     /**
+     * Draws every non-empty tile in one named layer.
      * @param {CanvasRenderingContext2D} ctx - Destination context.
      * @param {string} layerName - Tilelayer to draw.
      */
@@ -134,6 +138,7 @@ export class Level {
     }
 
     /**
+     * Draws a single tile at its grid position within the layer.
      * @param {CanvasRenderingContext2D} ctx - Destination context.
      * @param {number} gid - Tile's global ID.
      * @param {number} index - Tile's index within the layer array.
@@ -151,6 +156,7 @@ export class Level {
     }
 
     /**
+     * Draws multiple named layers in order.
      * @param {CanvasRenderingContext2D} ctx - Destination context.
      * @param {string[]} layerNames - Tilelayers to draw, in order.
      */
@@ -159,6 +165,7 @@ export class Level {
     }
 
     /**
+     * Draws every tilelayer in the level, in its original Tiled order.
      * @param {CanvasRenderingContext2D} ctx - Destination context.
      */
     drawAllLayers(ctx) {
@@ -166,6 +173,7 @@ export class Level {
     }
 
     /**
+     * Cached lookup of a tile's top transparent padding.
      * @param {number} gid - Tiled global tile id.
      * @returns {number} Rows of transparent padding above the visible art, cached per gid.
      */

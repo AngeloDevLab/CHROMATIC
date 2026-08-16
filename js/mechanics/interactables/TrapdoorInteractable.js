@@ -1,8 +1,7 @@
 import { Trapdoor } from '../../entities/Trapdoor.js';
 
 /**
- * Lvl 4 Gimmick (docs/GDD/02_game-structure.md 2.6) - how close the
- * player's feet need to be to the Trapdoor's top edge before it opens.
+ * How close the player's feet need to be to the Trapdoor's top edge before it opens.
  */
 const TRAPDOOR_TRIGGER_MARGIN_PX = 16;
 
@@ -10,12 +9,13 @@ const TRAPDOOR_TRIGGER_MARGIN_PX = 16;
 // size. No [E] prompt - purely proximity-driven.
 export class TrapdoorInteractable {
     /**
-     * @param {Game} game
-     * @param {Level} level
-     * @param {Player} player
-     * @param {object} options
-     * @param {string} options.greyFilterCSS
-     * @param {number} options.revealRadius
+     * Builds the trapdoor from the level's Trapdoor marker, if any.
+     * @param {Game} game - Owning Game instance.
+     * @param {Level} level - The loaded level, for its Trapdoor marker.
+     * @param {Player} player - For proximity/trigger checks.
+     * @param {object} options - Construction settings.
+     * @param {string} options.greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
+     * @param {number} options.revealRadius - LevelSession's PLAYER_REVEAL_RADIUS.
      */
     constructor(game, level, player, { greyFilterCSS, revealRadius }) {
         this.player = player;
@@ -34,7 +34,7 @@ export class TrapdoorInteractable {
 
     /**
      * Triggers the trapdoor when the player is horizontally over it and close enough above its top edge.
-     * @param {number} dt
+     * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
         if (!this._trapdoor) return;
@@ -51,7 +51,8 @@ export class TrapdoorInteractable {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws the trapdoor, if it has one.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         this._trapdoor?.render(ctx);

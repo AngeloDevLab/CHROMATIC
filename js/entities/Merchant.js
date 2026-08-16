@@ -2,12 +2,11 @@ import { Entity } from './Entity.js';
 
 const SIZE = 64;
 
-// Only ever constructed once the level's boss is dead and its dropped Token
-// collected (see Interactables.js's onBossDefeated()/_updateToken()) - this
-// class itself just draws the static sprite, all appearance-timing lives in
-// Interactables.
+// Only constructed once the level's boss is dead and its Token collected.
+// This class just draws the static sprite; appearance-timing lives in Interactables.js.
 export class Merchant extends Entity {
     /**
+     * Creates a merchant sprite at a fixed position.
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {HTMLImageElement} sprite - Static merchant sprite.
@@ -18,6 +17,7 @@ export class Merchant extends Entity {
     }
 
     /**
+     * Draws the merchant sprite.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {

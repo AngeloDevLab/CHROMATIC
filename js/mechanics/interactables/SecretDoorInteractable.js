@@ -1,16 +1,16 @@
 import { SecretDoor, SECRET_DOOR_PRISMA_COST } from '../../entities/SecretDoor.js';
 import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from './InteractPrompt.js';
 
-// Secret Room (Lvl 5 Gimmick, docs/GDD/02_game-structure.md 2.5) - uses the
-// same greyFilterCSS/revealed treatment as Portal/Trapdoor.
+// Secret Room (Lvl 5 Gimmick) - uses the same greyFilterCSS/revealed treatment as Portal/Trapdoor.
 export class SecretDoorInteractable {
     /**
-     * @param {Game} game
-     * @param {Level} level
-     * @param {Player} player
-     * @param {object} options
-     * @param {string} options.greyFilterCSS
-     * @param {number} options.revealRadius
+     * Builds the secret door (if the level has one) and its prompt element.
+     * @param {Game} game - Owning Game instance.
+     * @param {Level} level - The loaded level, for its SecretDoor marker.
+     * @param {Player} player - For proximity/range checks.
+     * @param {object} options - Construction settings.
+     * @param {string} options.greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
+     * @param {number} options.revealRadius - LevelSession's PLAYER_REVEAL_RADIUS.
      * @param {DamageNumbers} options.damageNumbers - For "not enough Prisma" status text.
      */
     constructor(game, level, player, { greyFilterCSS, revealRadius, damageNumbers }) {
@@ -23,9 +23,10 @@ export class SecretDoorInteractable {
     }
 
     /**
-     * @param {Game} game
-     * @param {Level} level
-     * @param {string} greyFilterCSS
+     * Builds the SecretDoor entity from the level's SecretDoor marker, if any.
+     * @param {Game} game - Owning Game instance.
+     * @param {Level} level - The loaded level, for its SecretDoor marker.
+     * @param {string} greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
      * @returns {SecretDoor|null}
      */
     _buildSecretDoor(game, level, greyFilterCSS) {
@@ -50,7 +51,7 @@ export class SecretDoorInteractable {
 
     /**
      * AABB push-out along whichever axis has the smaller overlap. No-op if there's no SecretDoor, or it's already open.
-     * @param {Player} player
+     * @param {Player} player - Player to check overlap against and push clear.
      */
     blockPlayer(player) {
         const door = this._secretDoor;
@@ -63,8 +64,9 @@ export class SecretDoorInteractable {
     }
 
     /**
-     * @param {SecretDoor} door
-     * @param {Player} player
+     * Pushes the player out along whichever axis has the smaller overlap.
+     * @param {SecretDoor} door - Door the player is overlapping.
+     * @param {Player} player - Player to push clear of the door.
      */
     _pushOutOfDoor(door, player) {
         const overlapLeft = (player.x + player.width) - door.x;
@@ -82,7 +84,8 @@ export class SecretDoorInteractable {
     }
 
     /**
-     * @param {number} dt
+     * Advances the door's animation, if it has one.
+     * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
         this._secretDoor?.update(dt);
@@ -90,8 +93,8 @@ export class SecretDoorInteractable {
 
     /**
      * [E] in range pays SECRET_DOOR_PRISMA_COST and starts the door opening.
-     * @param {Camera} camera
-     * @param {boolean} interactPressed
+     * @param {Camera} camera - Camera to position the prompt against.
+     * @param {boolean} interactPressed - Whether Interact was pressed this frame.
      */
     updatePrompt(camera, interactPressed) {
         if (!this._secretDoor) return;
@@ -124,7 +127,8 @@ export class SecretDoorInteractable {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws the door, if it has one.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         this._secretDoor?.render(ctx);

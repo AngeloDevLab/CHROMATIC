@@ -4,10 +4,8 @@ const DEFAULT_PATROL_SPEED = 40;
 const DEFAULT_GRAVITY = 700;
 
 /**
- * Brief white tint on taking damage, mirrors Player.js's HIT_FLASH_SECONDS
- * (see SpriteAnimation.draw's flashAmount). Exported for Boss.js, which
- * needs the same value to compute flashAmount in its own non-square
- * render() override.
+ * Brief white tint on taking damage. Exported for Boss.js, which needs the
+ * same value in its own render() override.
  */
 export const HIT_FLASH_SECONDS = 0.15;
 
@@ -17,32 +15,22 @@ export const HIT_FLASH_SECONDS = 0.15;
  */
 const KNOCKBACK_LOCK_SECONDS = 0.15;
 
-/**
- * Patroller behavior (05_enemies-bosses.md). 30 HP (3 melee hits).
- */
 const DEFAULT_HP = 30;
-
 const DEFAULT_CONTACT_DAMAGE = 20;
-
-/**
- * How far past its own leading edge to probe for whether the way ahead is blocked.
- */
 const LOOKAHEAD_PX = 4;
 
-// Patroller behavior (05_enemies-bosses.md): walks left/right along whatever
-// one-way floor it spawned on, gravity-bound via the shared Collision
-// instance. Direction flips from reading the tile grid ahead (wall, or
-// floor about to run out).
+// Walks left/right along whatever one-way floor it spawned on, direction
+// flipping when the tile grid ahead shows a wall or a floor about to run out.
 //
-// Lifecycle flags: `dormant` keeps an enemy harmless and off the HP bar
-// until a subclass clears it. `buried` controls draw order relative to the
-// terrain layer. `colorRevealed` guards GameState's one-time death color-reveal.
+// Lifecycle flags: `dormant` keeps an enemy harmless and off the HP bar;
+// `buried` controls draw order relative to terrain; `colorRevealed` guards
+// the one-time death color-reveal.
 //
-// Knockback: applyKnockback() is the passive contact-push reaction;
-// applyAttackKnockback() handles active attacks and delegates to it by
-// default (Charger.js overrides it separately).
+// `applyKnockback()` is the passive contact-push reaction; `applyAttackKnockback()`
+// handles active attacks and delegates to it by default.
 export class Enemy extends Entity {
     /**
+     * Builds base render/movement/combat/lifecycle state.
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {HTMLImageElement} sprite - Fallback static sprite, used before setAnimations() is called.
@@ -58,6 +46,7 @@ export class Enemy extends Entity {
     }
 
     /**
+     * Sets up sprite/animation/facing state before setAnimations() runs.
      * @param {HTMLImageElement} sprite - Fallback static sprite.
      * @param {number} width - Hitbox width, used as the initial render size.
      */
@@ -105,6 +94,7 @@ export class Enemy extends Entity {
     }
 
     /**
+     * Applies damage and enters the death animation if it was fatal.
      * @param {number} amount - Damage to apply.
      * @returns {number} The amount actually applied (0 if already dead).
      */
@@ -128,9 +118,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * True once the death animation has played out (or immediately if this
-     * Enemy instance has no 'dead' animation wired) - mirrors Player.js's
-     * deathAnimationFinished.
+     * True once the death animation has played out, or immediately if none is wired.
      * @returns {boolean}
      */
     get deathAnimationFinished() {
@@ -138,7 +126,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * Applies a brief knockback push (see Combat.js's resolveContactDamage).
+     * Sets velocity and starts the knockback lock timer.
      * @param {number} vx - Knockback velocity to apply.
      */
     applyKnockback(vx) {
@@ -155,6 +143,7 @@ export class Enemy extends Entity {
     }
 
     /**
+     * Wires up the animation set and recomputes renderSize from it.
      * @param {Object<string, SpriteAnimation>} animations - Named animation set.
      * @param {string} [initial='running'] - Animation to start on, and the
      *   fixed reference for renderSize/ground-line anchoring (see _drawY()).
@@ -171,10 +160,11 @@ export class Enemy extends Entity {
     }
 
     /**
+     * Starts gravity-bound left/right patrol against the level's collision.
      * @param {Collision} collision - Level collision to patrol against.
-     * @param {object} [options]
-     * @param {number} [options.speed=DEFAULT_PATROL_SPEED]
-     * @param {number} [options.gravity=DEFAULT_GRAVITY]
+     * @param {object} [options] - Optional settings.
+     * @param {number} [options.speed=DEFAULT_PATROL_SPEED] - Patrol speed, in pixels/second.
+     * @param {number} [options.gravity=DEFAULT_GRAVITY] - Gravity applied while patrolling.
      */
     enablePatrol(collision, { speed = DEFAULT_PATROL_SPEED, gravity = DEFAULT_GRAVITY } = {}) {
         this.patrolling = true;
@@ -184,9 +174,8 @@ export class Enemy extends Entity {
     }
 
     /**
-     * Scripted, physics-free constant-velocity run (menu living background)
-     * - no gravity/collision, no ledge/wall turning like enablePatrol(). The
-     * caller drives entrances/exits itself.
+     * Starts a scripted constant-velocity run - no gravity/collision, no
+     * ledge/wall turning like enablePatrol().
      * @param {number} vx - Constant horizontal velocity.
      */
     enableFreeRun(vx) {
@@ -196,7 +185,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * hitFlashTimer ticks down even once dead, so the killing blow's white flash still fades.
+     * Runs one enemy frame; hit-flash still ticks while dead.
      * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
@@ -213,7 +202,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * Direction is only reconsidered while grounded.
+     * Applies gravity and patrol movement, deferring to an active knockback.
      * @param {number} dt - Elapsed time in seconds.
      */
     _updatePatrol(dt) {
@@ -232,8 +221,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * A solid tile just past the leading edge blocks the way; no solid tile
-     * below that point means the floor is about to run out.
+     * Probes just past the leading edge for a wall or missing floor.
      * @returns {boolean}
      */
     _blockedAhead() {
@@ -248,8 +236,7 @@ export class Enemy extends Entity {
     }
 
     /**
-     * Bottom-anchored to the reference animation's ground line, not the raw
-     * hitbox edge. Shared by render() and visualTopY (HP bar placement).
+     * Bottom-anchored to the reference animation's ground line, not the raw hitbox edge.
      * @returns {number}
      */
     _drawY() {
@@ -257,6 +244,7 @@ export class Enemy extends Entity {
     }
 
     /**
+     * Centers the sprite over the hitbox.
      * @returns {number}
      */
     _drawX() {
@@ -274,6 +262,7 @@ export class Enemy extends Entity {
     }
 
     /**
+     * Draws the current animation, or the fallback sprite if none is set.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
@@ -289,6 +278,7 @@ export class Enemy extends Entity {
     }
 
     /**
+     * Draws the current frame, mirrored horizontally when facing left.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {SpriteAnimation} anim - Currently playing animation.
      */

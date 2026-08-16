@@ -1,11 +1,10 @@
 import { WRAITH_WIDTH, WRAITH_HEIGHT, TOP_MARGIN_PX } from './WraithConstants.js';
 
 /**
- * First solid `terrain`/`walls` row at pxX, scanning down from startY -
- * unlike Level.js's findGroundSurfaceY(), which always scans from row 0.
- * @param {Collision} collision
- * @param {number} pxX
- * @param {number} startY
+ * Finds the first solid row at pxX, scanning down from startY instead of row 0.
+ * @param {Collision} collision - Collision to scan against.
+ * @param {number} pxX - World X to scan down at.
+ * @param {number} startY - World Y to start scanning down from.
  * @returns {number}
  */
 function findGroundY(collision, pxX, startY) {
@@ -17,11 +16,9 @@ function findGroundY(collision, pxX, startY) {
 }
 
 /**
- * Ground/top anchors from the actual level. Also computes the two fixed X
- * anchors: the spawn position and its mirror across the level's horizontal
- * center. Returned keys match Wraith.js's own `_groundY`/`_topY`/`_sideAX`/
- * `_sideBX`/`_onSideA` fields for `Object.assign(this, ...)`.
- * @param {Collision} collision
+ * Computes ground/top Y anchors from the level, plus two fixed X anchors: the
+ * spawn position and its mirror across the level's center.
+ * @param {Collision} collision - Collision to scan against.
  * @param {number} x - World X spawn position.
  * @param {number} y - World Y spawn position.
  * @returns {{_groundY: number, _topY: number, _sideAX: number, _sideBX: number, _onSideA: boolean}}

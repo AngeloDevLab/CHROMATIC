@@ -3,17 +3,14 @@ import { Panel } from '../ui/Panel.js';
 import { buildSettingsBody, wireSettingsPanel } from '../ui/SettingsPanel.js';
 import { HowToPlayPanel } from '../ui/HowToPlayPanel.js';
 
-// Pushed on top of whatever's currently running (GameState/BossState)
-// rather than replacing it - the state underneath keeps its own
-// entities/timers exactly as they were and keeps rendering its last frame
-// behind this panel; only this state's update() runs while it's current.
+// Pushed on top of whatever's running rather than replacing it, so the
+// state underneath keeps rendering its last frame behind this panel (see
+// StateMachine.js's push()/pop()).
 //
-// The top-level Paused choices stay non-dismissible - Escape here always
-// means "unpause", handled explicitly via pop() below instead of Panel's
-// own window-level Escape listener (see Panel.open()'s closeOnEscape doc).
-// Settings (_openSettings()) reuses the same closeOnEscape: false, so
-// Escape always means "fully unpause", never "go back one level" - one
-// Escape behavior for the whole state, no race with Panel's own listener.
+// Escape always means "fully unpause" here, never "go back one level": the
+// top-level choices and Settings both use closeOnEscape: false and handle
+// Escape explicitly via pop(), instead of Panel's own window-level listener,
+// so the two Escape handlers never race.
 export class PauseState extends State {
     /**
      * Opens the Panel with the initial Paused choices.
@@ -60,6 +57,7 @@ export class PauseState extends State {
     }
 
     /**
+     * Unpauses on a Pause press.
      * @param {number} dt - Unused, kept for the State/StateMachine contract.
      */
     update(dt) {

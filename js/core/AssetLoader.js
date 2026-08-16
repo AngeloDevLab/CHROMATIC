@@ -52,6 +52,7 @@ export class AssetLoader {
     }
 
     /**
+     * Looks up a previously loaded image.
      * @param {string} key - Key an image was loaded under.
      * @returns {HTMLImageElement|undefined} The loaded image, if present.
      */
@@ -60,6 +61,7 @@ export class AssetLoader {
     }
 
     /**
+     * Looks up a previously loaded JSON file.
      * @param {string} key - Key a JSON file was loaded under.
      * @returns {object|undefined} The parsed JSON data, if present.
      */

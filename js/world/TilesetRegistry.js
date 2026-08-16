@@ -1,6 +1,5 @@
 /**
- * Tiled tileset basename
- * manifest image key + column count. 
+ * Maps each Tiled tileset basename to its manifest image key and column count.
  * Add an entry here when a new tileset is added to the project.
  */
 const TILESET_KEYS = {

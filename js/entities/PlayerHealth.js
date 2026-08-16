@@ -1,17 +1,7 @@
-/**
- * 04_health-save-system.md 5.1/5.2: both base value 100.
- */
 const MAX_HEALTH = 100;
 const MAX_SHIELD = 100;
-
-/**
- * 03_mechanics.md 4.5: "50 points (1 Secret Room) take about 50 seconds from empty".
- */
 const SHIELD_REGEN_PER_SECOND = 1;
 
-/**
- * Secret Room buff amounts (02_game-structure.md 2.5).
- */
 const BUFF_MAX_HEALTH_BONUS = 20;
 const BUFF_SHIELD_REGEN_BONUS = 0.5;
 const BUFF_MAX_SHIELD_BONUS = 20;
@@ -27,14 +17,11 @@ const INVINCIBILITY_SECONDS = 0.5;
  */
 const HIT_FLASH_SECONDS = 0.15;
 
-// Player's Health/Shield/buff bookkeeping (03_mechanics.md 4.5,
-// 02_game-structure.md 2.5), composed onto Player rather than mixed into its
-// movement/animation state. takeDamage()/kill() report back whether the hit
-// was fatal instead of entering the death animation themselves - that stays
-// an animation concern Player.js owns (see its _enterDeathAnimation()).
+// takeDamage()/kill() report back whether the hit was fatal; entering the
+// death animation stays Player.js's concern.
 export class PlayerHealth {
     /**
-     * shieldRegenPerSecond is an instance field, not the module constant directly.
+     * Sets health/shield to their max and resets all timers/flags.
      */
     constructor() {
         this.maxHealth = MAX_HEALTH;
@@ -49,7 +36,8 @@ export class PlayerHealth {
     }
 
     /**
-     * @param {'maxHealth'|'shieldRegen'|'maxShield'} buffId
+     * Applies a Secret Room buff's bonus to the matching stat.
+     * @param {'maxHealth'|'shieldRegen'|'maxShield'} buffId - Buff to apply.
      */
     applyBuff(buffId) {
         if (buffId === 'maxHealth') {
@@ -64,9 +52,8 @@ export class PlayerHealth {
     }
 
     /**
-     * 03_mechanics.md 4.5: Shield absorbs hits first, only once fully
-     * depleted does the remainder carry over to Health.
-     * @param {number} amount
+     * Shield absorbs hits first; only once depleted does the remainder carry over to Health.
+     * @param {number} amount - Damage amount.
      * @returns {boolean} Whether this hit brought health to 0.
      */
     takeDamage(amount) {
@@ -99,9 +86,8 @@ export class PlayerHealth {
     }
 
     /**
-     * Spends Prisma as a resource cost (the ranged Sword Throw), not as
-     * incoming damage - no overflow-to-health carry, invincibility window, or hit-flash.
-     * @param {number} amount
+     * Spends Shield as a resource cost, not incoming damage - no overflow-to-health, invincibility, or hit-flash.
+     * @param {number} amount - Shield amount to spend.
      * @returns {boolean} Whether there was enough to spend; doesn't partially consume on failure.
      */
     consumeShield(amount) {
@@ -111,23 +97,24 @@ export class PlayerHealth {
     }
 
     /**
-     * @param {number} dt
+     * Regenerates Shield over time, up to its max.
+     * @param {number} dt - Elapsed time in seconds.
      */
     regen(dt) {
         this.shield = Math.min(this.maxShield, this.shield + this.shieldRegenPerSecond * dt);
     }
 
-    /** Still ticks while dead, so the killing blow's white flash still fades. @param {number} dt */
+    /** Counts down the hit-flash timer; still ticks while dead. @param {number} dt - Elapsed time in seconds. */
     tickHitFlash(dt) {
         if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
     }
 
-    /** @param {number} dt */
+    /** Counts down the invincibility timer. @param {number} dt - Elapsed time in seconds. */
     tickInvincibility(dt) {
         if (this.invincibleTimer > 0) this.invincibleTimer = Math.max(0, this.invincibleTimer - dt);
     }
 
-    /** @returns {number} 0-1 white-tint amount for the current hit flash. */
+    /** White-tint amount for the current hit flash, 0-1. @returns {number} */
     get flashAmount() {
         return this.hitFlashTimer / HIT_FLASH_SECONDS;
     }

@@ -14,8 +14,8 @@ const PROJECTILE_SPEED = 400;
 const MAX_TRAVEL_PX = 300;
 
 /**
- * How far each swept sub-step advances before re-checking for a solid tile.
- * Collision.resolve()'s X-axis check is disabled for one-way levels, so this sweeps manually instead.
+ * How far each swept sub-step advances before re-checking for a solid tile;
+ * the X-axis collision check is disabled for one-way levels, so this sweeps manually.
  */
 const SWEEP_STEP_PX = 4;
 
@@ -36,10 +36,11 @@ const TRAIL_FRAME_COUNT = 8;
 const TRAIL_ECHO_SPACING_PX = 14;
 const TRAIL_ECHO_COUNT = 3;
 
-// Straight horizontal throw (03_mechanics.md 4.3's "Sword Throw") - no
-// gravity, thrown weapons in this game fly level rather than arcing.
+// Straight horizontal throw; no gravity, thrown weapons in this game fly
+// level rather than arcing.
 export class Projectile extends Entity {
     /**
+     * Spawns a thrown-sword projectile traveling in one direction.
      * @param {number} spawnCenterX - Spawn center X, not top-left.
      * @param {number} spawnCenterY - Spawn center Y.
      * @param {1|-1} direction - Travel direction.
@@ -96,6 +97,7 @@ export class Projectile extends Entity {
     }
 
     /**
+     * Draws the spinning blade and its trail echoes.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
@@ -125,8 +127,8 @@ export class Projectile extends Entity {
     }
 
     /**
-     * Draws one trail echo at position `i` behind the blade; skips it if
-     * that position is behind where the blade actually started (traveledAtEcho < 0).
+     * Draws one trail echo at position `i` behind the blade, skipping it if
+     * that position is behind the blade's start.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {number} i - Echo index, 1 (nearest) to TRAIL_ECHO_COUNT (farthest).
      */
@@ -141,11 +143,12 @@ export class Projectile extends Entity {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws one echo frame at its world position and rotation.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {number} i - Echo index, 1 (nearest) to TRAIL_ECHO_COUNT (farthest).
      * @param {number} frame - Trail sprite frame to draw.
-     * @param {number} echoX
-     * @param {number} traveledAtEcho
+     * @param {number} echoX - World X to center this echo at.
+     * @param {number} traveledAtEcho - Distance traveled at this echo's position, in pixels.
      */
     _drawEchoFrame(ctx, i, frame, echoX, traveledAtEcho) {
         ctx.save();

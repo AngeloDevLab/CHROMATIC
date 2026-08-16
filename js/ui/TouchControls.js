@@ -22,7 +22,8 @@ const TAP_BUTTONS = [
 ];
 
 /**
- * @returns {boolean} Whether this device reports any touch capability.
+ * Checks whether this device reports any touch capability.
+ * @returns {boolean}
  */
 export function isTouchCapable() {
     return navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
@@ -33,7 +34,7 @@ export function isTouchCapable() {
  * so the plate's see-through opacity doesn't also fade the icon. Caller owns
  * appending/removing it - Interactables.js's Interact prompt reuses this too.
  * @param {string} icon - Icon filename (without extension) under assets/icons/.
- * @param {string} className
+ * @param {string} className - CSS class for the button element.
  * @returns {HTMLButtonElement}
  */
 export function buildTouchButtonElement(icon, className) {
@@ -47,19 +48,13 @@ export function buildTouchButtonElement(icon, className) {
 // Virtual on-screen D-Pad/action buttons - plain HTML elements that feed
 // InputHandler's existing pressAction()/releaseAction()/triggerPress(), so
 // Player.js/CombatCoordinator.js never need to know input came from touch vs
-// a key. The Pause button always builds; the rest only on a touch-capable
-// device. Owned by LevelSession like Interactables/PlayerFx.
-//
-// Mounted to document.body, outside #ui-overlay, like LandscapeGate.js/
-// DevPanel.js - #ui-overlay is transform-scaled to the internal game
-// resolution, so anything inside it (even position: fixed) tracks the
-// scaled/letterboxed canvas rather than the physical screen corners.
-//
-// isTouchCapable() is re-checked on every resize/orientationchange, not just
-// at construction, so a DevTools device-mode toggle mid-level is picked up
-// too (same reasoning as LandscapeGate.js).
+// a key. Mounted to document.body, outside #ui-overlay, like
+// LandscapeGate.js/DevPanel.js, since #ui-overlay is transform-scaled to the
+// internal game resolution and would otherwise track the letterboxed canvas
+// instead of the physical screen corners.
 export class TouchControls {
     /**
+     * Builds the root and Pause button (always present), then starts watching for touch capability.
      * @param {Game} game - For input/overlay.
      */
     constructor(game) {
@@ -79,7 +74,8 @@ export class TouchControls {
     }
 
     /**
-     * Adds/removes the touch-only buttons when touch capability changes.
+     * Adds/removes the touch-only buttons when touch capability changes,
+     * re-checked every time so a DevTools device-mode toggle mid-level is picked up too.
      */
     _onResize() {
         const touch = isTouchCapable();
@@ -115,8 +111,9 @@ export class TouchControls {
     }
 
     /**
-     * @param {HTMLButtonElement} el
-     * @param {'left'|'right'|'jump'|'drop'} action
+     * Presses the action on pointerdown, releases it on pointerup/cancel/leave.
+     * @param {HTMLButtonElement} el - Button element to wire.
+     * @param {'left'|'right'|'jump'|'drop'} action - Held movement action to press/release.
      */
     _wireHoldButton(el, action) {
         el.addEventListener('pointerdown', (e) => {
@@ -134,8 +131,9 @@ export class TouchControls {
     }
 
     /**
-     * @param {HTMLButtonElement} el
-     * @param {'attack'|'pause'} name
+     * Triggers the one-shot action on pointerdown.
+     * @param {HTMLButtonElement} el - Button element to wire.
+     * @param {'attack'|'pause'} name - One-shot action to trigger.
      */
     _wireTapButton(el, name) {
         el.addEventListener('pointerdown', (e) => {
@@ -150,8 +148,9 @@ export class TouchControls {
     }
 
     /**
+     * Builds a button and tracks it for later removal.
      * @param {string} icon - Icon filename (without extension) under assets/icons/.
-     * @param {string} className
+     * @param {string} className - CSS class for the button element.
      * @returns {HTMLButtonElement}
      */
     _createButton(icon, className) {

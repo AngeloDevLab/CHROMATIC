@@ -6,17 +6,13 @@
  * floors); an optional wall layer is always fully solid in every direction
  * for real walls/ledges; an optional no-drop layer marks specific one-way
  * platforms as exempt from Player.js's Drop-Through-Platform ability.
- * hasFloorBelow() can't treat "any solid tile below" as a floor: this
- * tileset's platforms are visually several tiles thick (dirt continues
- * below the walkable surface), so it first skips the current platform's
- * own contiguous solid mass before scanning the gap below for a genuine
- * next floor.
  */
 export class Collision {
     /**
+     * Configures which layers this collider checks against.
      * @param {Level} level - Level whose tile layers to collide against.
      * @param {string} [layerName='Terrain/Collision'] - Primary collision layer name.
-     * @param {object} [options]
+     * @param {object} [options] - Optional settings.
      * @param {boolean} [options.oneWay=false] - Whether the primary layer only blocks from above.
      * @param {string|null} [options.wallLayerName=null] - Optional always-solid wall layer.
      * @param {string|null} [options.noDropLayerName=null] - Optional drop-exempt platform layer.
@@ -30,6 +26,7 @@ export class Collision {
     }
 
     /**
+     * Checks the primary and wall layers for a solid tile at a point.
      * @param {number} pxX - World X, pixels.
      * @param {number} pxY - World Y, pixels.
      * @returns {boolean} Whether either the primary or wall layer is solid here.
@@ -42,8 +39,7 @@ export class Collision {
     /**
      * Wall-layer-only check (Boss.js/WraithBeam.js) - deliberately excludes the
      * one-way terrain layer isSolidAt() also checks, so a boss beam is only
-     * blocked by real walls (05_enemies-bosses.md 6.3.1), not by a platform it's
-     * flying past at the same height.
+     * blocked by real walls, not by a platform it's flying past at the same height.
      * @param {number} pxX - World X, pixels.
      * @param {number} pxY - World Y, pixels.
      * @returns {boolean} Whether the wall layer is solid here.
@@ -53,6 +49,7 @@ export class Collision {
     }
 
     /**
+     * Checks a single named layer for a solid tile at a point.
      * @param {string} layerName - Tile layer to check.
      * @param {number} pxX - World X, pixels.
      * @param {number} pxY - World Y, pixels.
@@ -69,9 +66,7 @@ export class Collision {
     }
 
     /**
-     * Moves the entity by its current velocity and resolves overlaps
-     * against solid tiles axis by axis (X then Y), so diagonal movement
-     * into a corner doesn't get blocked by both axes at once.
+     * Moves the entity by its current velocity and resolves overlaps against solid tiles, axis by axis.
      * @param {Entity} entity - Entity to move and resolve.
      * @param {number} dt - Elapsed time in seconds.
      * @returns {boolean} Whether the entity ends up standing on solid ground.
@@ -104,6 +99,7 @@ export class Collision {
     }
 
     /**
+     * Resolves horizontal movement into X-axis collisions.
      * @param {Entity} entity - Entity whose X movement to resolve.
      */
     _resolveX(entity) {
@@ -137,6 +133,7 @@ export class Collision {
     }
 
     /**
+     * Resolves vertical movement into Y-axis collisions, dispatching by fall/rise direction.
      * @param {Entity} entity - Entity whose Y movement to resolve.
      * @param {number} previousBottom - Entity's bottom edge before this frame's Y movement.
      * @returns {boolean} Whether the entity ends up standing on solid ground.
@@ -211,8 +208,9 @@ export class Collision {
     }
 
     /**
-     * @param {Entity} entity
-     * @param {number} tileSize
+     * Snaps the entity's top edge to just below the tile it rose into and zeroes its rise speed.
+     * @param {Entity} entity - Entity that rose into a tile.
+     * @param {number} tileSize - Level's tile size, in pixels.
      */
     _snapBelowTile(entity, tileSize) {
         entity.y = (Math.floor(entity.y / tileSize) + 1) * tileSize;
@@ -220,6 +218,7 @@ export class Collision {
     }
 
     /**
+     * Scans a vertical span of a layer for any solid tile.
      * @param {string} layerName - Tile layer to check.
      * @param {number} pxX - World X, pixels.
      * @param {number} yTop - Top of the vertical span to scan.
@@ -235,6 +234,7 @@ export class Collision {
     }
 
     /**
+     * Scans a horizontal span of a layer for any solid tile.
      * @param {string} layerName - Tile layer to check.
      * @param {number} pxY - World Y, pixels.
      * @param {number} xLeft - Left of the horizontal span to scan.
@@ -251,7 +251,9 @@ export class Collision {
 
     /**
      * Checks whether a real floor exists below the entity's current
-     * platform, for the Drop-Through-Platform ability (Player.js).
+     * platform, for the Drop-Through-Platform ability (Player.js). Can't
+     * treat any solid tile as a floor since platforms here are several
+     * tiles thick, so it first skips the current platform's own solid mass before scanning for a genuine next floor.
      * @param {Entity} entity - Entity considering a drop.
      * @returns {boolean} Whether a real floor exists below the current platform.
      */
@@ -269,6 +271,7 @@ export class Collision {
     }
 
     /**
+     * Checks the primary and wall layers across the entity's width at one Y.
      * @param {number} pxY - World Y, pixels.
      * @param {Entity} entity - Entity whose width to scan across.
      * @returns {boolean} Whether the primary or wall layer is solid across the entity's width at this Y.

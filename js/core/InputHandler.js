@@ -1,8 +1,3 @@
-/**
- * Key -> logical action name. Movement/jump/drop are held states read via
- * isDown(); attack/pause/interact are edge-triggered one-shot presses (see
- * _presses below).
- */
 const KEY_MAP = {
     ArrowLeft: 'left', KeyA: 'left',
     ArrowRight: 'right', KeyD: 'right',
@@ -10,12 +5,12 @@ const KEY_MAP = {
     ArrowDown: 'drop', KeyS: 'drop',
 };
 
-// Edge-triggered actions follow a consume-once contract: consumeXPress()
-// returns true once then clears itself; clearXPress() discards a pending
-// press without consuming it. Pause is bound to KeyP, not Escape, since the
-// Fullscreen API reserves Escape as an unoverridable "exit fullscreen" key.
+// Held actions (left/right/jump/drop) are read via isDown(); attack/pause/interact
+// are edge-triggered via consumeXPress()/clearXPress(). Pause binds to KeyP, not
+// Escape, since the Fullscreen API reserves Escape as unoverridable.
 export class InputHandler {
     /**
+     * Sets up input state and attaches every DOM listener.
      * @param {HTMLCanvasElement} canvas - Canvas to scope mouse handling to; its parent (#viewport) scopes context-menu handling.
      */
     constructor(canvas) {
@@ -25,8 +20,7 @@ export class InputHandler {
     }
 
     /**
-     * Sets up held-action state (`actions`) and edge-triggered press state
-     * (`_presses`) - see the top-of-file note for the distinction.
+     * Sets up held-action and edge-triggered press state.
      */
     _initState() {
         this.actions = { left: false, right: false, jump: false, drop: false };
@@ -48,6 +42,7 @@ export class InputHandler {
     }
 
     /**
+     * Attaches every DOM listener InputHandler needs.
      * @param {HTMLCanvasElement} canvas - Canvas to scope mouse handling to; its parent (#viewport) scopes context-menu handling.
      */
     _registerListeners(canvas) {
@@ -77,8 +72,7 @@ export class InputHandler {
     }
 
     /**
-     * Routes a keydown to the matching held/edge-triggered action (see the
-     * top-of-file note on the key bindings).
+     * Routes a keydown to the matching held or edge-triggered action.
      * @param {KeyboardEvent} e - The browser keydown event.
      */
     _onKeyDown(e) {
@@ -93,7 +87,8 @@ export class InputHandler {
     }
 
     /**
-     * @param {KeyboardEvent} e
+     * Handles the one-shot keys not covered by KEY_MAP.
+     * @param {KeyboardEvent} e - The browser keydown event.
      * @returns {boolean} Whether this key was a one-shot press (Pause/Interact/Attack).
      */
     _handleOneShotKey(e) {
@@ -113,6 +108,7 @@ export class InputHandler {
     }
 
     /**
+     * Releases a held action on keyup.
      * @param {KeyboardEvent} e - The browser keyup event.
      */
     _onKeyUp(e) {
@@ -129,6 +125,7 @@ export class InputHandler {
     }
 
     /**
+     * Suppresses the right-click context menu over the game viewport.
      * @param {MouseEvent} e - The browser contextmenu event.
      */
     _onContextMenu(e) {
@@ -136,6 +133,7 @@ export class InputHandler {
     }
 
     /**
+     * Checks whether a held movement action is currently down.
      * @param {'left'|'right'|'jump'|'drop'} action - Held movement action to check.
      * @returns {boolean} Whether the action is currently held.
      */
@@ -144,6 +142,7 @@ export class InputHandler {
     }
 
     /**
+     * Consumes a pending edge-triggered press, if any.
      * @param {string} name - Key into _presses.
      * @returns {boolean} Whether a press was pending (and is now consumed).
      */
@@ -154,6 +153,7 @@ export class InputHandler {
     }
 
     /**
+     * Discards a pending press without consuming it.
      * @param {string} name - Key into _presses.
      */
     _clearPress(name) {
@@ -187,7 +187,7 @@ export class InputHandler {
 
     /**
      * TouchControls.js's entry point for a held movement button (left/right/jump/drop).
-     * @param {'left'|'right'|'jump'|'drop'} action
+     * @param {'left'|'right'|'jump'|'drop'} action - Held movement action to press.
      */
     pressAction(action) {
         this._active = true;
@@ -196,7 +196,8 @@ export class InputHandler {
     }
 
     /**
-     * @param {'left'|'right'|'jump'|'drop'} action
+     * TouchControls.js's entry point for releasing a held movement button.
+     * @param {'left'|'right'|'jump'|'drop'} action - Held movement action to release.
      */
     releaseAction(action) {
         this.actions[action] = false;
@@ -204,7 +205,7 @@ export class InputHandler {
 
     /**
      * TouchControls.js's entry point for a one-shot button (attack/pause/interact).
-     * @param {'attack'|'pause'|'interact'} name
+     * @param {'attack'|'pause'|'interact'} name - One-shot action to trigger.
      */
     triggerPress(name) {
         this._active = true;

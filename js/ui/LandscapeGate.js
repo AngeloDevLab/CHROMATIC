@@ -2,14 +2,10 @@ import { isTouchCapable } from './TouchControls.js';
 
 // Blocks the screen with a "rotate your device" prompt when a touch device
 // is held in portrait - the internal 640x360 resolution is landscape-only.
-// Fixed to the document, outside #ui-overlay, since it must cover the whole
-// physical screen, not just the scaled game viewport. Stays hidden on
-// non-touch devices. isTouchCapable() is re-checked on every resize, not
-// just at construction, so a DevTools device-mode toggle is picked up too.
-// Listens to both 'resize' and 'orientationchange' - some mobile browsers
-// lag a frame behind the actual rotation on 'resize' alone.
 export class LandscapeGate {
     /**
+     * Builds the prompt and listens for both resize and orientationchange,
+     * since some mobile browsers lag a frame behind rotation on resize alone.
      * @param {Game} game - Unused directly.
      */
     constructor(game) {
@@ -24,7 +20,9 @@ export class LandscapeGate {
     }
 
     /**
-     * Builds the (initially hidden) full-screen prompt.
+     * Builds the (initially hidden) full-screen prompt, fixed to the
+     * document outside #ui-overlay so it covers the whole physical screen,
+     * not just the scaled game viewport.
      */
     _buildElement() {
         this.element = document.createElement('div');
@@ -37,7 +35,8 @@ export class LandscapeGate {
     }
 
     /**
-     * Shows/hides the prompt based on the current viewport aspect ratio.
+     * Shows/hides the prompt based on the current viewport aspect ratio,
+     * re-checking isTouchCapable() every time so a DevTools device-mode toggle is picked up too.
      */
     _onOrientationChange() {
         this._isPortrait = isTouchCapable() && window.innerHeight > window.innerWidth;
@@ -45,6 +44,7 @@ export class LandscapeGate {
     }
 
     /**
+     * Game._advanceFixedSteps() reads this to drop the accumulator while blocking.
      * @returns {boolean} Whether the rotate prompt is currently covering the screen.
      */
     get isBlocking() {

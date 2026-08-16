@@ -4,6 +4,7 @@
 // the current state entirely, unwinding the whole stack first.
 export class StateMachine {
     /**
+     * Sets up an empty state registry and stack.
      * @param {Game} game - The owning Game instance, passed through to states.
      */
     constructor(game) {
@@ -58,6 +59,7 @@ export class StateMachine {
     }
 
     /**
+     * Looks up a registered state, throwing if the name is unknown.
      * @param {string} name - Name a state was registered under.
      * @returns {State} The registered state.
      */

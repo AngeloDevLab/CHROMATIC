@@ -1,44 +1,20 @@
-/**
- * Coyote time: how long after walking off a ledge a jump still counts as
- * grounded. Jump buffering: how long an early jump press still fires once grounded.
- */
 const COYOTE_TIME_SECONDS = 0.1;
 const JUMP_BUFFER_SECONDS = 0.12;
-
-/**
- * Variable jump height: releasing jump early while still rising clamps vy
- * to this fraction of full takeoff speed, for a short hop instead of
- * always launching to full height regardless of tap vs. hold.
- */
 const SHORT_HOP_VY_FRACTION = 0.45;
-
-/**
- * Movement feel: ramps vx toward the target speed instead of snapping
- * instantly. Deceleration is faster than acceleration.
- */
 const ACCELERATION = 1800;
 const DECELERATION = 2600;
-
-/**
- * How long the player can stand idle (grounded, not attacking, no
- * horizontal velocity) before the AFK enter/loop animation takes over -
- * reset by any input, see _updateAfkTimer().
- */
 const AFK_TRIGGER_SECONDS = 15;
 
 /**
- * Drop-Through-Platform (03_mechanics.md 4.2, replaces the
- * originally-planned Duck): just enough to push the player past the
- * one-way collision's "already below this surface" threshold before
- * Collision.resolve() runs this same frame - gravity does the rest, no
- * multi-frame "falling through" state needed.
+ * Just enough to push past the one-way collision's landed-this-frame check; gravity finishes the fall.
  */
 const DROP_NUDGE_PX = 4;
 
 /**
- * @param {number} current
- * @param {number} target
- * @param {number} maxDelta
+ * Steps a value toward a target by at most maxDelta.
+ * @param {number} current - Starting value.
+ * @param {number} target - Value to step toward.
+ * @param {number} maxDelta - Maximum change allowed this step.
  * @returns {number}
  */
 function moveToward(current, target, maxDelta) {
@@ -47,24 +23,21 @@ function moveToward(current, target, maxDelta) {
     return current;
 }
 
-// Player's real keyboard-driven movement (Run/Jump/Drop Through Platform/
-// Attack-locks-movement), composed onto Player as this.movement - holds a
-// `player` reference and reads/writes that instance's own fields directly.
-//
-// Jump sequencing: _tryGroundJump() runs before _tryDoubleJump() each frame,
-// so the two never both fire on the same frame. Walking off a ledge without
-// jumping lets the next mid-air press fire as the "double" jump even
-// without a first one - intentional, the usual one-bonus-airborne-jump convention.
+// _tryGroundJump() runs before _tryDoubleJump() each frame, so the two never
+// both fire the same frame. Walking off a ledge without jumping still lets
+// the next mid-air press fire as the double jump - the usual one-bonus-airborne-jump convention.
 export class PlayerMovement {
     /**
-     * @param {Player} player
+     * Binds this movement module to the Player it controls.
+     * @param {Player} player - Owning Player instance to control.
      */
     constructor(player) {
         this.player = player;
     }
 
     /**
-     * @param {number} dt
+     * Runs one movement frame.
+     * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
         const player = this.player;
@@ -79,8 +52,9 @@ export class PlayerMovement {
     }
 
     /**
-     * @param {number} dt
-     * @param {boolean} groundedAttack
+     * Advances physics for one frame.
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {boolean} groundedAttack - Whether the player is mid-swing while grounded.
      */
     _updatePhysics(dt, groundedAttack) {
         this._updateJumpTimers(dt);
@@ -91,7 +65,9 @@ export class PlayerMovement {
     }
 
     /**
-     * @param {number} dt
+     * Resolves collision, flags landing VFX on the grounded edge, and clears
+     * the attack lock once its animation finishes.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _resolveCollision(dt) {
         const player = this.player;
@@ -102,9 +78,8 @@ export class PlayerMovement {
     }
 
     /**
-     * Only accrues while otherwise idle (grounded, not attacking, standing
-     * still); any held movement key or one-shot press (attack/pause/interact/touch) resets it.
-     * @param {number} dt
+     * Accrues while idle; resets on any input, held or one-shot.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateAfkTimer(dt) {
         const player = this.player;
@@ -129,10 +104,9 @@ export class PlayerMovement {
     }
 
     /**
-     * Coyote time: player.grounded still reflects last frame's collision
-     * result here (this frame's own resolve() happens later). Jump
-     * buffering: a press is queued for JUMP_BUFFER_SECONDS.
-     * @param {number} dt
+     * Ticks the coyote and jump-buffer timers; `player.grounded` here still
+     * reflects last frame's result.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _updateJumpTimers(dt) {
         const player = this.player;
@@ -144,11 +118,10 @@ export class PlayerMovement {
     }
 
     /**
-     * Attack only roots the player while grounded; airborne, physics keep
-     * running normally. A knockback push or an active Dash burst overrides
-     * this entirely until it expires.
-     * @param {number} dt
-     * @param {boolean} groundedAttack
+     * Computes horizontal velocity; attack roots the player only while
+     * grounded, and knockback/Dash override it entirely until they expire.
+     * @param {number} dt - Elapsed time in seconds.
+     * @param {boolean} groundedAttack - Whether the player is mid-swing while grounded.
      */
     _updateHorizontalVelocity(dt, groundedAttack) {
         const player = this.player;
@@ -162,6 +135,7 @@ export class PlayerMovement {
     }
 
     /**
+     * Computes target horizontal speed from input and updates facing.
      * @returns {number} Target horizontal speed from held movement keys.
      */
     _resolveTargetVx() {
@@ -180,7 +154,8 @@ export class PlayerMovement {
     }
 
     /**
-     * @param {number} dt
+     * Applies gravity, then jump/double-jump/short-hop resolution.
+     * @param {number} dt - Elapsed time in seconds.
      */
     _applyGravityAndJump(dt) {
         const player = this.player;
@@ -193,7 +168,7 @@ export class PlayerMovement {
     }
 
     /**
-     * Coyote-time/jump-buffer-gated normal jump.
+     * Attempts a normal ground jump.
      * @returns {boolean} Whether it fired.
      */
     _tryGroundJump() {
@@ -207,7 +182,7 @@ export class PlayerMovement {
     }
 
     /**
-     * Fires the double jump if unlocked, unused, and a jump press is buffered.
+     * Attempts a double jump.
      * @returns {boolean} Whether it fired.
      */
     _tryDoubleJump() {
@@ -221,8 +196,7 @@ export class PlayerMovement {
     }
 
     /**
-     * Only if there's a real floor below to land on (Collision.hasFloorBelow,
-     * not a pit) and the current platform isn't tagged no-drop (Collision.isNoDropBelow).
+     * Nudges the player through a droppable one-way platform.
      */
     _updateDropThrough() {
         const player = this.player;
@@ -233,9 +207,8 @@ export class PlayerMovement {
     }
 
     /**
-     * Locks movement for the swing's duration (base Attack, as opposed to the
-     * later Air Attack/Slide+Attack unlockables) - gravity and collision keep
-     * resolving normally, only horizontal input is ignored.
+     * Starts the attack; gravity and collision keep resolving normally,
+     * only horizontal input is locked for the swing's duration.
      */
     _startAttack() {
         const player = this.player;
@@ -246,8 +219,7 @@ export class PlayerMovement {
     }
 
     /**
-     * Airborne takes priority over running/idle regardless of horizontal
-     * input. Switching animations resets it.
+     * Switches to the next animation, if it changed.
      */
     _updateAnimationState() {
         const player = this.player;
@@ -259,6 +231,7 @@ export class PlayerMovement {
     }
 
     /**
+     * Picks the animation for this frame.
      * @returns {string}
      */
     _resolveNextAnimation() {
@@ -270,10 +243,8 @@ export class PlayerMovement {
     }
 
     /**
-     * Idle sub-state machine: idle -> afkEnter (one-shot) -> afk (loops)
-     * once afkTimer crosses the threshold, collapsing straight back to idle
-     * the instant input resumes (afkTimer resets to 0 the same frame in
-     * _updateAfkTimer(), no separate wake-up animation).
+     * Picks idle, afkEnter, or afk based on the afk timer; collapses back to
+     * idle instantly once input resumes, with no separate wake-up animation.
      * @returns {'idle'|'afkEnter'|'afk'}
      */
     _resolveIdleAnimation() {

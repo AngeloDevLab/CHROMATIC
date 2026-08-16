@@ -3,9 +3,6 @@ import { Token } from '../../entities/Token.js';
 import { MerchantDialogue } from '../../ui/MerchantDialogue.js';
 import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from './InteractPrompt.js';
 
-/**
- * Horizontal spacing between multiple Tokens dropped by a boss.
- */
 const TOKEN_DROP_OFFSET_PX = 28;
 
 /**
@@ -13,9 +10,6 @@ const TOKEN_DROP_OFFSET_PX = 28;
  */
 const MINIBOSS_DIALOGUE_TEXT = "Heh, another wanderer with color to spare. Slay the Wraith that haunts the Grey City, and we'll talk business.";
 
-/**
- * 03_mechanics.md 4.4: "An ability costs 2 Tokens."
- */
 const ABILITY_TOKEN_COST = 2;
 
 /**
@@ -23,17 +17,12 @@ const ABILITY_TOKEN_COST = 2;
  */
 const SHOP_MIN_TOKEN_REWARD = ABILITY_TOKEN_COST;
 
-/**
- * 03_mechanics.md 4.4: "Double Jump and Dash are guaranteed first options
- * at the Prologue Merchant."
- */
 const ABILITY_SHOP_OPTIONS = [
     { id: 'doubleJump', label: 'Double Jump', description: 'Press Jump twice.', cost: ABILITY_TOKEN_COST },
     { id: 'dash', label: 'Dash', description: 'Press A or D twice quickly to dash in that direction.', cost: ABILITY_TOKEN_COST },
 ];
 
-// Post-boss Merchant (05_enemies-bosses.md 6.2). Doesn't spawn until the
-// boss is dead and every dropped Token is collected.
+// Post-boss Merchant. Doesn't spawn until the boss is dead and every dropped Token is collected.
 //
 // updatePrompt() hides its prompt immediately when [E] opens the dialogue,
 // since opening MerchantDialogue freezes LevelSession's update loop and
@@ -44,10 +33,11 @@ const ABILITY_SHOP_OPTIONS = [
 // claimed as soon as the boss dies, not once its Tokens are picked up.
 export class MerchantInteractable {
     /**
-     * @param {Game} game
-     * @param {Level} level
-     * @param {Player} player
-     * @param {object} options
+     * Finds the level's Merchant marker and builds its dialogue/prompt.
+     * @param {Game} game - Owning Game instance.
+     * @param {Level} level - The loaded level, for its Merchant marker.
+     * @param {Player} player - For proximity/range checks.
+     * @param {object} options - Construction settings.
      * @param {Collision} options.collision - For the boss-drop Tokens' fall onto the floor.
      * @param {number} options.levelNumber - To key `Game.claimedBossTokens` in onBossDefeated().
      */
@@ -82,9 +72,9 @@ export class MerchantInteractable {
 
     /**
      * Spreads `count` Tokens evenly around centerX, TOKEN_DROP_OFFSET_PX apart.
-     * @param {number} centerX
-     * @param {number} centerY
-     * @param {number} count
+     * @param {number} centerX - World X to center the Token spread on.
+     * @param {number} centerY - World Y to drop the Tokens at.
+     * @param {number} count - How many Tokens to spawn.
      * @returns {Token[]}
      */
     _buildTokenDrop(centerX, centerY, count) {
@@ -95,7 +85,7 @@ export class MerchantInteractable {
 
     /**
      * Updates dropped Tokens until collected, then spawns the Merchant once all are gone.
-     * @param {number} dt
+     * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
         if (!this._tokens.length) return;
@@ -107,7 +97,8 @@ export class MerchantInteractable {
     }
 
     /**
-     * @param {Token} token
+     * Collects a Token on player overlap, awarding it and playing feedback.
+     * @param {Token} token - Token to check for pickup.
      * @returns {boolean} Whether this Token was just picked up.
      */
     _collectToken(token) {
@@ -119,7 +110,8 @@ export class MerchantInteractable {
     }
 
     /**
-     * @param {Entity} entity
+     * Checks whether an entity's bounds overlap the player's.
+     * @param {Entity} entity - Entity to check against the player's bounds.
      * @returns {boolean}
      */
     _overlapsPlayer(entity) {
@@ -130,8 +122,8 @@ export class MerchantInteractable {
 
     /**
      * No-op until the Merchant has spawned (all Tokens collected).
-     * @param {Camera} camera
-     * @param {boolean} interactPressed
+     * @param {Camera} camera - Camera to position the prompt against.
+     * @param {boolean} interactPressed - Whether Interact was pressed this frame.
      */
     updatePrompt(camera, interactPressed) {
         if (!this._merchant) return;
@@ -165,6 +157,7 @@ export class MerchantInteractable {
     }
 
     /**
+     * Spends Tokens to unlock an ability, if affordable and not already owned.
      * @param {string} id - One of ABILITY_SHOP_OPTIONS's ids.
      * @param {number} cost - That option's Token cost.
      * @returns {boolean} Whether the purchase went through.
@@ -180,7 +173,8 @@ export class MerchantInteractable {
     }
 
     /**
-     * @param {CanvasRenderingContext2D} ctx
+     * Draws the Merchant and any still-uncollected Tokens.
+     * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
         this._merchant?.render(ctx);

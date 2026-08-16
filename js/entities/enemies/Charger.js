@@ -1,46 +1,23 @@
 import { Enemy } from '../Enemy.js';
 
-/**
- * 05_enemies-bosses.md 6.5 (Zone 2+ balancing draft) - distinct from the
- * base Enemy/Patroller defaults (50 HP, see Enemy.js).
- */
 const CHARGE_HP = 25;
-
-/**
- * Nudged down twice now (170 -> 140 -> 115) - first-guess, needs playtesting.
- */
 const DEFAULT_CHARGE_SPEED = 115;
-
-/**
- * How close (and how level with the charger, vertically) the player needs
- * to be to trigger a charge.
- */
 const CHARGE_RANGE_PX = 190;
 const CHARGE_HEIGHT_TOLERANCE_PX = 24;
 
 /**
- * A charge travels this far and then stops, win or lose. Facing is locked
- * at the start, not re-aimed every frame.
+ * Facing is locked at the start of a charge, not re-aimed every frame.
  */
 const DEFAULT_CHARGE_DISTANCE_PX = 210;
 
-/**
- * After a charge ends (wall hit or losing the player), how long before it
- * can trigger another one.
- */
 const DEFAULT_CHARGE_COOLDOWN_SECONDS = 5;
 
-// Charger behavior (05_enemies-bosses.md 6.1: "Spots the player, rushes in").
 // Patrols like the base Enemy/Patroller until the player comes within range
 // on roughly the same floor, then rushes at chargeSpeed instead of
 // patrolSpeed - overrides _updatePatrol() rather than duplicating it.
-//
-// While charging, applyAttackKnockback() (active attacks) is voided; damage
-// still applies, only the stagger is skipped. Passive contact-push
-// (applyKnockback()) is untouched, so running into the player still ends
-// the charge, like hitting a wall does.
 export class Charger extends Enemy {
     /**
+     * Sets Charger's HP and default charge state.
      * @param {number} x - World X position.
      * @param {number} y - World Y position.
      * @param {HTMLImageElement} sprite - Fallback static sprite.
@@ -61,11 +38,12 @@ export class Charger extends Enemy {
     }
 
     /**
+     * Arms this Charger to track a player and rush it once in range.
      * @param {Player} player - Player instance to watch for range/line of sight.
-     * @param {object} [options]
-     * @param {number} [options.chargeSpeed=DEFAULT_CHARGE_SPEED]
-     * @param {number} [options.chargeCooldownSeconds=DEFAULT_CHARGE_COOLDOWN_SECONDS]
-     * @param {number} [options.chargeDistance=DEFAULT_CHARGE_DISTANCE_PX]
+     * @param {object} [options] - Optional settings.
+     * @param {number} [options.chargeSpeed=DEFAULT_CHARGE_SPEED] - Speed while charging.
+     * @param {number} [options.chargeCooldownSeconds=DEFAULT_CHARGE_COOLDOWN_SECONDS] - Seconds between charges.
+     * @param {number} [options.chargeDistance=DEFAULT_CHARGE_DISTANCE_PX] - Max distance a charge travels.
      */
     enableCharge(player, {
         chargeSpeed = DEFAULT_CHARGE_SPEED,
@@ -88,6 +66,7 @@ export class Charger extends Enemy {
     }
 
     /**
+     * Runs one frame of gravity, knockback-or-charge movement, and animation.
      * @param {number} dt - Elapsed time in seconds.
      */
     _updatePatrol(dt) {
@@ -106,8 +85,7 @@ export class Charger extends Enemy {
     }
 
     /**
-     * Ends any active charge when contact-damage knockback lands, same as
-     * running into a wall. Leaves vx untouched (whatever applyKnockback() set it to).
+     * Ends any active charge when contact-damage knockback lands, same as running into a wall.
      * @param {number} dt - Elapsed time in seconds.
      */
     _updateKnockback(dt) {
@@ -131,6 +109,7 @@ export class Charger extends Enemy {
     }
 
     /**
+     * Starts a charge when eligible, or advances/ends one already running.
      * @param {number} dt - Elapsed time in seconds.
      */
     _updateGroundedCharge(dt) {
@@ -155,7 +134,7 @@ export class Charger extends Enemy {
     }
 
     /**
-     * Swaps to the charge sprite while charging, resetting on switch so it never starts mid-frame.
+     * Swaps to the charge sprite while charging, resetting on switch.
      */
     _updateChargeAnimation() {
         if (!this.animations?.charge) return;
@@ -168,6 +147,7 @@ export class Charger extends Enemy {
     }
 
     /**
+     * Checks whether the player is within charge range and height.
      * @returns {boolean}
      */
     _canSeePlayer() {

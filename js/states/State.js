@@ -1,5 +1,6 @@
 export class State {
     /**
+     * Stores the owning Game instance.
      * @param {Game} game - The owning Game instance.
      */
     constructor(game) {

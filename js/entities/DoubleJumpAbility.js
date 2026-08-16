@@ -1,19 +1,15 @@
-// Composed onto Player as this.doubleJump (Player.js's _initAbilityState()) -
-// purely queried/mutated from inside PlayerMovement.js's existing jump code
-// (_applyGravityAndJump()'s _tryDoubleJump(), _updateJumpTimers()'s reset()
-// call), no per-frame update() of its own needed.
+// Composed onto Player as this.doubleJump. Purely queried/mutated from
+// PlayerMovement.js's jump code - no per-frame update() of its own.
 export class DoubleJumpAbility {
     /**
-     * unlocked gates whether _tryDoubleJump() can fire at all (see
-     * Player.unlockAbility()); used tracks the current grounded cycle's
-     * extra jump, reset() by PlayerMovement._updateJumpTimers().
+     * Sets up the unlock flag and used-this-cycle flag.
      */
     constructor() {
         this.unlocked = false;
         this.used = false;
     }
 
-    /** Re-arms the extra jump - called once by PlayerMovement._updateJumpTimers() the frame it's grounded. */
+    /** Re-arms the extra jump. */
     reset() {
         this.used = false;
     }

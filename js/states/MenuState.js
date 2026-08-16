@@ -26,8 +26,7 @@ const ENEMY_FRAME_SIZE = 64;
 const BACKGROUND_OVERLAP_PX = 32;
 
 /**
- * Difficulty scales only incoming damage (04_health-save-system.md 5.3) -
- * enemy HP and the player's own damage stay the same across all three.
+ * Difficulty scales only incoming damage - enemy HP and the player's own damage stay the same across all three.
  */
 const DIFFICULTIES = [
     { id: 'easy', label: 'Easy', description: 'Can afford mistakes, survives several hits. (-50% incoming damage)' },
@@ -42,9 +41,8 @@ const DIFFICULTIES = [
 //
 // New Game opens Difficulty selection below, which resets existing
 // progress (Game.resetProgress()) before continuing into CutsceneState ->
-// WorldmapState (08_menu-flow.md 9.2) - without that reset, a persisted
-// save would make New Game silently resume the old one instead of
-// actually restarting.
+// WorldmapState - without that reset, a persisted save would make New Game
+// silently resume the old one instead of actually restarting.
 export class MenuState extends State {
     /**
      * Builds the living-background scene and the menu overlay.
@@ -84,7 +82,7 @@ export class MenuState extends State {
     }
 
     /**
-     * Permanent reveal (same mode as real gameplay, 03_mechanics.md 4.1), erased by the patroller pass.
+     * Permanent reveal (same mode as real gameplay), erased by the patroller pass.
      */
     _buildColorZone() {
         this.colorZone = new ColorZone(this.game.width, this.game.height, REVEAL_RADIUS, {
@@ -105,6 +103,7 @@ export class MenuState extends State {
     }
 
     /**
+     * Spawns the decorative player actor for the living background.
      * @param {number} groundY - World-space Y of the player's feet.
      */
     _buildPlayerActor(groundY) {
@@ -116,6 +115,7 @@ export class MenuState extends State {
     }
 
     /**
+     * Spawns the decorative patroller actor for the living background.
      * @param {number} groundSurfaceY - World-space Y of the visible ground surface.
      */
     _buildEnemyActor(groundSurfaceY) {
@@ -127,9 +127,7 @@ export class MenuState extends State {
     }
 
     /**
-     * Random direction each pass (03_mechanics.md 4.1's living-background
-     * demo); starts off the canvas edge on the entering side, ends once
-     * fully off the far edge (see _hasExited()).
+     * Random direction each pass; starts off the canvas edge on the entering side, ends once fully off the far edge (see _hasExited()).
      */
     _startPlayerPass() {
         const direction = Math.random() < 0.5 ? 1 : -1;
@@ -149,7 +147,8 @@ export class MenuState extends State {
     }
 
     /**
-     * @param {Entity} entity
+     * Checks whether an entity has fully left the screen in its direction of travel.
+     * @param {Entity} entity - Entity to check against the screen bounds.
      * @returns {boolean}
      */
     _hasExited(entity) {
@@ -185,6 +184,7 @@ export class MenuState extends State {
     }
 
     /**
+     * Dispatches a menu button selection to its handler.
      * @param {string} id - Selected menu item id.
      */
     _handleMenuSelect(id) {
@@ -233,6 +233,7 @@ export class MenuState extends State {
     }
 
     /**
+     * Builds the difficulty-choice buttons' markup.
      * @returns {string} Markup for the difficulty-choice buttons.
      */
     _buildDifficultyOptionsHTML() {
@@ -273,6 +274,7 @@ export class MenuState extends State {
     }
 
     /**
+     * Advances whichever actor's pass is currently playing.
      * @param {number} dt - Elapsed time in seconds.
      */
     update(dt) {
@@ -291,6 +293,7 @@ export class MenuState extends State {
     }
 
     /**
+     * Draws the background, color overlay, and whichever actor is active.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
