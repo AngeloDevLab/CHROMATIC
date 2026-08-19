@@ -4,6 +4,11 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.20.1] - 2026-08-19
+
+### Changed
+- Every file in the repo renamed to kebab-case: all of `js/` (`Main.js` -> `main.js`, `AssetLoader.js` -> `asset-loader.js`, etc.), `docs/GDD/*.md` (`00_elevator-pitch.md` -> `00-elevator-pitch.md`, `_ideas-inbox.md` -> `ideas-inbox.md`), fonts, tilesets (+ their `.tsx` companions), level exports (`Lv_1.json` -> `lv-1.json`, `mainMenu.*` -> `main-menu.*`), OST tracks, and the two boss art folders (`Lv_3_Boss`/`lv_6_boss` -> `lv-3-boss`/`lv-6-boss`) - 138 files/folders total, done via `git mv` to preserve history. All imports, the `LoadingState.js` asset manifest, Tiled JSON/`.tmx` tileset sources, CSS `url()`s, and GDD cross-links updated to match. `TilesetRegistry.js`'s `TILESET_KEYS` entries needed quoting (`tileset-grass` etc. aren't valid unquoted object keys). `README.md`/`LICENSE`/`CHANGELOG.md`/`CLAUDE.md`/`TODO.md` and dotfiles kept their conventional names; `credits.json`'s third-party filenames (original names on their source sites) left untouched.
+
 ## [0.20.0] - 2026-08-16
 
 ### Added

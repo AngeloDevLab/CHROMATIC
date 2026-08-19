@@ -1,7 +1,7 @@
 @font-face {
     font-family: 'Jersey 10';
-    src: url('assets/fonts/Jersey10-Regular.woff2') format('woff2'),
-        url('assets/fonts/Jersey10-Regular.woff') format('woff');
+    src: url('assets/fonts/jersey10-regular.woff2') format('woff2'),
+        url('assets/fonts/jersey10-regular.woff') format('woff');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -9,8 +9,8 @@
 
 @font-face {
     font-family: 'Jacquard 24';
-    src: url('assets/fonts/Jacquard24-Regular.woff2') format('woff2'),
-        url('assets/fonts/Jacquard24-Regular.woff') format('woff');
+    src: url('assets/fonts/jacquard24-regular.woff2') format('woff2'),
+        url('assets/fonts/jacquard24-regular.woff') format('woff');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -18,8 +18,8 @@
 
 @font-face {
     font-family: 'Mozilla Headline';
-    src: url('assets/fonts/MozillaHeadline-Regular.woff2') format('woff2'),
-        url('assets/fonts/MozillaHeadline-Regular.woff') format('woff');
+    src: url('assets/fonts/mozilla-headline-regular.woff2') format('woff2'),
+        url('assets/fonts/mozilla-headline-regular.woff') format('woff');
     font-weight: normal;
     font-style: normal;
     font-display: swap;
@@ -215,14 +215,14 @@ body {
     margin-bottom: calc(12px * var(--hud-scale));
 }
 
-/* MerchantDialogue.js passes an empty title (its own layout puts the name
+/* merchant-dialogue.js passes an empty title (its own layout puts the name
    next to the portrait instead, see .merchant-name below) - without this,
    the empty <h2> would still keep panel-title's margin-bottom as blank space. */
 .panel-title:empty {
     display: none;
 }
 
-/* MerchantDialogue.js's portrait/name/text layout, in place of Panel's
+/* merchant-dialogue.js's portrait/name/text layout, in place of Panel's
    generic title bar. */
 .merchant-dialogue {
     display: flex;
@@ -265,7 +265,7 @@ body {
     color: rgba(242, 242, 242, 0.75);
 }
 
-/* Info/HowToPlayPanel.js's prose - Jersey 10's pixel look is hard to read at
+/* Info/how-to-play-panel.js's prose - Jersey 10's pixel look is hard to read at
    length, so their body text switches to Mozilla Headline; headings stay
    Jersey 10 to match the rest of the panel chrome. */
 .readable-body {
@@ -291,7 +291,7 @@ body {
     text-decoration: underline;
 }
 
-/* MenuState.js's Legal Notice/Privacy Policy - marks a still-unfilled
+/* menu-state.js's Legal Notice/Privacy Policy - marks a still-unfilled
    placeholder field ([First name Last name], etc.) in a color that can't be
    missed by accident before this ever goes live. */
 .legal-placeholder {
@@ -417,7 +417,7 @@ body {
     opacity: 0.8;
 }
 
-/* MerchantDialogue.js's shop grid (_buildShopSectionHTML()) - card shape
+/* merchant-dialogue.js's shop grid (_buildShopSectionHTML()) - card shape
    borrowed from .difficulty-option rather than inventing a third button
    style. No separate Token-count readout - each option shows its own cost
    instead (see .merchant-shop-cost below). */
@@ -514,7 +514,7 @@ body {
     cursor: default;
 }
 
-/* HowToPlayPanel.js's written sections - heading + paragraph, no preview
+/* how-to-play-panel.js's written sections - heading + paragraph, no preview
    art, so a plain stacked block list is enough (no row/flex needed). */
 .how-to-play-section {
     margin-bottom: calc(14px * var(--hud-scale));
@@ -592,7 +592,7 @@ body {
     padding: 0;
     border: none;
     background-color: transparent;
-    background-image: url('assets/icons/wm_btn_default.png');
+    background-image: url('assets/icons/wm-btn-default.png');
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -618,12 +618,12 @@ body {
 }
 
 .worldmap-node.locked::before {
-    background-image: url('assets/icons/wm_btn_locked.png');
+    background-image: url('assets/icons/wm-btn-locked.png');
     opacity: 1;
 }
 
 .worldmap-node.completed::before {
-    background-image: url('assets/icons/wm_btn_completed.png');
+    background-image: url('assets/icons/wm-btn-completed.png');
     opacity: 1;
 }
 
@@ -631,7 +631,7 @@ body {
     content: '';
     position: absolute;
     inset: 0;
-    background-image: url('assets/icons/wm_btn_selected.png');
+    background-image: url('assets/icons/wm-btn-selected.png');
     background-size: contain;
     background-repeat: no-repeat;
     opacity: 0;
@@ -809,7 +809,7 @@ body {
     white-space: nowrap;
 }
 
-/* [E] Talk/Exit Level prompts (Interactables.js) - position already tracks
+/* [E] Talk/Exit Level prompts (interactables.js) - position already tracks
    the portal/merchant's world position via camera math (unaffected by this),
    only font-size reads --hud-scale (see :root above) so the text itself
    stays readable at the same on-screen size during a boss fight. */
@@ -824,8 +824,8 @@ body {
     white-space: nowrap;
 }
 
-/* Interactables.js's _createInteractPrompt() adds this on a touch device -
-   stacks the real Interact icon button (TouchControls.js's
+/* interactables.js's _createInteractPrompt() adds this on a touch device -
+   stacks the real Interact icon button (touch-controls.js's
    buildTouchButtonElement(), .interact-prompt-icon override below) above
    the same text label desktop gets, centered as a group instead of the
    plain floating text above. */
@@ -857,7 +857,7 @@ body {
     pointer-events: auto;
 }
 
-/* BossState.js's top-center HP bar label - screen-fixed like .hud-value,
+/* boss-state.js's top-center HP bar label - screen-fixed like .hud-value,
    left/top set inline per-frame since the bar centers on the current
    buffer width (varies per boss arena), not a fixed position. font-size
    reads --hud-scale (see :root above), same reasoning as .hud-value. */
@@ -872,14 +872,14 @@ body {
     white-space: nowrap;
 }
 
-/* HUD.js's renderBossBar() shifts the bar's own fill to the same color once
-   boss.enraged (Boss.js) - Phase 2's only visible tell besides the moveset
+/* hud.js's renderBossBar() shifts the bar's own fill to the same color once
+   boss.enraged (boss.js) - Phase 2's only visible tell besides the moveset
    itself ticking faster. */
 .boss-name-label.enraged {
     color: #ff8a3f;
 }
 
-/* BossState.js's HP value readout ("150/150"), right below the canvas bar -
+/* boss-state.js's HP value readout ("150/150"), right below the canvas bar -
    same 16px base as .hud-value's player numbers; --hud-scale (see :root
    above) keeps it that same size on screen regardless of the arena's
    buffer size. */
@@ -906,7 +906,7 @@ body {
     line-height: 1;
 }
 
-/* Dev Panel (js/ui/DevPanel.js) - fixed outside #ui-overlay, deliberately
+/* Dev Panel (js/ui/dev-panel.js) - fixed outside #ui-overlay, deliberately
    unscaled so it stays readable at any window/game scale. Toggled with the
    physical key above Tab/left of 1 (Backquote). */
 .dev-panel {
@@ -1024,7 +1024,7 @@ body {
     cursor: default;
 }
 
-/* TouchControls.js's root - fixed outside #ui-overlay like .dev-panel/
+/* touch-controls.js's root - fixed outside #ui-overlay like .dev-panel/
    .landscape-gate, so its buttons anchor to the physical screen corners
    instead of the scaled/letterboxed game viewport. */
 .touch-controls-root {
@@ -1034,7 +1034,7 @@ body {
     pointer-events: none;
 }
 
-/* TouchControls.js's virtual buttons - each is a plate (.touch-button-bg,
+/* touch-controls.js's virtual buttons - each is a plate (.touch-button-bg,
    faded so the game reads through it) with a fully opaque icon layered on
    top (.touch-button-icon), kept as separate children rather than one flat
    image so the opacity only ever touches the plate. Sizes/positions are
@@ -1074,7 +1074,7 @@ body {
 }
 
 /* Mouse-only hover feedback (the Pause button is the one .touch-button
-   that's always on screen on desktop too, see TouchControls.js) - scoped to
+   that's always on screen on desktop too, see touch-controls.js) - scoped to
    devices that actually support a real, non-sticky hover so a touchscreen's
    post-tap "stuck hover" never fights the .pressed class above. */
 @media (hover: hover) and (pointer: fine) {
@@ -1121,7 +1121,7 @@ body {
     right: 12px;
 }
 
-/* LandscapeGate.js - fixed outside #ui-overlay like .dev-panel, has to
+/* landscape-gate.js - fixed outside #ui-overlay like .dev-panel, has to
    cover the whole physical screen rather than the scaled game viewport.
    Hidden by default, .visible toggled on portrait orientation. */
 .landscape-gate {

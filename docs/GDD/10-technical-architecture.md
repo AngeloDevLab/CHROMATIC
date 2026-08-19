@@ -1,0 +1,166 @@
+# 11. Technical Architecture
+
+## 11.1 Tech Stack
+
+- HTML5 Canvas for rendering
+- Vanilla JavaScript - ES Modules
+- OOP with classes and inheritance
+- State-driven architecture
+- LocalStorage for save data
+
+## 11.2 Folder Structure
+
+| Folder | Content |
+|---|---|
+| core/ | game.js, state-machine.js, asset-loader.js, input-handler.js, sound-manager.js, music-playlist.js, save-system.js |
+| states/ | state.js (base), LoadingState, MenuState, WorldmapState, PauseState, BuffState, GameOverState, CutsceneState, plus GameState/BossState - both thin wrappers around the shared level-session.js that owns the actual level's entities/camera/HUD |
+| entities/ | entity.js (base), enemy.js (base), boss.js (base), player.js (with its composed player-health.js/player-renderer.js), double-jump-ability.js/dash-ability.js, enemy-factory.js, character-animations.js, and the level-interactable entities (portal.js, token.js, merchant.js, secret-door.js, buff-terminal.js, trapdoor.js, projectile.js, vfx-effect.js) |
+| entities/enemies/ | charger.js, sentinel.js, shooter.js, shooter-projectile.js - Patroller has no dedicated subclass, it's the base enemy.js with patrol behavior enabled (see enemy-factory.js) |
+| entities/bosses/ | wraith.js (shared Miniboss/Templateboss moveset, extends boss.js), wraith-beam.js, wraith-templateboss.js (extends wraith.js) |
+| mechanics/ | color-zone.js, combat.js, combat-coordinator.js, enemy-roster.js, interactables.js, player-fx.js, death-sequence.js |
+| world/ | level.js, tileset-registry.js |
+| ui/ | hud.js, panel.js, menu-buttons.js, settings-panel.js, damage-numbers.js, merchant-dialogue.js, touch-controls.js, landscape-gate.js, dev-panel.js |
+| utils/ | camera.js, collision.js, sprite-animation.js |
+
+Inheritance chain: Entity → Enemy → Boss → Wraith → WraithTemplateboss (a future Chapterboss would extend Boss the same way). Charger/Sentinel/Shooter inherit directly from Enemy, Patroller is the base Enemy class itself, Player inherits directly from Entity. Abilities (DoubleJump/Dash, Wall Jump not yet built) are not inheritance, but composition - they're attached to the Player as Ability instances.
+
+### 11.2.1 Assets Folder
+
+| Folder | Content |
+|---|---|
+| assets/images/character/ | Player sprite sheets (e.g. `idle.png`, `running.png`) |
+| assets/images/enemys/ | Enemy + boss sprite sheets, one subfolder per type |
+| assets/images/objects/ | Interactable/prop sprites (Token, Portal, Trapdoor, Merchant, etc.) |
+| assets/images/vfx/ | Dash/jump/landing smoke sheets |
+| assets/images/tilesets/ | Tileset PNGs + their Tiled `.tsx` companion files |
+| assets/images/backgrounds/ | Shared forest backdrop + per-scene background images (no parallax subfolder - a separately-scrolling parallax layer was tried and dropped for now, see the Background Layering note under 11.6.1 below) |
+| assets/icons/ | UI icons (touch controls, ability/menu icons) |
+| assets/levels/ | Tiled JSON level exports |
+| assets/fonts/ | Self-hosted font files (see [09-audio-visual.md](09-audio-visual.md) 10.1) |
+| assets/sounds/ost/, assets/sounds/sfx/ | Music tracks, sound effect files |
+| assets/credits.json | Per-asset credit/license data, rendered into the Menu's Credits panel |
+
+## 11.3 Controls
+
+| Platform | Movement | Attack | Pause |
+|---|---|---|---|
+| Desktop | WASD / Arrow keys | Mouse click | ESC |
+| Mobile | Left/Right/Drop/Jump Button | Attack Button (auto-targeting) | Pause Button |
+
+## 11.4 Language & Localization
+
+The game's output (UI text, dialogue, story fragments) is **English**. The GDD documentation remains German as the working language. A localization/translation layer is **not planned** at this time - strings are authored directly in English, not routed through a translation system.
+
+## 11.5 Asset Hosting
+
+Sprites, images, and sounds are delivered as static files within the project - no Firebase or other backend needed. A regular static host (e.g. Netlify, Vercel, GitHub Pages) is enough for delivery via asset-loader.js. Firebase remains relevant only as an optional Phase 2 extension for cross-device saves, see [04-health-save-system.md](04-health-save-system.md).
+
+## 11.6 Level Design Pipeline (Tiled)
+
+Levels are built in [Tiled](https://www.mapeditor.org/) and exported as JSON (not TMX/XML) - directly loadable via `fetch()` + `JSON.parse()`, no XML parsing needed in the game. Loaded via `world/level.js`.
+
+### 11.6.1 Layer Convention
+
+| Layer | Type | Purpose |
+|---|---|---|
+| Background | Tile layer | Purely visual, no collision |
+| terrain | Tile layer | Solid ground - see one-way behavior below. `utils/collision.js` takes the exact layer name per level (not hardcoded), so this can vary per level if needed |
+| walls | Tile layer, optional | Always fully solid from every direction, regardless of `terrain`'s one-way mode - marks specific ledge/corner tiles (or a boss arena's cover segments, see [05-enemies-bosses.md](05-enemies-bosses.md) 6.3.1) that should actually block sideways movement/projectiles. Opt-in per level (`collision.js`'s `wallLayerName`) - tolerates not existing yet on a level that doesn't need it |
+| noDrop | Tile layer, optional | Marks specific `terrain` platforms as exempt from Drop-Through-Platform (`player.js`/[03-mechanics.md](03-mechanics.md) 4.2) - still a normal one-way floor otherwise, S/Down just does nothing while standing on one. For a level (Gimmick/Secret) where some platforms are the actual intended path rather than something the player should be able to fall through at will. Opt-in per level (`collision.js`'s `noDropLayerName`) |
+| Decoration | Tile layer | Purely visual, never collidable. If a decoration element should block movement (e.g. a desk), that tile belongs in terrain instead |
+| Objects | Object layer (Tiled markers, not painted tiles) | Player start, enemy spawns, Secret Room trigger, boss trigger, exit portal, checkpoint, doors - see 11.6.2 |
+
+Tiles in the terrain layer must visually fill their full 32x32 cell, opaque edge to edge - a tile that only occupies half its cell (e.g. a thin grass strip with transparent padding above or below) leaves it ambiguous whether collision covers the whole cell or just the visible part, and `collision.js` doesn't special-case partial tiles. Decorative overhang (taller grass tufts, edge detail poking above the grid line) belongs on the Decoration layer instead, layered on top of a fully solid terrain tile.
+
+**One-way by default:** levels built from several stacked walkable floors (Prologue Level 1 and onward, unless a level specifically needs solid walls) use `terrain` as a one-way platform - it only blocks when the player lands on it from above (falling onto it), and is otherwise fully passable (jumping up through it from below, walking through it sideways). `collision.js`'s `oneWay` option controls this per level; a level that needs real solid walls (e.g. once Wall Jump unlocks in Chap 2, see [03-mechanics.md](03-mechanics.md) 4.2) sets `oneWay: false` instead, which restores full solid-from-every-side blocking - so the two collision styles coexist per level rather than being a single global rule.
+
+### Background Layering
+
+For now, every level bakes in the same shared forest backdrop image as its static base layer, with each level's own Tiled Background tile layer optionally painted on top to override it where needed (e.g. a cave interior covering the forest entirely rather than showing through).
+
+An earlier attempt at a separately-scrolling parallax layer (its own, slower scroll speed for a sense of depth) was tried and dropped again - it doesn't compose cleanly with the world's color reveal/darken mechanic (see [03-mechanics.md](03-mechanics.md) 4.1), which needs one flat backdrop to punch color reveals into rather than several independently-moving layers. Worth revisiting once a clean way to combine the two is found - not a permanent decision, just deferred.
+
+Later chapters will need their own distinct backdrop image(s) instead of reusing the Prologue's forest backdrop, once their settings diverge from generic forest.
+
+### 11.6.2 Objects Layer: Markers Instead of Sprites
+
+For data markers without a sprite, the rectangle/point tool on the Object Layer is enough - no dedicated tileset needed. Per object:
+
+1. Set the **Class** (called "Type" in older Tiled versions), e.g. `EnemySpawn`, `Door`, `SecretTrigger`, `PlayerStart`, `ExitPortal`
+2. Add **Custom Properties**, e.g. for `EnemySpawn` the property `enemyType` (string) = `"Patroller"`
+
+Recommendation: predefine Custom Types once in Tiled's Custom Types Editor (Project menu), so every new object with that Class automatically comes with the matching property fields, instead of retyping the schema every time.
+
+Example object in the JSON export:
+```json
+{
+  "type": "EnemySpawn",
+  "x": 320, "y": 480, "width": 32, "height": 32,
+  "properties": [
+    { "name": "enemyType", "type": "string", "value": "Patroller" }
+  ]
+}
+```
+The level loader flattens each object into a plain `{ type, x, y, properties }` marker rather than creating entities itself - the state that owns the level reads those markers afterward and spawns the matching entity from them. A door is deliberately treated as an Object/Entity rather than a Terrain tile, because it has a state (open/closed) that a static tile cannot represent.
+
+## 11.7 Resolution, Scaling & Size Convention
+
+### 11.7.1 Base Resolution
+
+Internal render resolution: **640x360**. At common desktop resolutions this lands on a whole-number scale factor:
+
+| Target Resolution | Scale Factor |
+|---|---|
+| 1280x720 | 2x |
+| 1920x1080 (FullHD) | 3x |
+| 2560x1440 | 4x |
+| 3840x2160 (4K) | 6x |
+
+The canvas element has two separate sizes: the drawing surface (`canvas.width/height` = 640x360, determines the field of view) and the display size (`canvas.style.width/height`, scaled up by the browser to the target resolution). `image-rendering: pixelated` makes sure this scaling happens via nearest-neighbor (crisp) instead of smooth interpolation (blurry).
+
+Scaling is **fractional, in every state, with no exceptions** (recalculated on resize: `Math.min(window.innerWidth/640, window.innerHeight/360)`, no rounding to a whole-number step). Whole-number scaling was considered and rejected: at this base resolution the steps between levels (1x/2x/3x/4x/6x) are large, so rounding down to the nearest one can waste a large fraction of the window as unused black bars whenever the size in between doesn't line up (e.g. a 1600x900 window would floor to 2x = 1280x720, wasting ~20% of the available space) - worse than the alternative in practice. Using the exact same fractional formula everywhere also means the scale factor never changes when switching states (no jump opening Pause over a running GameState, none entering/leaving the Menu either), since there's only one rule instead of a per-state exception.
+
+Trade-off: nearest-neighbor sampling at a fractional scale can shimmer once `camera.js` actively scrolls (GameState, Worldmap movement), because some source pixels map to one more screen pixel than others, and which pixels get the extra one shifts every frame as the camera moves. Accepted for now, revisit only if that's actually visible/bothersome once real scrolling gameplay exists - not worth pre-optimizing for a problem not yet observed.
+
+A dedicated fullscreen toggle (Fullscreen API, `requestFullscreen()`/`exitFullscreen()`) separately lets the browser chrome (address bar, tabs) hide entirely, on both desktop and mobile - unrelated to the scaling formula itself. `#ui-overlay` (see 11.8) always uses the exact same scale factor as the canvas, so HUD/UI elements stay pixel-aligned with the canvas content underneath.
+
+Deliberately **no** larger field of view on larger screens - otherwise players with a higher resolution would have a visibility advantage (enemies, projectiles, Secret Rooms visible earlier). The field of view stays the same for everyone, only the display size changes.
+
+### 11.7.2 Size Convention
+
+- Tile size: 32x32 (already fixed by the existing tileset)
+- Field of view at zoom 1.0: 20x11.25 tiles (640x360 ÷ 32)
+- Object/sprite dimensions always as multiples of 32, otherwise pixel-snapping issues when placing in Tiled
+- Player: 32x64 collision hitbox (1x2 tiles). The sprite itself is drawn larger and centered over that hitbox - render size is computed at runtime from how much transparent padding the current sprite sheet carries (`player.js`), so the *visible* character measures roughly 64px tall regardless of how much padding any given animation's frame has, instead of the hitbox growing/shrinking with it
+- Enemy: 32x32 up to 64x64 depending on type (multiples of 32)
+- Door: 32x64
+- Tilemap size is not limited by the canvas - the map can be arbitrarily large, `camera.js` scrolls with the player. Width/height guidelines by level type (field of view is 20x11.25 tiles at zoom 1.0), revised this session against the levels actually built so far:
+
+| Level Type | Width (tiles) | Height (tiles) | Reasoning |
+|---|---|---|---|
+| Combat | ~80-150 | ~20-30 | Room to fight across multiple screens without towering verticality - confirmed against Lv_1 (150x30)/Lv_2 (80x30) |
+| Secret/Exploration | ~100-140 | ~35-50 | Networked, multiple branches - lean toward the taller end to bury the Secret Room itself off the main path (e.g. underground, some corridors deliberately dead-ending) rather than it being obviously reachable |
+| Special/Gimmick | ~60-100 | ~30-40 | Or flipped (~30-40 x ~60-100) for a vertically-paced gimmick instead - orientation follows whichever axis the specific gimmick's tension plays out on ("water rising" wants height, a chase/timed sequence might want width), not a fixed rule. Confirmed against Lv_4 (60x40) |
+| Platform | ~50-70 | ~60-100 | Narrow and vertical, relevant once Wall Jump unlocks (Chap 2+) |
+| Boss level | ~30-40 | ~20-25 | ~1.5-2 screens, enclosed - the arena's own dimensions become the render buffer directly (see 11.7.3), so there's no empty border to hide. Still tentative - needs final alignment with actual boss pacing/ability space (short travel distances, but enough room for the moveset) once an arena is fully built; Lv_3 (36x21) is the closest current reference |
+
+Note: Secret/Exploration and taller Special/Gimmick instances above already exceed the older "~35 tiles max without Wall Jump" guidance (e.g. Lv_4 at 40) - not a problem in practice as long as the extra height is crossed via drops/stacked one-way floors rather than continuous upward climbing, but worth keeping in mind when laying out a level that tall.
+
+### 11.7.3 Arena-Sized Buffer (Boss Fights)
+
+Supersedes the camera-zoom approach originally planned here (see CHANGELOG 0.8.0) - `BossState.enter()` instead resizes the render buffer itself to exactly match the boss arena's pixel dimensions (e.g. Lv_3's 960x512) before the session builds, so there's no empty border to hide and no zoom math needed. `Game._handleResize()`'s integer window-fit scale ends up smaller for the same physical window since the buffer itself is bigger - `Game.hudScale` compensates so HUD bars/labels stay a constant on-screen size regardless of the arena's buffer size (see `boss-state.js`). The buffer resets to the base 640x360 on `BossState.exit()`.
+
+## 11.8 UI Overlay & Text Rendering
+
+UI text (HUD, menus, dialogue) is not drawn with `fillText()` on the canvas - at 640x360 internal resolution scaled up via `image-rendering: pixelated`, font glyph edges would scale up blocky instead of staying crisp. Instead, a `#ui-overlay` div sits absolutely positioned over the canvas (both inside a `position: relative` container), sized to the same 640x360 internal coordinate system and scaled with the same factor as the canvas (`transform: scale(...); transform-origin: top left;`) - so UI elements are positioned in game-space coordinates without per-resolution recalculation, while the text itself renders through the browser's normal font engine (sharp at any scale).
+
+The overlay defaults to `pointer-events: none` so clicks/touches pass through to the canvas underneath, with `pointer-events: auto` set individually on interactive elements (buttons, mobile controls) so they still receive input.
+
+### 11.8.1 HTML vs Canvas Boundary
+
+The dividing line is interactivity and text, not "inside vs outside the game world":
+
+- **HTML overlay** - anything the player clicks/taps/focuses (menu items, panels, Worldmap chapter buttons, mobile touch controls, Pause menu) and any text/numbers anywhere (HUD values, labels, titles, dialogue). Partly for the crisp-font reason above, partly because native DOM elements get hit-testing, hover/press states, and multi-touch for free instead of hand-rolled canvas equivalents.
+- **Canvas** - everything rendered every frame as part of the game loop that is purely visual and non-interactive: the game world itself, sprite/tile rendering, the color mechanic, and HUD bar fills (Health/Prisma/Boss HP/Shield bars are colored rectangles, not text).
+
+A HUD bar is therefore a hybrid: the bar itself (background + proportional fill) is drawn on the canvas each frame by `ui/hud.js`, while its accompanying number is a small HTML element in the overlay. To keep both in sync, the bar's position/size lives once as an exported constant (e.g. `HEALTH_BAR = { x: 8, y: 8, width: 72, height: 8 }` in `ui/hud.js`) that both the canvas draw call and the HTML element's positioning read from, instead of duplicating matching magic numbers in two separate places.
