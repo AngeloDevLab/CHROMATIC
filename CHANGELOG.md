@@ -4,6 +4,17 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.21.0] - 2026-08-19
+
+### Added
+- Fullscreen-recommendation panel shown right after loading finishes: recommendation text, an opt-in fullscreen toggle, and a Skip button (`.loading-fullscreen-skip`, same look as the cutscene's own skip button but in the panel's normal flow). Replaces the old "Press any key to continue" screen.
+
+### Changed
+- Fullscreen is no longer persisted at all - `main.js`'s global `fullscreenchange` listener (which saved it to `SaveSystem` and silently re-entered it on the next load) is gone. Entering fullscreen is now always a deliberate, in-the-moment choice, never auto-applied from a past session.
+
+### Fixed
+- The previous "Press any key to continue" screen paired an unrelated action (dismissing the loading screen) with a side effect the player never asked for in that moment (silently re-entering fullscreen from a saved preference) - forcing a choice instead of asking for one. The new panel makes fullscreen an explicit opt-in every time.
+
 ## [0.20.2] - 2026-08-19
 
 ### Changed

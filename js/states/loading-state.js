@@ -1,7 +1,9 @@
-// Waits for pointerup, not pointerdown - Chrome's autoplay unlock isn't granted until a gesture
-// completes.
+// Fullscreen is never auto-applied or persisted - entering it (like resuming
+// the AudioContext) only ever happens as the direct result of a real click/
+// keypress in the fullscreen-prompt panel below, never automatically.
 
 import { State } from './state.js';
+import { Panel } from '../ui/panel.js';
 
 /** Loads every image/JSON/sound asset, then waits for a user gesture before entering the Menu. */
 export class LoadingState extends State {
@@ -42,30 +44,52 @@ export class LoadingState extends State {
         this.label.textContent = `Loading... ${percent}%`;
     }
 
-    /**
-     * Gates the state transition behind one user gesture.
-     */
+    /** Opens the fullscreen-recommendation panel; the transition to Menu waits until the player interacts with it (toggle/×/Skip). */
     _waitForContinue() {
-        this.label.textContent = 'Press any key to continue';
-        const proceed = () => {
-            document.removeEventListener('keydown', proceed);
-            document.removeEventListener('pointerup', proceed);
-            this._applyFullscreenPreference();
-            this.game.sound.resume();
-            this.game.music.start();
-            this.game.stateMachine.change('menu');
-        };
-        document.addEventListener('keydown', proceed);
-        document.addEventListener('pointerup', proceed);
+        this.label.textContent = '';
+        this._fullscreenPanel = new Panel(this.game.overlay);
+        this._fullscreenPanel.open('', this._buildFullscreenPromptHTML(), {
+            dismissible: true,
+            onClose: () => this._proceed(),
+            onMount: (root) => this._wireFullscreenPrompt(root),
+        });
     }
 
     /**
-     * Re-enters fullscreen if the player had it on last session.
+     * Builds the fullscreen-recommendation panel body: a toggle plus a Skip button.
+     * @returns {string} Fullscreen-prompt panel body markup.
      */
-    _applyFullscreenPreference() {
-        if (this.game.save.get('fullscreen', false) && !document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(() => { });
-        }
+    _buildFullscreenPromptHTML() {
+        return `
+            <p>We recommend playing in fullscreen.</p>
+            <label class="settings-row">
+                <span>Fullscreen</span>
+                <input type="checkbox" id="loading-fullscreen-toggle">
+            </label>
+            <button class="loading-fullscreen-skip" id="loading-fullscreen-skip">Skip ▸</button>
+        `;
+    }
+
+    /**
+     * Wires the toggle and Skip button to close the panel - both trigger _proceed() via onClose.
+     * @param {HTMLElement} root - The mounted panel's root element.
+     */
+    _wireFullscreenPrompt(root) {
+        root.querySelector('#loading-fullscreen-toggle').addEventListener('change', (event) => {
+            if (event.target.checked) document.documentElement.requestFullscreen().catch(() => { });
+            this._fullscreenPanel.close();
+        });
+        root.querySelector('#loading-fullscreen-skip').addEventListener('click', () => this._fullscreenPanel.close());
+    }
+
+    /**
+     * Resumes audio, starts music, and enters the Menu - called once the
+     * fullscreen prompt closes, however it closed.
+     */
+    _proceed() {
+        this.game.sound.resume();
+        this.game.music.start();
+        this.game.stateMachine.change('menu');
     }
 
     /**

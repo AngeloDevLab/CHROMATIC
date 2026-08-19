@@ -18,16 +18,6 @@ import { DevPanel } from './ui/dev-panel.js';
 import { LandscapeGate } from './ui/landscape-gate.js';
 
 /**
- * Persists the fullscreen state on every change, regardless of what triggered it.
- * @param {SaveSystem} save - Persisted player preferences.
- */
-function trackFullscreenChanges(save) {
-    document.addEventListener('fullscreenchange', () => {
-        save.set('fullscreen', !!document.fullscreenElement);
-    });
-}
-
-/**
  * Creates the Game instance and wires up its core singleton systems.
  * @returns {Game} The configured game instance.
  */
@@ -65,7 +55,6 @@ function registerStates(game) {
  */
 function bootstrap() {
     const game = createGame();
-    trackFullscreenChanges(game.save);
     game.devPanel = new DevPanel(game);
     game.landscapeGate = new LandscapeGate(game);
     registerStates(game);

@@ -413,6 +413,25 @@ body {
     background: rgba(255, 255, 255, 0.15);
 }
 
+/* Same look as .cutscene-skip-button, but in the fullscreen-prompt panel's
+   normal document flow instead of absolutely positioned over the canvas. */
+.loading-fullscreen-skip {
+    display: block;
+    margin: calc(16px * var(--hud-scale)) 0 0 auto;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: calc(16px * var(--hud-scale));
+    color: #f2f2f2;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: calc(4px * var(--hud-scale));
+    padding: calc(6px * var(--hud-scale)) calc(12px * var(--hud-scale));
+    cursor: pointer;
+}
+
+.loading-fullscreen-skip:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
 .panel-body p {
     opacity: 0.8;
 }

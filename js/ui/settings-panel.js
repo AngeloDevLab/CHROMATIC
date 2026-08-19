@@ -144,9 +144,8 @@ function wireMuteToggle(root, game) {
 }
 
 /**
- * Wires the fullscreen checkbox to the browser Fullscreen API. The
- * preference itself is persisted by main.js's global fullscreenchange
- * listener, not here.
+ * Wires the fullscreen checkbox to the browser Fullscreen API. Session-only -
+ * fullscreen is never persisted, so this always starts from the live state.
  * @param {HTMLElement} root - The mounted panel's root element.
  */
 function wireFullscreenToggle(root) {
