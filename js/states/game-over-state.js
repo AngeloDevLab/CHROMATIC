@@ -1,11 +1,11 @@
+// Non-dismissible (no Resume) - Retry/Main Menu both call change() instead of pop(), unwinding
+// this state and the dead session beneath it together.
+
 import { State } from './state.js';
 import { Panel } from '../ui/panel.js';
 import { isBossLevel } from './level-session.js';
 
-// Pushed on top of the dead GameState/BossState once its death sequence
-// finishes. Non-dismissible - no Resume; Retry/Main Menu both call change()
-// instead of pop(), unwinding this state and the dead session beneath it
-// together.
+/** The Game Over screen, pushed once the dead GameState/BossState's death sequence finishes. */
 export class GameOverState extends State {
     /**
      * Re-derives boss-vs-normal routing for Retry via isBossLevel(), since

@@ -1,13 +1,13 @@
+// onComplete is a callback rather than this class calling stateMachine.change('worldmap') itself -
+// finishing the level stays LevelSession's own concern.
+
 import { PortalInteractable } from './interactables/portal-interactable.js';
 import { MerchantInteractable } from './interactables/merchant-interactable.js';
 import { TrapdoorInteractable } from './interactables/trapdoor-interactable.js';
 import { SecretDoorInteractable } from './interactables/secret-door-interactable.js';
 import { BuffTerminalInteractable } from './interactables/buff-terminal-interactable.js';
 
-// Portal/Merchant/Trapdoor/SecretDoor/BuffTerminal - every level object the
-// player interacts with via proximity/[E]. `onComplete` is a callback rather
-// than this class calling stateMachine.change('worldmap') itself - finishing
-// the level is LevelSession's own concern.
+/** Portal/Merchant/Trapdoor/SecretDoor/BuffTerminal - every level object the player interacts with via proximity/[E]. */
 export class Interactables {
     /**
      * Constructs each interactable type, sharing the player/collision/damage-number wiring.

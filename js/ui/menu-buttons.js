@@ -1,4 +1,4 @@
-const MENU_ITEMS = [
+const menu_items = [
     { id: 'continue', label: 'Continue' },
     { id: 'new-game', label: 'New Game' },
     { id: 'settings', label: 'Settings' },
@@ -6,6 +6,7 @@ const MENU_ITEMS = [
     { id: 'info', label: 'Info' },
 ];
 
+/** Builds and mounts the main menu's button list (Continue/New Game/Settings/etc.). */
 export class MenuButtons {
     /**
      * Stores mount settings; call mount() to actually build the buttons.
@@ -28,7 +29,7 @@ export class MenuButtons {
         this.element = document.createElement('div');
         this.element.className = 'menu-buttons';
 
-        for (const item of MENU_ITEMS) {
+        for (const item of menu_items) {
             this.element.appendChild(this._createButton(item));
         }
 

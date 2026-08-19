@@ -1,7 +1,6 @@
 import { isTouchCapable } from './touch-controls.js';
 
-// Blocks the screen with a "rotate your device" prompt when a touch device
-// is held in portrait - the internal 640x360 resolution is landscape-only.
+/** Blocks the screen with a "rotate your device" prompt when a touch device is held in portrait. */
 export class LandscapeGate {
     /**
      * Builds the prompt and listens for both resize and orientationchange,

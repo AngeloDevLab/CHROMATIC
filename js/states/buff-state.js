@@ -1,12 +1,10 @@
+// No explicit Escape handling needed - GameState doesn't tick while this is current, so nothing
+// competes with Panel's own listener.
+
 import { State } from './state.js';
 import { Panel } from '../ui/panel.js';
 
-// Secret Room reward - pushed on top of GameState from BuffTerminalInteractable's [E] handler.
-//
-// Dismissible: the terminal stays unused until a buff is chosen, so the
-// player can walk away and try again later. No explicit Escape handling is
-// needed - GameState doesn't tick while this is current, so nothing
-// competes with Panel's own dismiss/Escape listener.
+/** Secret Room buff-choice screen, pushed on top of GameState from a BuffTerminal's [E] prompt. */
 export class BuffState extends State {
     /**
      * Opens the buff-choice panel for the terminal that triggered it.

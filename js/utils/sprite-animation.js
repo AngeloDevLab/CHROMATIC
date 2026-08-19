@@ -1,6 +1,8 @@
-// topRatio/groundLineRatio locate the actual artwork within a frame's
-// transparent padding, so callers can align to the visible character instead
-// of the frame's raw edges.
+// topRatio/groundLineRatio locate the actual artwork within a frame's transparent padding, so
+// callers can align to the visible character instead of the frame's raw edges.
+
+
+/** A frame-based sprite animation, auto-detecting its artwork's opaque bounds within each frame's padding. */
 export class SpriteAnimation {
     /**
      * Sets up playback state and auto-detects the artwork's opaque bounds within a frame.

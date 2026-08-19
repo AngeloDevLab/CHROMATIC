@@ -1,7 +1,5 @@
-// push()/pop() let a state (Pause/GameOver/Buff) stack on top of whatever
-// is currently running instead of replacing it - the state underneath
-// stays alive and keeps rendering behind the overlay. change() replaces
-// the current state entirely, unwinding the whole stack first.
+
+/** Registry of named States; change() replaces the current state, push()/pop() stack an overlay state on top without exiting the one beneath it. */
 export class StateMachine {
     /**
      * Sets up an empty state registry and stack.

@@ -4,6 +4,12 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.20.2] - 2026-08-19
+
+### Changed
+- JSDoc pass across `js/`: every class now has a short class-level doc block summarizing what it holds/does (69 classes total - 62 converted from an existing top-of-file `//` comment or added fresh where none existed). Non-obvious invariants/reasoning that used to live in those top comments were trimmed to the single most important point per file and moved to a genuine file-top comment (before the imports), separate from the class doc; behavior-only comments with nothing left to say beyond the new class doc were dropped. A handful of function-level JSDoc blocks that described a caller's use case or an implementation detail instead of what the function itself does were rewritten (`Player.die()`, `Player.visualTopY`/`visualCenterY`, `LevelSession._completeLevel()`, `WorldmapState._layoutNodes()`/`_isLocked()`, `Game.loadProgress()`/`saveProgress()`).
+- Non-exported, module-scope constants renamed from `SCREAMING_SNAKE_CASE` to `snake_case` (168 constants across 47 files) - only `export`ed constants meant to be shared across files keep `SCREAMING_SNAKE_CASE` (e.g. `PLAYER_REVEAL_RADIUS`). `CLAUDE.md`'s Code Style section documents both this and the JSDoc refinement above.
+
 ## [0.20.1] - 2026-08-19
 
 ### Changed

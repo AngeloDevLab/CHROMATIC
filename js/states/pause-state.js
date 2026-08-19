@@ -1,16 +1,12 @@
+// Escape always means "fully unpause", never "go back one level" - top-level choices and Settings
+// both handle it explicitly via pop() instead of Panel's own listener, so the two never race.
+
 import { State } from './state.js';
 import { Panel } from '../ui/panel.js';
 import { buildSettingsBody, wireSettingsPanel } from '../ui/settings-panel.js';
 import { HowToPlayPanel } from '../ui/how-to-play-panel.js';
 
-// Pushed on top of whatever's running rather than replacing it, so the
-// state underneath keeps rendering its last frame behind this panel (see
-// state-machine.js's push()/pop()).
-//
-// Escape always means "fully unpause" here, never "go back one level": the
-// top-level choices and Settings both use closeOnEscape: false and handle
-// Escape explicitly via pop(), instead of Panel's own window-level listener,
-// so the two Escape handlers never race.
+/** The Pause menu, pushed on top of whatever's currently running. */
 export class PauseState extends State {
     /**
      * Opens the Panel with the initial Paused choices.

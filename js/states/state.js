@@ -1,3 +1,4 @@
+/** Base class for every screen state (enter/exit/update/render), overridden by subclasses. */
 export class State {
     /**
      * Stores the owning Game instance.

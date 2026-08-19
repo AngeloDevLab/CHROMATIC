@@ -5,11 +5,9 @@ import { buildVfxAnimation } from '../entities/character-animations.js';
  * How often a footstep plays while running - first-guess, needs a real ear
  * against the running animation's own cadence.
  */
-const FOOTSTEP_INTERVAL_SECONDS = 0.40;
+const footstep_interval_seconds = 0.40;
 
-// Player's ground-contact smoke (jump/landing/dash) and action SFX (attack
-// swoosh, footsteps) - extracted out of level-session.js. Only ever touches
-// the player, its own VfxEffect pool, and the sound bus.
+/** Player's ground-contact smoke VFX and action SFX (attack swoosh, footsteps). */
 export class PlayerFx {
     /**
      * Sets up an empty VFX pool and action-SFX tracking state.
@@ -58,7 +56,7 @@ export class PlayerFx {
     }
 
     /**
-     * Repeats every FOOTSTEP_INTERVAL_SECONDS while actually running under
+     * Repeats every footstep_interval_seconds while actually running under
      * control. Resets so the next step fires immediately once running starts again.
      * @param {number} dt - Elapsed time in seconds.
      */
@@ -71,7 +69,7 @@ export class PlayerFx {
         this._footstepTimer -= dt;
         if (this._footstepTimer > 0) return;
         this.game.sound.playSfx('footsteps');
-        this._footstepTimer = FOOTSTEP_INTERVAL_SECONDS;
+        this._footstepTimer = footstep_interval_seconds;
     }
 
     /**

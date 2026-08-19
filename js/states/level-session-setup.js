@@ -1,3 +1,6 @@
+// enemyRoster is built between spawnPlayer() and initInteractablesAndHud() (Interactables needs
+// it) - that one step stays inline in LevelSession's constructor instead of moving here.
+
 import { Level } from '../world/level.js';
 import { buildTilesetRegistry } from '../world/tileset-registry.js';
 import { Player } from '../entities/player.js';
@@ -15,14 +18,9 @@ import { HUD, HEALTH_BAR, SHIELD_BAR, scaleRect } from '../ui/hud.js';
 import { DamageNumbers } from '../ui/damage-numbers.js';
 import { LEVEL_JSON_KEYS, PLAYER_REVEAL_RADIUS } from './level-session.js';
 
-const FALLBACK_SPAWN = { x: 64, y: 0 };
+const fallback_spawn = { x: 64, y: 0 };
 
-// LevelSession's constructor-time build-out, composed onto it the same way
-// level-session-renderer.js owns rendering - each method mutates the session
-// reference passed in, in the fixed order the constructor calls them.
-// enemyRoster is created between spawnPlayer() and initInteractablesAndHud()
-// since Interactables needs it, so that step stays inline in the
-// constructor instead of moving here.
+/** LevelSession's constructor-time build-out, composed onto it the same way level-session-renderer.js owns rendering. */
 export class LevelSessionSetup {
     /**
      * Binds this setup helper to the LevelSession it builds.
@@ -103,7 +101,7 @@ export class LevelSessionSetup {
         session.game.input.clearJumpPress();
         session.game.input.clearDropPress();
 
-        const playerStart = session.level.getObjectsByType('PlayerStart')[0] ?? FALLBACK_SPAWN;
+        const playerStart = session.level.getObjectsByType('PlayerStart')[0] ?? fallback_spawn;
         session.player = new Player(playerStart.x, playerStart.y, buildPlayerAnimations(session.game.assets));
         session.player.enableControl(session.game.input, session.collision);
         for (const buffId of session.game.buffs) session.player.applyBuff(buffId);

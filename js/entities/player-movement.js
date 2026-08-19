@@ -1,14 +1,17 @@
-const COYOTE_TIME_SECONDS = 0.1;
-const JUMP_BUFFER_SECONDS = 0.12;
-const SHORT_HOP_VY_FRACTION = 0.45;
-const ACCELERATION = 1800;
-const DECELERATION = 2600;
-const AFK_TRIGGER_SECONDS = 15;
+// _tryGroundJump() runs before _tryDoubleJump() each frame, so the two never both fire the same
+// frame.
+
+const coyote_time_seconds = 0.1;
+const jump_buffer_seconds = 0.12;
+const short_hop_vy_fraction = 0.45;
+const acceleration = 1800;
+const deceleration = 2600;
+const afk_trigger_seconds = 15;
 
 /**
  * Just enough to push past the one-way collision's landed-this-frame check; gravity finishes the fall.
  */
-const DROP_NUDGE_PX = 4;
+const drop_nudge_px = 4;
 
 /**
  * Steps a value toward a target by at most maxDelta.
@@ -23,9 +26,7 @@ function moveToward(current, target, maxDelta) {
     return current;
 }
 
-// _tryGroundJump() runs before _tryDoubleJump() each frame, so the two never
-// both fire the same frame. Walking off a ledge without jumping still lets
-// the next mid-air press fire as the double jump - the usual one-bonus-airborne-jump convention.
+/** Player's keyboard-driven movement, composed onto Player as this.movement: acceleration, jump/double-jump, dash, and Drop-Through-Platform. */
 export class PlayerMovement {
     /**
      * Binds this movement module to the Player it controls.
@@ -110,10 +111,10 @@ export class PlayerMovement {
      */
     _updateJumpTimers(dt) {
         const player = this.player;
-        player.coyoteTimer = player.grounded ? COYOTE_TIME_SECONDS : Math.max(0, player.coyoteTimer - dt);
+        player.coyoteTimer = player.grounded ? coyote_time_seconds : Math.max(0, player.coyoteTimer - dt);
         if (player.grounded) player.doubleJump.reset();
 
-        if (player.input.consumeJumpPress()) player.jumpBufferTimer = JUMP_BUFFER_SECONDS;
+        if (player.input.consumeJumpPress()) player.jumpBufferTimer = jump_buffer_seconds;
         else player.jumpBufferTimer = Math.max(0, player.jumpBufferTimer - dt);
     }
 
@@ -130,7 +131,7 @@ export class PlayerMovement {
         const inDash = player.dash.timer > 0;
 
         const targetVx = (!inKnockback && !inDash && !groundedAttack) ? this._resolveTargetVx() : 0;
-        const accelRate = targetVx === 0 ? DECELERATION : ACCELERATION;
+        const accelRate = targetVx === 0 ? deceleration : acceleration;
         player.vx = (inKnockback || inDash) ? player.vx : (groundedAttack ? 0 : moveToward(player.vx, targetVx, accelRate * dt));
     }
 
@@ -163,7 +164,7 @@ export class PlayerMovement {
 
         if (!this._tryGroundJump() && !this._tryDoubleJump()
             && player.vy < 0 && !player.input.isDown('jump')) {
-            player.vy = Math.max(player.vy, -player.jumpSpeed * SHORT_HOP_VY_FRACTION);
+            player.vy = Math.max(player.vy, -player.jumpSpeed * short_hop_vy_fraction);
         }
     }
 
@@ -202,7 +203,7 @@ export class PlayerMovement {
         const player = this.player;
         if (player.input.consumeDropPress() && !player.attacking && player.grounded
             && player.collision.hasFloorBelow(player) && !player.collision.isNoDropBelow(player)) {
-            player.y += DROP_NUDGE_PX;
+            player.y += drop_nudge_px;
         }
     }
 
@@ -249,7 +250,7 @@ export class PlayerMovement {
      */
     _resolveIdleAnimation() {
         const player = this.player;
-        if (player.afkTimer < AFK_TRIGGER_SECONDS) return 'idle';
+        if (player.afkTimer < afk_trigger_seconds) return 'idle';
         if (player.currentAnimation === 'afkEnter') {
             return player.animations.afkEnter.finished ? 'afk' : 'afkEnter';
         }

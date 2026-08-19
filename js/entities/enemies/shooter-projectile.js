@@ -3,32 +3,33 @@ import { SpriteAnimation } from '../../utils/sprite-animation.js';
 
 // shooter-projectile.png is a baked spin-cycle strip, unlike the player's
 // code-spun thrown-sword.png - kept as its own simpler class rather than folded into projectile.js.
-const FRAME_SIZE = 64;
-const FRAME_COUNT = 8;
-const FPS = 16;
+const frame_size = 64;
+const frame_count = 8;
+const fps = 16;
 
 /**
  * The sprite's actual dot only fills a fraction of its frame; render size
- * stays FRAME_SIZE, only the hitbox shrinks.
+ * stays frame_size, only the hitbox shrinks.
  */
-const HITBOX_SIZE = 28;
+const hitbox_size = 28;
 
 /**
  * Paired with shooter.js's own shot-cooldown.
  */
-const SPEED = 180;
+const speed = 180;
 
 /**
  * A bit more than shooter.js's own SHOOTER_RANGE_PX (260).
  */
-const MAX_TRAVEL_PX = 300;
+const max_travel_px = 300;
 
 /**
  * Same tunneling-prevention approach as projectile.js - small enough that a
  * fast shot can't skip through a thin wall in one frame.
  */
-const SWEEP_STEP_PX = 4;
+const sweep_step_px = 4;
 
+/** Shooter's fired projectile: sweeps forward for a wall hit, despawning past its max range. */
 export class ShooterProjectile extends Entity {
     /**
      * Spawns a projectile traveling in one direction.
@@ -39,13 +40,13 @@ export class ShooterProjectile extends Entity {
      * @param {number} damage - Damage dealt on hit.
      */
     constructor(spawnCenterX, spawnCenterY, direction, sprite, damage) {
-        super(spawnCenterX - HITBOX_SIZE / 2, spawnCenterY - HITBOX_SIZE / 2, HITBOX_SIZE, HITBOX_SIZE);
+        super(spawnCenterX - hitbox_size / 2, spawnCenterY - hitbox_size / 2, hitbox_size, hitbox_size);
         this.direction = direction;
-        this.vx = direction * SPEED;
+        this.vx = direction * speed;
         this.damage = damage;
         this.traveled = 0;
         this.dead = false;
-        this.spin = new SpriteAnimation(sprite, FRAME_SIZE, FRAME_SIZE, FRAME_COUNT, FPS);
+        this.spin = new SpriteAnimation(sprite, frame_size, frame_size, frame_count, fps);
     }
 
     /**
@@ -55,7 +56,7 @@ export class ShooterProjectile extends Entity {
      */
     update(dt, collision) {
         const totalDx = this.vx * dt;
-        const steps = Math.max(1, Math.ceil(Math.abs(totalDx) / SWEEP_STEP_PX));
+        const steps = Math.max(1, Math.ceil(Math.abs(totalDx) / sweep_step_px));
         const stepDx = totalDx / steps;
 
         for (let i = 0; i < steps; i++) {
@@ -80,7 +81,7 @@ export class ShooterProjectile extends Entity {
 
         this.x += stepDx;
         this.traveled += Math.abs(stepDx);
-        if (this.traveled >= MAX_TRAVEL_PX) {
+        if (this.traveled >= max_travel_px) {
             this.dead = true;
             return true;
         }
@@ -94,16 +95,16 @@ export class ShooterProjectile extends Entity {
     render(ctx) {
         if (this.dead) return;
 
-        const renderX = this.centerX - FRAME_SIZE / 2;
-        const renderY = this.centerY - FRAME_SIZE / 2;
+        const renderX = this.centerX - frame_size / 2;
+        const renderY = this.centerY - frame_size / 2;
 
         ctx.save();
         if (this.direction === -1) {
-            ctx.translate(renderX + FRAME_SIZE, renderY);
+            ctx.translate(renderX + frame_size, renderY);
             ctx.scale(-1, 1);
-            this.spin.draw(ctx, 0, 0, FRAME_SIZE, FRAME_SIZE);
+            this.spin.draw(ctx, 0, 0, frame_size, frame_size);
         } else {
-            this.spin.draw(ctx, renderX, renderY, FRAME_SIZE, FRAME_SIZE);
+            this.spin.draw(ctx, renderX, renderY, frame_size, frame_size);
         }
         ctx.restore();
     }

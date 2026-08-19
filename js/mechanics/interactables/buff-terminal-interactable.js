@@ -1,17 +1,11 @@
+// The constructor pre-marks a terminal used if Game.claimedSecretRoomBuffs already has this level
+// - used alone doesn't survive a replay's fresh LevelSession, so without this a replay could offer
+// a second buff choice.
+
 import { BuffTerminal } from '../../entities/buff-terminal.js';
 import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from './interact-prompt.js';
 
-// Buff Terminal (Lvl 5 Gimmick) - interactable once the SecretDoor is open
-// (or none is placed) and unused; pushes BuffState rather than granting
-// anything directly.
-//
-// The constructor pre-marks a terminal used if Game.claimedSecretRoomBuffs
-// already has this level, since `used` alone doesn't survive a replay's
-// fresh LevelSession - without this a replay could offer a second buff
-// choice from the same terminal.
-//
-// updatePrompt() hides its prompt immediately when [E] pushes BuffState,
-// since no further update() calls happen afterward to hide it later.
+/** Wires the level's BuffTerminal to its [E] prompt, pushing BuffState on interact. */
 export class BuffTerminalInteractable {
     /**
      * Builds the terminal from the level's BuffTerminal marker, if any.

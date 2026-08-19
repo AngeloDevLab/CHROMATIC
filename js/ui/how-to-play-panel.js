@@ -1,4 +1,4 @@
-const SECTIONS = [
+const sections = [
     {
         title: 'The Color Trail',
         text: 'Walking reclaims the world, turning grey back to color. Explore to progress.',
@@ -64,7 +64,7 @@ export class HowToPlayPanel {
      * @returns {string} The full section list markup.
      */
     _buildBodyHTML() {
-        const sections = SECTIONS.map((section) => `
+        const sections = sections.map((section) => `
             <div class="how-to-play-section">
                 <h4>${section.title}</h4>
                 <p>${section.text}</p>

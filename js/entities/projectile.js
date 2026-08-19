@@ -4,40 +4,39 @@ import { Entity } from './entity.js';
  * thrown-sword.png is 32x64 (narrow, portrait) - hitbox/render size
  * matches the sprite's native resolution instead of squashing it into a square.
  */
-const PROJECTILE_WIDTH = 32;
-const PROJECTILE_HEIGHT = 64;
-const PROJECTILE_SPEED = 400;
+const projectile_width = 32;
+const projectile_height = 64;
+const projectile_speed = 400;
 
 /**
  * Despawns after traveling this far without hitting anything.
  */
-const MAX_TRAVEL_PX = 300;
+const max_travel_px = 300;
 
 /**
  * How far each swept sub-step advances before re-checking for a solid tile;
  * the X-axis collision check is disabled for one-way levels, so this sweeps manually.
  */
-const SWEEP_STEP_PX = 4;
+const sweep_step_px = 4;
 
 /**
  * Continuous spin for a "thrown blade" look - thrown-sword.png is a single
  * static image (no sprite sheet), so this is the only motion cue on it.
  */
-const ROTATION_PER_PX = 0.15;
+const rotation_per_px = 0.15;
 
 /**
  * Ghost-trail echoes rendered behind the blade using thrown-sword-trail.png
  * (192x24, 8 frames of 24x24). Echo spacing/frame are derived from distance
  * traveled rather than a timer.
  */
-const TRAIL_SOURCE_FRAME_SIZE = 24;
-const TRAIL_RENDER_SIZE = 64;
-const TRAIL_FRAME_COUNT = 8;
-const TRAIL_ECHO_SPACING_PX = 14;
-const TRAIL_ECHO_COUNT = 3;
+const trail_source_frame_size = 24;
+const trail_render_size = 64;
+const trail_frame_count = 8;
+const trail_echo_spacing_px = 14;
+const trail_echo_count = 3;
 
-// Straight horizontal throw; no gravity, thrown weapons in this game fly
-// level rather than arcing.
+/** The player's thrown-sword projectile: a straight, level throw with a spinning blade and ghost trail. */
 export class Projectile extends Entity {
     /**
      * Spawns a thrown-sword projectile traveling in one direction.
@@ -49,9 +48,9 @@ export class Projectile extends Entity {
      * @param {HTMLImageElement} trailSprite - Motion-blur trail sprite sheet.
      */
     constructor(spawnCenterX, spawnCenterY, direction, sprite, damage, trailSprite) {
-        super(spawnCenterX - PROJECTILE_WIDTH / 2, spawnCenterY - PROJECTILE_HEIGHT / 2, PROJECTILE_WIDTH, PROJECTILE_HEIGHT);
+        super(spawnCenterX - projectile_width / 2, spawnCenterY - projectile_height / 2, projectile_width, projectile_height);
         this.direction = direction;
-        this.vx = direction * PROJECTILE_SPEED;
+        this.vx = direction * projectile_speed;
         this.sprite = sprite;
         this.trailSprite = trailSprite;
         this.damage = damage;
@@ -66,7 +65,7 @@ export class Projectile extends Entity {
      */
     update(dt, collision) {
         const totalDx = this.vx * dt;
-        const steps = Math.max(1, Math.ceil(Math.abs(totalDx) / SWEEP_STEP_PX));
+        const steps = Math.max(1, Math.ceil(Math.abs(totalDx) / sweep_step_px));
         const stepDx = totalDx / steps;
 
         for (let i = 0; i < steps; i++) {
@@ -89,7 +88,7 @@ export class Projectile extends Entity {
 
         this.x += stepDx;
         this.traveled += Math.abs(stepDx);
-        if (this.traveled >= MAX_TRAVEL_PX) {
+        if (this.traveled >= max_travel_px) {
             this.dead = true;
             return true;
         }
@@ -107,7 +106,7 @@ export class Projectile extends Entity {
 
         ctx.save();
         ctx.translate(this.centerX, this.centerY);
-        ctx.rotate(this.traveled * ROTATION_PER_PX * this.direction);
+        ctx.rotate(this.traveled * rotation_per_px * this.direction);
         if (this.direction === -1) ctx.scale(-1, 1);
         ctx.drawImage(this.sprite, -this.width / 2, -this.height / 2, this.width, this.height);
         ctx.restore();
@@ -121,7 +120,7 @@ export class Projectile extends Entity {
     _renderTrail(ctx) {
         if (!this.trailSprite) return;
 
-        for (let i = TRAIL_ECHO_COUNT; i >= 1; i--) {
+        for (let i = trail_echo_count; i >= 1; i--) {
             this._renderEcho(ctx, i);
         }
     }
@@ -130,14 +129,14 @@ export class Projectile extends Entity {
      * Draws one trail echo at position `i` behind the blade, skipping it if
      * that position is behind the blade's start.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
-     * @param {number} i - Echo index, 1 (nearest) to TRAIL_ECHO_COUNT (farthest).
+     * @param {number} i - Echo index, 1 (nearest) to trail_echo_count (farthest).
      */
     _renderEcho(ctx, i) {
-        const behindPx = i * TRAIL_ECHO_SPACING_PX;
+        const behindPx = i * trail_echo_spacing_px;
         const traveledAtEcho = this.traveled - behindPx;
         if (traveledAtEcho < 0) return;
 
-        const frame = Math.floor(traveledAtEcho / TRAIL_ECHO_SPACING_PX) % TRAIL_FRAME_COUNT;
+        const frame = Math.floor(traveledAtEcho / trail_echo_spacing_px) % trail_frame_count;
         const echoX = this.centerX - this.direction * behindPx;
         this._drawEchoFrame(ctx, i, frame, echoX, traveledAtEcho);
     }
@@ -145,20 +144,20 @@ export class Projectile extends Entity {
     /**
      * Draws one echo frame at its world position and rotation.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
-     * @param {number} i - Echo index, 1 (nearest) to TRAIL_ECHO_COUNT (farthest).
+     * @param {number} i - Echo index, 1 (nearest) to trail_echo_count (farthest).
      * @param {number} frame - Trail sprite frame to draw.
      * @param {number} echoX - World X to center this echo at.
      * @param {number} traveledAtEcho - Distance traveled at this echo's position, in pixels.
      */
     _drawEchoFrame(ctx, i, frame, echoX, traveledAtEcho) {
         ctx.save();
-        ctx.globalAlpha = 1 - i / (TRAIL_ECHO_COUNT + 1);
+        ctx.globalAlpha = 1 - i / (trail_echo_count + 1);
         ctx.translate(echoX, this.centerY);
-        ctx.rotate(traveledAtEcho * ROTATION_PER_PX * this.direction);
+        ctx.rotate(traveledAtEcho * rotation_per_px * this.direction);
         ctx.drawImage(
             this.trailSprite,
-            frame * TRAIL_SOURCE_FRAME_SIZE, 0, TRAIL_SOURCE_FRAME_SIZE, TRAIL_SOURCE_FRAME_SIZE,
-            -TRAIL_RENDER_SIZE / 2, -TRAIL_RENDER_SIZE / 2, TRAIL_RENDER_SIZE, TRAIL_RENDER_SIZE
+            frame * trail_source_frame_size, 0, trail_source_frame_size, trail_source_frame_size,
+            -trail_render_size / 2, -trail_render_size / 2, trail_render_size, trail_render_size
         );
         ctx.restore();
     }

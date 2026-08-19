@@ -1,17 +1,16 @@
-const TARGET_VISIBLE_HEIGHT = 64;
+const target_visible_height = 64;
 
 /**
  * afk maps to afkEnter's bounds (not its own) to avoid a size pop when the loop takes over.
  */
-const OWN_BOUNDS_SOURCE = { attack: 'attack', afkEnter: 'afkEnter', afk: 'afkEnter' };
+const own_bounds_source = { attack: 'attack', afkEnter: 'afkEnter', afk: 'afkEnter' };
 
 /**
  * Max AFK art-alignment nudge, in pixels.
  */
-const AFK_Y_OFFSET = 5;
+const afk_y_offset = 5;
 
-// Reads position/size/facing/animation off the player reference passed in;
-// owns nothing else besides renderSize.
+/** Player's sprite-drawing pipeline, composed onto Player as this.renderer. */
 export class PlayerRenderer {
     /**
      * Binds this renderer to the Player it draws and computes its base render size.
@@ -24,14 +23,14 @@ export class PlayerRenderer {
 
     /**
      * Scales the render size so the *visible* character (excluding the
-     * sprite's own padding) measures TARGET_VISIBLE_HEIGHT, instead of the whole padded frame.
+     * sprite's own padding) measures target_visible_height, instead of the whole padded frame.
      * @param {object} animations - Named SpriteAnimation set, see sprite-animation.js.
      * @returns {number}
      */
     _computeRenderSize(animations) {
         const idle = animations.idle;
         const visibleFraction = idle ? idle.groundLineRatio - idle.topRatio : 1;
-        return TARGET_VISIBLE_HEIGHT / visibleFraction;
+        return target_visible_height / visibleFraction;
     }
 
     /**
@@ -88,7 +87,7 @@ export class PlayerRenderer {
         const anim = this.player.animations[this.player.currentAnimation];
         if (!anim) return;
 
-        const boundsKey = OWN_BOUNDS_SOURCE[this.player.currentAnimation];
+        const boundsKey = own_bounds_source[this.player.currentAnimation];
         const boundsAnim = boundsKey ? this.player.animations[boundsKey] : null;
         const { width: renderWidth, height: renderHeight } = this._renderDimensions(anim, boundsAnim);
         const drawX = this._drawX(renderWidth);
@@ -98,14 +97,14 @@ export class PlayerRenderer {
     }
 
     /**
-     * Ramps from 0 to AFK_Y_OFFSET 1px per afkEnter frame as it plays, then
+     * Ramps from 0 to afk_y_offset 1px per afkEnter frame as it plays, then
      * holds at the max once afkEnter finishes and afk's loop takes over.
      * @returns {number}
      */
     _afkYOffset() {
         const name = this.player.currentAnimation;
         if (name !== 'afkEnter' && name !== 'afk') return 0;
-        return Math.min(this.player.animations.afkEnter.currentFrame, AFK_Y_OFFSET);
+        return Math.min(this.player.animations.afkEnter.currentFrame, afk_y_offset);
     }
 
     /**
@@ -117,7 +116,7 @@ export class PlayerRenderer {
     _renderDimensions(anim, boundsAnim) {
         if (!boundsAnim) return { width: this.renderSize, height: this.renderSize };
 
-        const height = TARGET_VISIBLE_HEIGHT / (boundsAnim.groundLineRatio - boundsAnim.topRatio);
+        const height = target_visible_height / (boundsAnim.groundLineRatio - boundsAnim.topRatio);
         const width = height * (anim.frameWidth / anim.frameHeight);
         return { width, height };
     }

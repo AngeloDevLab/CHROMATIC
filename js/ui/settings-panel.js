@@ -1,4 +1,4 @@
-const VOLUME_BUSES = [
+const volume_buses = [
     { id: 'master', label: 'Master' },
     { id: 'music', label: 'Music' },
     { id: 'sfx', label: 'SFX' },
@@ -7,16 +7,16 @@ const VOLUME_BUSES = [
 /**
  * Defaults to 50%, not full volume.
  */
-const DEFAULT_VOLUME = 0.5;
+const default_volume = 0.5;
 
 /**
- * Reads a bus's saved volume, defaulting to DEFAULT_VOLUME when unset.
+ * Reads a bus's saved volume, defaulting to default_volume when unset.
  * @param {Game} game - Owning Game instance (needs game.save).
  * @param {string} busId - 'master' | 'music' | 'sfx'.
  * @returns {number} Saved volume, 0 to 1.
  */
 function getSavedVolume(game, busId) {
-    return game.save.get(`volume.${busId}`, DEFAULT_VOLUME);
+    return game.save.get(`volume.${busId}`, default_volume);
 }
 
 /**
@@ -26,7 +26,7 @@ function getSavedVolume(game, busId) {
  * @param {Game} game - Owning Game instance (needs game.save and game.sound).
  */
 export function applyAudioPreferences(game) {
-    for (const bus of VOLUME_BUSES) {
+    for (const bus of volume_buses) {
         game.sound.setVolume(bus.id, getSavedVolume(game, bus.id));
     }
     game.sound.setMuted(game.save.get('muted', false));
@@ -38,7 +38,7 @@ export function applyAudioPreferences(game) {
  * @returns {string} Audio section HTML.
  */
 function buildAudioSection(game) {
-    const sliders = VOLUME_BUSES.map((bus) => `
+    const sliders = volume_buses.map((bus) => `
         <label class="settings-row">
             <span>${bus.label} Volume</span>
             <input type="range" min="0" max="1" step="0.01" data-bus="${bus.id}" value="${getSavedVolume(game, bus.id)}">
@@ -74,7 +74,7 @@ function buildDisplaySection() {
  * and the mouse-click attack - read-only, no rebinding logic here. Key
  * rebinding UI is planned for Phase 2, not built yet.
  */
-const CONTROLS = [
+const controls = [
     { label: 'Run', keys: 'A / D or Left/Right Arrow' },
     { label: 'Jump', keys: 'W / Space / Up Arrow' },
     { label: 'Drop Through Platform', keys: 'S or Down Arrow' },
@@ -88,7 +88,7 @@ const CONTROLS = [
  * @returns {string} Controls section HTML.
  */
 function buildControlsSection() {
-    return CONTROLS.map((control) => `
+    return controls.map((control) => `
         <div class="settings-row">
             <span>${control.label}</span>
             <span>${control.keys}</span>
@@ -98,7 +98,7 @@ function buildControlsSection() {
 
 /**
  * Builds the Settings panel's body HTML. Language stays a placeholder (no
- * i18n system exists yet); Controls is read-only (see CONTROLS above).
+ * i18n system exists yet); Controls is read-only (see controls above).
  * @param {Game} game - Owning Game instance, used to read current values.
  * @returns {string} Panel body HTML.
  */

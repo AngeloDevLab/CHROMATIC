@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'chromatic-save';
+const storage_key = 'chromatic-save';
 
 /**
  * Thin JSON-over-localStorage wrapper for player preferences and progress,
@@ -15,7 +15,7 @@ export class SaveSystem {
      */
     _load() {
         try {
-            return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+            return JSON.parse(localStorage.getItem(storage_key)) || {};
         } catch {
             return {};
         }
@@ -38,6 +38,6 @@ export class SaveSystem {
      */
     set(key, value) {
         this.data[key] = value;
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+        localStorage.setItem(storage_key, JSON.stringify(this.data));
     }
 }

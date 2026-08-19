@@ -1,7 +1,7 @@
 import { SecretDoor, SECRET_DOOR_PRISMA_COST } from '../../entities/secret-door.js';
 import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from './interact-prompt.js';
 
-// Secret Room (Lvl 5 Gimmick) - uses the same greyFilterCSS/revealed treatment as Portal/Trapdoor.
+/** Wires the level's SecretDoor to its [E] prompt, spending Prisma to open it. */
 export class SecretDoorInteractable {
     /**
      * Builds the secret door (if the level has one) and its prompt element.

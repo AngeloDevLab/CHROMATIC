@@ -1,3 +1,6 @@
+// New Game resets existing progress (Game.resetProgress()) before continuing - without that, a
+// persisted save would make New Game silently resume the old one instead of restarting.
+
 import { State } from './state.js';
 import { Level } from '../world/level.js';
 import { buildTilesetRegistry } from '../world/tileset-registry.js';
@@ -12,37 +15,29 @@ import { buildInfoBody } from '../ui/info-panel-content.js';
 import { HowToPlayPanel } from '../ui/how-to-play-panel.js';
 import { MENU_ZONE, MENU_TRACK_KEYS } from '../core/music-playlist.js';
 
-const PLAYER_SPEED = 60;
-const ENEMY_SPEED = 70;
-const REVEAL_RADIUS = 55;
-const DARKEN_RADIUS = 65;
-const PASS_DELAY_SECONDS = 1;
-const CHARACTER_FRAME_SIZE = 96;
+const player_speed = 60;
+const enemy_speed = 70;
+const reveal_radius = 55;
+const darken_radius = 65;
+const pass_delay_seconds = 1;
+const character_frame_size = 96;
 /**
  * enemy-patroller-walking-idle.png is its own 64x64 sheet, unrelated to the
  * player's 96x96 convention above.
  */
-const ENEMY_FRAME_SIZE = 64;
-const BACKGROUND_OVERLAP_PX = 32;
+const enemy_frame_size = 64;
+const background_overlap_px = 32;
 
 /**
  * Difficulty scales only incoming damage - enemy HP and the player's own damage stay the same across all three.
  */
-const DIFFICULTIES = [
+const difficulties = [
     { id: 'easy', label: 'Easy', description: 'Can afford mistakes, survives several hits. (-50% incoming damage)' },
     { id: 'normal', label: 'Normal', description: 'Normal margin for error.' },
     { id: 'hard', label: 'Hard', description: 'Needs near-perfect play - many hits can be a one-shot. (+100% incoming damage)' },
 ];
 
-// Continue jumps straight to WorldmapState (game.difficulty/completedLevels
-// are already loaded from SaveSystem by then, see game.js's loadProgress())
-// - MenuButtons only enables the button once game.difficulty is non-null,
-// i.e. New Game has been confirmed at least once.
-//
-// New Game opens Difficulty selection below, which resets existing
-// progress (Game.resetProgress()) before continuing into CutsceneState ->
-// WorldmapState - without that reset, a persisted save would make New Game
-// silently resume the old one instead of actually restarting.
+/** The main menu: title, living-background demo scene, and Continue/New Game/Settings/How to Play/Info navigation. */
 export class MenuState extends State {
     /**
      * Builds the living-background scene and the menu overlay.
@@ -63,7 +58,7 @@ export class MenuState extends State {
     /**
      * Renders the shared parallax + level tile layers once onto a static
      * background canvas, cover-fit against the sky gap above the ground
-     * line and extended slightly past it (BACKGROUND_OVERLAP_PX).
+     * line and extended slightly past it (background_overlap_px).
      * @param {number} groundSurfaceY - World-space Y of the visible ground surface.
      */
     _buildBackground(groundSurfaceY) {
@@ -72,7 +67,7 @@ export class MenuState extends State {
         this.backgroundCanvas.height = this.game.height;
         const bgCtx = this.backgroundCanvas.getContext('2d');
         const parallax = this.game.assets.getImage('menu-parallax-bg');
-        const parallaxHeight = groundSurfaceY + BACKGROUND_OVERLAP_PX;
+        const parallaxHeight = groundSurfaceY + background_overlap_px;
         const parallaxScale = parallaxHeight / parallax.height;
         const parallaxWidth = parallax.width * parallaxScale;
         const parallaxX = (this.game.width - parallaxWidth) / 2;
@@ -85,7 +80,7 @@ export class MenuState extends State {
      * Permanent reveal (same mode as real gameplay), erased by the patroller pass.
      */
     _buildColorZone() {
-        this.colorZone = new ColorZone(this.game.width, this.game.height, REVEAL_RADIUS, {
+        this.colorZone = new ColorZone(this.game.width, this.game.height, reveal_radius, {
             greyBrightness: 0.3,
             greyTint: { sepia: 0.4, hueRotate: 180, saturate: 2 },
         });
@@ -108,8 +103,8 @@ export class MenuState extends State {
      */
     _buildPlayerActor(groundY) {
         const animations = {
-            idle: new SpriteAnimation(this.game.assets.getImage('guardian-idle'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 9, 8),
-            running: new SpriteAnimation(this.game.assets.getImage('guardian-running'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 12, 14),
+            idle: new SpriteAnimation(this.game.assets.getImage('guardian-idle'), character_frame_size, character_frame_size, 9, 8),
+            running: new SpriteAnimation(this.game.assets.getImage('guardian-running'), character_frame_size, character_frame_size, 12, 14),
         };
         this.player = new Player(0, groundY, animations);
     }
@@ -120,9 +115,9 @@ export class MenuState extends State {
      */
     _buildEnemyActor(groundSurfaceY) {
         const patrollerSprite = this.game.assets.getImage('enemy-patroller-walking-idle');
-        this.enemy = new Enemy(0, groundSurfaceY - ENEMY_FRAME_SIZE, patrollerSprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE);
+        this.enemy = new Enemy(0, groundSurfaceY - enemy_frame_size, patrollerSprite, enemy_frame_size, enemy_frame_size);
         this.enemy.setAnimations({
-            running: new SpriteAnimation(patrollerSprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, 12, 10),
+            running: new SpriteAnimation(patrollerSprite, enemy_frame_size, enemy_frame_size, 12, 10),
         });
     }
 
@@ -132,7 +127,7 @@ export class MenuState extends State {
     _startPlayerPass() {
         const direction = Math.random() < 0.5 ? 1 : -1;
         this.player.x = direction === 1 ? -this.player.width : this.game.width;
-        this.player.enableFreeRun(direction * PLAYER_SPEED);
+        this.player.enableFreeRun(direction * player_speed);
         this.phase = 'player';
     }
 
@@ -142,7 +137,7 @@ export class MenuState extends State {
     _startEnemyPass() {
         const direction = Math.random() < 0.5 ? 1 : -1;
         this.enemy.x = direction === 1 ? -this.enemy.width : this.game.width;
-        this.enemy.enableFreeRun(direction * ENEMY_SPEED);
+        this.enemy.enableFreeRun(direction * enemy_speed);
         this.phase = 'enemy';
     }
 
@@ -162,7 +157,7 @@ export class MenuState extends State {
      */
     _startDelay(nextPass) {
         this.phase = 'delay';
-        this._delayTimer = PASS_DELAY_SECONDS;
+        this._delayTimer = pass_delay_seconds;
         this._nextPass = nextPass;
     }
 
@@ -237,7 +232,7 @@ export class MenuState extends State {
      * @returns {string} Markup for the difficulty-choice buttons.
      */
     _buildDifficultyOptionsHTML() {
-        const options = DIFFICULTIES.map((difficulty) => `
+        const options = difficulties.map((difficulty) => `
             <button class="difficulty-option" data-id="${difficulty.id}">
                 <span class="difficulty-label">${difficulty.label}</span>
                 <span class="difficulty-description">${difficulty.description}</span>
@@ -284,7 +279,7 @@ export class MenuState extends State {
             if (this._hasExited(this.player)) this._startDelay(() => this._startEnemyPass());
         } else if (this.phase === 'enemy') {
             this.enemy.update(dt);
-            this.colorZone.darken(this.enemy.centerX, this.enemy.centerY, DARKEN_RADIUS);
+            this.colorZone.darken(this.enemy.centerX, this.enemy.centerY, darken_radius);
             if (this._hasExited(this.enemy)) this._startDelay(() => this._startPlayerPass());
         } else {
             this._delayTimer -= dt;
@@ -299,7 +294,7 @@ export class MenuState extends State {
     render(ctx) {
         ctx.drawImage(this.backgroundCanvas, 0, 0);
         if (this.phase === 'player') {
-            this.colorZone.render(ctx, { x: this.player.centerX, y: this.player.visualCenterY, radius: REVEAL_RADIUS });
+            this.colorZone.render(ctx, { x: this.player.centerX, y: this.player.visualCenterY, radius: reveal_radius });
             this.player.render(ctx);
         } else {
             this.colorZone.render(ctx);

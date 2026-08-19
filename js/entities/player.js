@@ -1,3 +1,5 @@
+// _wasGrounded starts null, not false, so the first resolve() doesn't read as a landing.
+
 import { Entity } from './entity.js';
 import { PlayerHealth } from './player-health.js';
 import { PlayerRenderer } from './player-renderer.js';
@@ -5,27 +7,22 @@ import { PlayerMovement } from './player-movement.js';
 import { DoubleJumpAbility } from './double-jump-ability.js';
 import { DashAbility } from './dash-ability.js';
 
-const HITBOX_WIDTH = 32;
-const HITBOX_HEIGHT = 64;
+const hitbox_width = 32;
+const hitbox_height = 64;
 
 /**
  * attack.png frame where the blade reaches full extension; the swing
  * resolves its hit exactly once, here.
  */
-const ATTACK_IMPACT_FRAME = 4;
+const attack_impact_frame = 4;
 
 /**
  * How long a knockback push overrides normal horizontal control; without it,
  * the accel/decel movement code would immediately pull vx back.
  */
-const KNOCKBACK_LOCK_SECONDS = 0.15;
+const knockback_lock_seconds = 0.15;
 
-// autopilot/freeRun/controlled are mutually exclusive, set once by whichever
-// enableX() the caller uses. Health/Shield/buff bookkeeping, rendering, and
-// keyboard movement live on composed sub-objects; most getters below are thin delegates.
-//
-// pendingVfx is a per-frame VFX mailbox drained by LevelSession. `_wasGrounded`
-// starts `null`, not `false`, so the first resolve() doesn't read as a landing.
+/** The playable character: composes health/renderer/movement sub-objects, plus attack/ability/VFX state. */
 export class Player extends Entity {
     /**
      * Builds the composed sub-objects and initializes movement/attack/ability/VFX state.
@@ -34,7 +31,7 @@ export class Player extends Entity {
      * @param {object} animations - Keyed by animation name, see sprite-animation.js.
      */
     constructor(x, y, animations) {
-        super(x, y, HITBOX_WIDTH, HITBOX_HEIGHT);
+        super(x, y, hitbox_width, hitbox_height);
         this.animations = animations;
         this.currentAnimation = 'idle';
         this.facing = 1;
@@ -97,7 +94,7 @@ export class Player extends Entity {
     /** Whether the player has died. @returns {boolean} */
     get dead() { return this.healthState.dead; }
 
-    /** Synced from GameState.update() every frame via the Dev Panel toggle. @returns {boolean} */
+    /** Whether godmode is currently enabled (synced from GameState.update() via the Dev Panel toggle). @returns {boolean} */
     get godmode() { return this.healthState.godmode; }
 
     /** Enables or disables godmode. @param {boolean} value - Whether godmode is enabled. */
@@ -120,15 +117,12 @@ export class Player extends Entity {
         else if (id === 'dash') this.dash.unlocked = true;
     }
 
-    /** Falling out of the level (GameState's kill plane) is always fatal. */
+    /** Kills the player outright and starts the death animation. */
     die() {
         if (this.healthState.kill()) this._enterDeathAnimation();
     }
 
-    /**
-     * Plays the one-shot fall animation; deathAnimationFinished gates when
-     * GameState's ghost-rise is allowed to start.
-     */
+    /** Plays the one-shot fall animation, if one is wired for the current character. */
     _enterDeathAnimation() {
         if (this.animations.dead) {
             this.currentAnimation = 'dead';
@@ -138,6 +132,7 @@ export class Player extends Entity {
 
     /**
      * True once the fall animation has played out, or immediately if none is wired.
+     * Gates when GameState's ghost-rise is allowed to start.
      * @returns {boolean}
      */
     get deathAnimationFinished() {
@@ -158,13 +153,13 @@ export class Player extends Entity {
      */
     applyKnockback(vx) {
         this.vx = vx;
-        this.knockbackTimer = KNOCKBACK_LOCK_SECONDS;
+        this.knockbackTimer = knockback_lock_seconds;
     }
 
     /**
      * Spends shield to absorb damage, if enough is available.
      * @param {number} amount - Damage amount to try to absorb.
-     * @returns {boolean}
+     * @returns {boolean} Whether enough shield was available (all-or-nothing; nothing is consumed on false).
      */
     consumeShield(amount) {
         return this.healthState.consumeShield(amount);
@@ -176,7 +171,7 @@ export class Player extends Entity {
      */
     consumeAttackImpact() {
         if (!this.attacking || this._attackImpactResolved) return false;
-        if (this.animations.attack.currentFrame < ATTACK_IMPACT_FRAME) return false;
+        if (this.animations.attack.currentFrame < attack_impact_frame) return false;
         this._attackImpactResolved = true;
         return true;
     }
@@ -268,10 +263,10 @@ export class Player extends Entity {
         }
     }
 
-    /** Topmost visible pixel row. @returns {number} */
+    /** Topmost visible pixel row, from PlayerRenderer - where damage numbers float from. @returns {number} */
     get visualTopY() { return this.renderer.visualTopY; }
 
-    /** Vertical center of the visible sprite. @returns {number} */
+    /** Vertical center of the visible sprite, from PlayerRenderer - the color-reveal/proximity anchor point. @returns {number} */
     get visualCenterY() { return this.renderer.visualCenterY; }
 
     /**

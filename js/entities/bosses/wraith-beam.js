@@ -1,8 +1,9 @@
 import { Entity } from '../entity.js';
 
-const THICKNESS_PX = 36;
-const STEP_PX = 8;
+const thickness_px = 36;
+const step_px = 8;
 
+/** The Wraith's beam attack: scans for a wall to stop at, horizontally or vertically. */
 export class WraithBeam extends Entity {
     /**
      * Spawns a beam and does its first scan for a wall to stop at.
@@ -34,9 +35,9 @@ export class WraithBeam extends Entity {
      */
     static _initialBounds(spawnCenterX, spawnCenterY, axis) {
         if (axis === 'horizontal') {
-            return [spawnCenterX, spawnCenterY - THICKNESS_PX / 2, 0, THICKNESS_PX];
+            return [spawnCenterX, spawnCenterY - thickness_px / 2, 0, thickness_px];
         }
-        return [spawnCenterX - THICKNESS_PX / 2, spawnCenterY, THICKNESS_PX, 0];
+        return [spawnCenterX - thickness_px / 2, spawnCenterY, thickness_px, 0];
     }
 
     /**
@@ -58,7 +59,7 @@ export class WraithBeam extends Entity {
 
         let stopX = this._sourceX;
         while (this.direction === 1 ? stopX < levelEdgeX : stopX > levelEdgeX) {
-            const nextX = stopX + this.direction * STEP_PX;
+            const nextX = stopX + this.direction * step_px;
             if (this._isBlockedAcross(nextX, centerY, 'y')) break;
             stopX = this.direction === 1 ? Math.min(nextX, levelEdgeX) : Math.max(nextX, levelEdgeX);
         }
@@ -79,7 +80,7 @@ export class WraithBeam extends Entity {
 
         let stopY = centerY;
         while (stopY < levelBottomY) {
-            const nextY = stopY + STEP_PX;
+            const nextY = stopY + step_px;
             if (this._isBlockedAcross(centerX, nextY, 'x')) break;
             stopY = Math.min(nextY, levelBottomY);
         }
@@ -93,12 +94,12 @@ export class WraithBeam extends Entity {
      * Checks whether a wall tile blocks the beam at the given point, across its full cross-section.
      * @param {number} x - World X to check.
      * @param {number} y - World Y to check.
-     * @param {'x'|'y'} crossAxis - Which coordinate the THICKNESS_PX span applies to.
+     * @param {'x'|'y'} crossAxis - Which coordinate the thickness_px span applies to.
      * @returns {boolean}
      */
     _isBlockedAcross(x, y, crossAxis) {
-        const half = THICKNESS_PX / 2;
-        for (let offset = -half; offset < half; offset += STEP_PX) {
+        const half = thickness_px / 2;
+        for (let offset = -half; offset < half; offset += step_px) {
             const px = crossAxis === 'x' ? x + offset : x;
             const py = crossAxis === 'y' ? y + offset : y;
             if (this._collision.isWallAt(px, py)) return true;

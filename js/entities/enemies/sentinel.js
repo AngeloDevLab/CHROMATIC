@@ -1,32 +1,33 @@
+// dormant clears only after buried, so the rise is visible before contact damage/the HP bar
+// activate.
+
 import { Enemy } from '../enemy.js';
 
 /**
  * Tankiest in the roster; contact damage matches every other enemy type.
  */
-const SENTINEL_HP = 35;
-const SENTINEL_CONTACT_DAMAGE = 20;
+const sentinel_hp = 35;
+const sentinel_contact_damage = 20;
 
 /**
  * Sinks the sprite while buried; actual hiding comes from GameState drawing
  * buried enemies before the terrain layer, not this offset alone.
  */
-const BURY_DEPTH_PX = 64;
+const bury_depth_px = 64;
 
-const DEFAULT_RISE_DURATION_SECONDS = 0.6;
+const default_rise_duration_seconds = 0.6;
 
 /**
  * Manual nudge - the sprite's auto-detected ground line lands a bit above the actual floor.
  */
-const GROUND_OFFSET_PX = 10;
+const ground_offset_px = 10;
 
 /**
  * Simple radius check (not a rectangular tolerance like Charger's).
  */
-const DEFAULT_AGGRO_RANGE_PX = 90;
+const default_aggro_range_px = 90;
 
-// Sentinel never moves, even after triggering. `buried` hides the sprite
-// (GameState draws it pre-terrain); `dormant` blocks contact damage and the
-// HP bar, clearing later so the rise is visible first.
+/** Stationary enemy that stays buried/dormant until the player triggers its rise. */
 export class Sentinel extends Enemy {
     /**
      * Sets Sentinel's HP and starts it buried/dormant.
@@ -38,12 +39,12 @@ export class Sentinel extends Enemy {
      */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
-        this.hp = SENTINEL_HP;
-        this.maxHp = SENTINEL_HP;
-        this.contactDamage = SENTINEL_CONTACT_DAMAGE;
+        this.hp = sentinel_hp;
+        this.maxHp = sentinel_hp;
+        this.contactDamage = sentinel_contact_damage;
         this.player = null;
-        this.aggroRange = DEFAULT_AGGRO_RANGE_PX;
-        this.riseDuration = DEFAULT_RISE_DURATION_SECONDS;
+        this.aggroRange = default_aggro_range_px;
+        this.riseDuration = default_rise_duration_seconds;
         this.riseProgress = 0;
         this.buried = true;
         this.dormant = true;
@@ -53,10 +54,10 @@ export class Sentinel extends Enemy {
      * Arms this Sentinel to aggro on a player within range.
      * @param {Player} player - Player instance to watch for aggro range.
      * @param {object} [options] - Optional settings.
-     * @param {number} [options.range=DEFAULT_AGGRO_RANGE_PX] - Aggro trigger range, in pixels.
-     * @param {number} [options.riseDuration=DEFAULT_RISE_DURATION_SECONDS] - Seconds to fully rise once triggered.
+     * @param {number} [options.range=default_aggro_range_px] - Aggro trigger range, in pixels.
+     * @param {number} [options.riseDuration=default_rise_duration_seconds] - Seconds to fully rise once triggered.
      */
-    enableTrigger(player, { range = DEFAULT_AGGRO_RANGE_PX, riseDuration = DEFAULT_RISE_DURATION_SECONDS } = {}) {
+    enableTrigger(player, { range = default_aggro_range_px, riseDuration = default_rise_duration_seconds } = {}) {
         this.player = player;
         this.aggroRange = range;
         this.riseDuration = riseDuration;
@@ -94,6 +95,6 @@ export class Sentinel extends Enemy {
      * @returns {number}
      */
     _drawY() {
-        return super._drawY() + (1 - this.riseProgress) * BURY_DEPTH_PX + GROUND_OFFSET_PX;
+        return super._drawY() + (1 - this.riseProgress) * bury_depth_px + ground_offset_px;
     }
 }

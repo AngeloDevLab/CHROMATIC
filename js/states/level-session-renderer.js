@@ -1,8 +1,6 @@
 import { PLAYER_REVEAL_RADIUS } from './level-session.js';
 
-// LevelSession's render pipeline, composed onto it rather than kept inline -
-// same pattern as player-renderer.js. Reads state off the session reference
-// passed in and owns nothing else.
+/** LevelSession's render pipeline, composed onto it rather than kept inline. */
 export class LevelSessionRenderer {
     /**
      * Binds this renderer to the LevelSession it draws.

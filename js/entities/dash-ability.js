@@ -1,11 +1,11 @@
-const DASH_SPEED = 400;
-const DASH_DURATION_SECONDS = 0.18;
-const DASH_COOLDOWN_SECONDS = 0.6;
-const DOUBLE_TAP_WINDOW_SECONDS = 0.25;
+// PlayerMovement freezes vx/facing for the dash's duration, the same way it does for knockback.
 
-// Composed onto Player as this.dash. Detects its own double-tap trigger by
-// comparing input state frame-to-frame; PlayerMovement freezes vx/facing for
-// the burst's duration, same as it does for knockback.
+const dash_speed = 400;
+const dash_duration_seconds = 0.18;
+const dash_cooldown_seconds = 0.6;
+const double_tap_window_seconds = 0.25;
+
+/** Composed onto Player as this.dash: detects a double-tap and fires a brief velocity burst. */
 export class DashAbility {
     /**
      * Sets up unlock/timer/tap-detection state.
@@ -67,7 +67,7 @@ export class DashAbility {
         if (this[windowField] > 0 && this.cooldownTimer <= 0 && !player.attacking) {
             this._trigger(player, direction);
         } else {
-            this[windowField] = DOUBLE_TAP_WINDOW_SECONDS;
+            this[windowField] = double_tap_window_seconds;
         }
     }
 
@@ -77,9 +77,9 @@ export class DashAbility {
      * @param {number} direction - -1 (left) or 1 (right).
      */
     _trigger(player, direction) {
-        this.timer = DASH_DURATION_SECONDS;
-        this.cooldownTimer = DASH_COOLDOWN_SECONDS;
-        player.vx = direction * DASH_SPEED;
+        this.timer = dash_duration_seconds;
+        this.cooldownTimer = dash_cooldown_seconds;
+        player.vx = direction * dash_speed;
         player.facing = direction;
         player.pendingVfx.push('dash');
     }

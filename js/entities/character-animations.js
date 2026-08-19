@@ -3,15 +3,15 @@ import { SpriteAnimation } from '../utils/sprite-animation.js';
 /**
  * attack.png uses a wider canvas than the other guardian sheets, to fit the sword's swing.
  */
-const CHARACTER_FRAME_SIZE = 96;
-const ATTACK_FRAME_WIDTH = 150;
-const ATTACK_FRAME_HEIGHT = 96;
+const character_frame_size = 96;
+const attack_frame_width = 150;
+const attack_frame_height = 96;
 
 /**
  * enter-afk.png/afk.png use a smaller 64x64 canvas than the other guardian
  * sheets; the renderer scales to idle's size regardless.
  */
-const AFK_FRAME_SIZE = 64;
+const afk_frame_size = 64;
 
 /**
  * Player action smoke VFX; all three sheets are 64x64 frames.
@@ -30,13 +30,13 @@ export const VFX_CLIPS = {
  */
 export function buildPlayerAnimations(assets) {
     return {
-        idle: new SpriteAnimation(assets.getImage('guardian-idle'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 9, 8),
-        running: new SpriteAnimation(assets.getImage('guardian-running'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 12, 14),
-        jump: new SpriteAnimation(assets.getImage('guardian-jump'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 13, 12),
-        attack: new SpriteAnimation(assets.getImage('guardian-attack'), ATTACK_FRAME_WIDTH, ATTACK_FRAME_HEIGHT, 8, 16, { loop: false }),
-        afkEnter: new SpriteAnimation(assets.getImage('guardian-afk-enter'), AFK_FRAME_SIZE, AFK_FRAME_SIZE, 11, 10, { loop: false }),
-        afk: new SpriteAnimation(assets.getImage('guardian-afk'), AFK_FRAME_SIZE, AFK_FRAME_SIZE, 5, 6),
-        dead: new SpriteAnimation(assets.getImage('guardian-dead'), CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 13, 10, { loop: false }),
+        idle: new SpriteAnimation(assets.getImage('guardian-idle'), character_frame_size, character_frame_size, 9, 8),
+        running: new SpriteAnimation(assets.getImage('guardian-running'), character_frame_size, character_frame_size, 12, 14),
+        jump: new SpriteAnimation(assets.getImage('guardian-jump'), character_frame_size, character_frame_size, 13, 12),
+        attack: new SpriteAnimation(assets.getImage('guardian-attack'), attack_frame_width, attack_frame_height, 8, 16, { loop: false }),
+        afkEnter: new SpriteAnimation(assets.getImage('guardian-afk-enter'), afk_frame_size, afk_frame_size, 11, 10, { loop: false }),
+        afk: new SpriteAnimation(assets.getImage('guardian-afk'), afk_frame_size, afk_frame_size, 5, 6),
+        dead: new SpriteAnimation(assets.getImage('guardian-dead'), character_frame_size, character_frame_size, 13, 10, { loop: false }),
     };
 }
 

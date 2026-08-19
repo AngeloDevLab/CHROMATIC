@@ -1,9 +1,8 @@
 import { Entity } from './entity.js';
 
-const SIZE = 64;
+const size = 64;
 
-// Only constructed once the level's boss is dead and its Token collected.
-// This class just draws the static sprite; appearance-timing lives in interactables.js.
+/** The post-boss Merchant: just draws its static sprite, spawned once its Tokens are collected. */
 export class Merchant extends Entity {
     /**
      * Creates a merchant sprite at a fixed position.
@@ -12,7 +11,7 @@ export class Merchant extends Entity {
      * @param {HTMLImageElement} sprite - Static merchant sprite.
      */
     constructor(x, y, sprite) {
-        super(x, y, SIZE, SIZE);
+        super(x, y, size, size);
         this.sprite = sprite;
     }
 

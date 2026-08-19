@@ -1,11 +1,8 @@
-const FULL_REVEAL_DURATION_SECONDS = 1.5;
+const full_reveal_duration_seconds = 1.5;
 
-const ZONE_WIPE_DURATION_SECONDS = 1.5;
+const zone_wipe_duration_seconds = 1.5;
 
-// color-zone.js's triggered, one-time sweep animations (full-level reveal/
-// darken on boss-defeat/player-death, Worldmap's zone-wipe), as opposed to
-// that file's own continuous per-frame trail mechanism - each has its own
-// elapsed/progress state that the other group never needs.
+/** ColorZone's triggered, one-time sweep animations (full reveal/darken, Worldmap's zone-wipe). */
 export class ColorZoneTransitions {
     /**
      * Starts with no sweep active.
@@ -79,7 +76,7 @@ export class ColorZoneTransitions {
     _updateFullReveal(dt) {
         const zone = this._colorZone;
         this._fullReveal.elapsed += dt;
-        const progress = Math.min(1, this._fullReveal.elapsed / FULL_REVEAL_DURATION_SECONDS);
+        const progress = Math.min(1, this._fullReveal.elapsed / full_reveal_duration_seconds);
 
         if (progress >= 1) {
             zone.overlayCtx.clearRect(0, 0, zone.width, zone.height);
@@ -97,7 +94,7 @@ export class ColorZoneTransitions {
     _updateFullDarken(dt) {
         const zone = this._colorZone;
         this._fullDarken.elapsed += dt;
-        const progress = Math.min(1, this._fullDarken.elapsed / FULL_REVEAL_DURATION_SECONDS);
+        const progress = Math.min(1, this._fullDarken.elapsed / full_reveal_duration_seconds);
 
         if (progress >= 1) {
             zone.overlayCtx.drawImage(zone.greyTemplateCanvas, 0, 0);
@@ -114,7 +111,7 @@ export class ColorZoneTransitions {
      */
     _updateZoneWipe(dt) {
         this._zoneWipe.elapsed += dt;
-        const progress = Math.min(1, this._zoneWipe.elapsed / ZONE_WIPE_DURATION_SECONDS);
+        const progress = Math.min(1, this._zoneWipe.elapsed / zone_wipe_duration_seconds);
         const { xStart, xEnd } = this._zoneWipe;
         const right = xStart + (xEnd - xStart) * progress;
 

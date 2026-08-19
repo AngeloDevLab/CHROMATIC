@@ -1,36 +1,31 @@
+// onBossDefeated() is guarded by Game.claimedBossTokens so replaying a level can't drop the same
+// boss's Tokens twice.
+
 import { Merchant } from '../../entities/merchant.js';
 import { Token } from '../../entities/token.js';
 import { MerchantDialogue } from '../../ui/merchant-dialogue.js';
 import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from './interact-prompt.js';
 
-const TOKEN_DROP_OFFSET_PX = 28;
+const token_drop_offset_px = 28;
 
 /**
  * Dialogue text shown for a Miniboss-tier Merchant (pure flavor, no shop).
  */
-const MINIBOSS_DIALOGUE_TEXT = "Heh, another wanderer with color to spare. Slay the Wraith that haunts the Grey City, and we'll talk business.";
+const miniboss_dialogue_text = "Heh, another wanderer with color to spare. Slay the Wraith that haunts the Grey City, and we'll talk business.";
 
-const ABILITY_TOKEN_COST = 2;
+const ability_token_cost = 2;
 
 /**
  * Minimum boss Token reward for the ability shop to open.
  */
-const SHOP_MIN_TOKEN_REWARD = ABILITY_TOKEN_COST;
+const shop_min_token_reward = ability_token_cost;
 
-const ABILITY_SHOP_OPTIONS = [
-    { id: 'doubleJump', label: 'Double Jump', description: 'Press Jump twice.', cost: ABILITY_TOKEN_COST },
-    { id: 'dash', label: 'Dash', description: 'Press A or D twice quickly to dash in that direction.', cost: ABILITY_TOKEN_COST },
+const ability_shop_options = [
+    { id: 'doubleJump', label: 'Double Jump', description: 'Press Jump twice.', cost: ability_token_cost },
+    { id: 'dash', label: 'Dash', description: 'Press A or D twice quickly to dash in that direction.', cost: ability_token_cost },
 ];
 
-// Post-boss Merchant. Doesn't spawn until the boss is dead and every dropped Token is collected.
-//
-// updatePrompt() hides its prompt immediately when [E] opens the dialogue,
-// since opening MerchantDialogue freezes LevelSession's update loop and
-// nothing else would run to hide it afterward.
-//
-// onBossDefeated() is guarded by Game.claimedBossTokens so replaying a
-// level can't drop the same boss's Tokens twice; the reward is marked
-// claimed as soon as the boss dies, not once its Tokens are picked up.
+/** Drops the boss's Token reward, then spawns the Merchant and its shop dialogue once collected. */
 export class MerchantInteractable {
     /**
      * Finds the level's Merchant marker and builds its dialogue/prompt.
@@ -71,16 +66,16 @@ export class MerchantInteractable {
     }
 
     /**
-     * Spreads `count` Tokens evenly around centerX, TOKEN_DROP_OFFSET_PX apart.
+     * Spreads `count` Tokens evenly around centerX, token_drop_offset_px apart.
      * @param {number} centerX - World X to center the Token spread on.
      * @param {number} centerY - World Y to drop the Tokens at.
      * @param {number} count - How many Tokens to spawn.
      * @returns {Token[]}
      */
     _buildTokenDrop(centerX, centerY, count) {
-        const spread = (count - 1) * TOKEN_DROP_OFFSET_PX;
+        const spread = (count - 1) * token_drop_offset_px;
         return Array.from({ length: count }, (_, i) =>
-            new Token(centerX - spread / 2 + i * TOKEN_DROP_OFFSET_PX, centerY, this.game.assets.getImage('token')));
+            new Token(centerX - spread / 2 + i * token_drop_offset_px, centerY, this.game.assets.getImage('token')));
     }
 
     /**
@@ -144,12 +139,12 @@ export class MerchantInteractable {
      * Opens the post-boss dialogue: flavor-only for a Miniboss, or the ability shop for a Templateboss/Chapterboss.
      */
     _openDialogue() {
-        if (this._tokenReward < SHOP_MIN_TOKEN_REWARD) {
-            this.dialogue.open(MINIBOSS_DIALOGUE_TEXT);
+        if (this._tokenReward < shop_min_token_reward) {
+            this.dialogue.open(miniboss_dialogue_text);
             return;
         }
         this.dialogue.open(`You defeated ${this._bossName}. Let's see what I have for you.`, {
-            options: ABILITY_SHOP_OPTIONS,
+            options: ability_shop_options,
             getTokens: () => this.game.tokens,
             isOwned: (id) => this.game.abilities.has(id),
             buy: (id, cost) => this._buyAbility(id, cost),
@@ -158,7 +153,7 @@ export class MerchantInteractable {
 
     /**
      * Spends Tokens to unlock an ability, if affordable and not already owned.
-     * @param {string} id - One of ABILITY_SHOP_OPTIONS's ids.
+     * @param {string} id - One of ability_shop_options's ids.
      * @param {number} cost - That option's Token cost.
      * @returns {boolean} Whether the purchase went through.
      */

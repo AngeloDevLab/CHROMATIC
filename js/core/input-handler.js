@@ -1,13 +1,13 @@
-const KEY_MAP = {
+// Pause binds to KeyP, not Escape - the Fullscreen API reserves Escape as unoverridable.
+
+const key_map = {
     ArrowLeft: 'left', KeyA: 'left',
     ArrowRight: 'right', KeyD: 'right',
     ArrowUp: 'jump', Space: 'jump', KeyW: 'jump',
     ArrowDown: 'drop', KeyS: 'drop',
 };
 
-// Held actions (left/right/jump/drop) are read via isDown(); attack/pause/interact
-// are edge-triggered via consumeXPress()/clearXPress(). Pause binds to KeyP, not
-// Escape, since the Fullscreen API reserves Escape as unoverridable.
+/** Reads keyboard/mouse input into held actions (left/right/jump/drop) and edge-triggered presses (attack/pause/interact). */
 export class InputHandler {
     /**
      * Sets up input state and attaches every DOM listener.
@@ -79,7 +79,7 @@ export class InputHandler {
         this._active = true;
         if (this._handleOneShotKey(e)) return;
 
-        const action = KEY_MAP[e.code];
+        const action = key_map[e.code];
         if (!action) return;
         if (action === 'jump' && !this.actions.jump) this._presses.jump = true;
         if (action === 'drop' && !this.actions.drop) this._presses.drop = true;
@@ -87,7 +87,7 @@ export class InputHandler {
     }
 
     /**
-     * Handles the one-shot keys not covered by KEY_MAP.
+     * Handles the one-shot keys not covered by key_map.
      * @param {KeyboardEvent} e - The browser keydown event.
      * @returns {boolean} Whether this key was a one-shot press (Pause/Interact/Attack).
      */
@@ -112,7 +112,7 @@ export class InputHandler {
      * @param {KeyboardEvent} e - The browser keyup event.
      */
     _onKeyUp(e) {
-        const action = KEY_MAP[e.code];
+        const action = key_map[e.code];
         if (action) this.actions[action] = false;
     }
 

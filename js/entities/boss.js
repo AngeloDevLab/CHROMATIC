@@ -1,12 +1,10 @@
 import { Enemy, HIT_FLASH_SECONDS } from './enemy.js';
 
-const VULNERABLE_DAMAGE_MULTIPLIER = 2;
-const ENRAGE_HP_FRACTION = 0.5;
-const ENRAGE_TIME_SCALE = 0.5;
+const vulnerable_damage_multiplier = 2;
+const enrage_hp_fraction = 0.5;
+const enrage_time_scale = 0.5;
 
-// Entity -> Enemy -> Boss -> Templateboss. This layer holds what every boss
-// tier shares: the vulnerability-window damage bonus, phase/enrage timing,
-// and non-square rendering for tall/wide boss sheets.
+/** Base class every boss tier shares: vulnerability-window damage, enrage timing, and non-square sprite rendering. */
 export class Boss extends Enemy {
     /**
      * Landed/exposed window, flipped by subclasses during their own state machine.
@@ -51,7 +49,7 @@ export class Boss extends Enemy {
      * @returns {number} The amount actually applied.
      */
     takeDamage(amount, { scaleForVulnerable = true } = {}) {
-        const scaled = this.vulnerable && scaleForVulnerable ? amount * VULNERABLE_DAMAGE_MULTIPLIER : amount;
+        const scaled = this.vulnerable && scaleForVulnerable ? amount * vulnerable_damage_multiplier : amount;
         return super.takeDamage(scaled);
     }
 
@@ -60,7 +58,7 @@ export class Boss extends Enemy {
      * @returns {boolean}
      */
     get enraged() {
-        return this.hp <= this.maxHp * ENRAGE_HP_FRACTION;
+        return this.hp <= this.maxHp * enrage_hp_fraction;
     }
 
     /**
@@ -68,7 +66,7 @@ export class Boss extends Enemy {
      * @returns {number}
      */
     get timeScale() {
-        return this.enraged ? ENRAGE_TIME_SCALE : 1;
+        return this.enraged ? enrage_time_scale : 1;
     }
 
     /**

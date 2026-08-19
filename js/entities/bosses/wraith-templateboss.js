@@ -1,13 +1,12 @@
 import { Wraith } from './wraith.js';
 import { WraithBeam } from './wraith-beam.js';
 
-const TEMPLATEBOSS_HP = 400;
-const TEMPLATEBOSS_SIGNATURE_HIT_DAMAGE = 80;
-const TEMPLATEBOSS_NAME = 'Wraith of the Grey City';
-const TEMPLATEBOSS_TOKEN_REWARD = 2;
+const templateboss_hp = 400;
+const templateboss_signature_hit_damage = 80;
+const templateboss_name = 'Wraith of the Grey City';
+const templateboss_token_reward = 2;
 
-// Wraith of the Grey City (Lvl 6 Templateboss); extends wraith.js rather than
-// duplicating it. Rolls a random axis each attack instead of always firing horizontal.
+/** Wraith of the Grey City (Lvl 6 Templateboss): extends wraith.js, rolling a random beam axis each attack. */
 export class WraithTemplateboss extends Wraith {
     /**
      * Last axis actually fired, for _rollAxis()'s enrage bias; null until the first attack.
@@ -23,11 +22,11 @@ export class WraithTemplateboss extends Wraith {
      */
     constructor(x, y, collision, player) {
         super(x, y, collision, player);
-        this.hp = TEMPLATEBOSS_HP;
-        this.maxHp = TEMPLATEBOSS_HP;
-        this.signatureHitDamage = TEMPLATEBOSS_SIGNATURE_HIT_DAMAGE;
-        this.name = TEMPLATEBOSS_NAME;
-        this.tokenReward = TEMPLATEBOSS_TOKEN_REWARD;
+        this.hp = templateboss_hp;
+        this.maxHp = templateboss_hp;
+        this.signatureHitDamage = templateboss_signature_hit_damage;
+        this.name = templateboss_name;
+        this.tokenReward = templateboss_token_reward;
     }
 
     /**

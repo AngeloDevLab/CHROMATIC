@@ -1,9 +1,10 @@
+// Not every level places a Portal in Tiled - hence the null-tolerant this._portal checks
+// throughout.
+
 import { Portal } from '../../entities/portal.js';
 import { createInteractPrompt, positionInteractPrompt, INTERACT_RANGE_PX } from './interact-prompt.js';
 
-// Level-end portal - locked until every enemy is dead, then interactable via
-// [E] in range. Not every level places one in Tiled, hence the null-tolerant
-// this._portal checks throughout.
+/** Wires the level's exit Portal to its [E] prompt, locked until every enemy is dead. */
 export class PortalInteractable {
     /**
      * Builds the portal (if the level has one) and its prompt element.

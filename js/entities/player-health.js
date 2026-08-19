@@ -1,34 +1,36 @@
-const MAX_HEALTH = 100;
-const MAX_SHIELD = 100;
-const SHIELD_REGEN_PER_SECOND = 1;
+// takeDamage()/kill() only report back whether the hit was fatal - entering the death animation
+// stays player.js's concern.
 
-const BUFF_MAX_HEALTH_BONUS = 20;
-const BUFF_SHIELD_REGEN_BONUS = 0.5;
-const BUFF_MAX_SHIELD_BONUS = 20;
+const max_health = 100;
+const max_shield = 100;
+const shield_regen_per_second = 1;
+
+const buff_max_health_bonus = 20;
+const buff_shield_regen_bonus = 0.5;
+const buff_max_shield_bonus = 20;
 
 /**
  * Brief invincibility after any hit, independent of an enemy's own contactCooldown.
  */
-const INVINCIBILITY_SECONDS = 0.5;
+const invincibility_seconds = 0.5;
 
 /**
  * Brief white tint on taking damage, deliberately shorter than
- * INVINCIBILITY_SECONDS - a quick hit reaction, not a "still invincible" indicator.
+ * invincibility_seconds - a quick hit reaction, not a "still invincible" indicator.
  */
-const HIT_FLASH_SECONDS = 0.15;
+const hit_flash_seconds = 0.15;
 
-// takeDamage()/kill() report back whether the hit was fatal; entering the
-// death animation stays player.js's concern.
+/** Player's Health/Shield/invincibility/hit-flash bookkeeping, composed onto Player as this.healthState. */
 export class PlayerHealth {
     /**
      * Sets health/shield to their max and resets all timers/flags.
      */
     constructor() {
-        this.maxHealth = MAX_HEALTH;
-        this.health = MAX_HEALTH;
-        this.maxShield = MAX_SHIELD;
-        this.shield = MAX_SHIELD;
-        this.shieldRegenPerSecond = SHIELD_REGEN_PER_SECOND;
+        this.maxHealth = max_health;
+        this.health = max_health;
+        this.maxShield = max_shield;
+        this.shield = max_shield;
+        this.shieldRegenPerSecond = shield_regen_per_second;
         this.invincibleTimer = 0;
         this.hitFlashTimer = 0;
         this.dead = false;
@@ -41,12 +43,12 @@ export class PlayerHealth {
      */
     applyBuff(buffId) {
         if (buffId === 'maxHealth') {
-            this.maxHealth += BUFF_MAX_HEALTH_BONUS;
+            this.maxHealth += buff_max_health_bonus;
             this.health = this.maxHealth;
         } else if (buffId === 'shieldRegen') {
-            this.shieldRegenPerSecond += BUFF_SHIELD_REGEN_BONUS;
+            this.shieldRegenPerSecond += buff_shield_regen_bonus;
         } else if (buffId === 'maxShield') {
-            this.maxShield += BUFF_MAX_SHIELD_BONUS;
+            this.maxShield += buff_max_shield_bonus;
             this.shield = this.maxShield;
         }
     }
@@ -67,8 +69,8 @@ export class PlayerHealth {
             this.health = Math.max(0, this.health - amount);
         }
 
-        this.invincibleTimer = INVINCIBILITY_SECONDS;
-        this.hitFlashTimer = HIT_FLASH_SECONDS;
+        this.invincibleTimer = invincibility_seconds;
+        this.hitFlashTimer = hit_flash_seconds;
         if (this.health === 0) this.dead = true;
         return this.health === 0;
     }
@@ -116,6 +118,6 @@ export class PlayerHealth {
 
     /** White-tint amount for the current hit flash, 0-1. @returns {number} */
     get flashAmount() {
-        return this.hitFlashTimer / HIT_FLASH_SECONDS;
+        return this.hitFlashTimer / hit_flash_seconds;
     }
 }

@@ -1,13 +1,13 @@
+// Mirrors triggerFullReveal's victory beat in color-zone.js, but darkens the level instead of
+// bursting into color.
+
 import { SpriteAnimation } from '../utils/sprite-animation.js';
 
 export const GHOST_FRAME_SIZE = 64;
-const GHOST_RISE_SPEED = 25;
-const GHOST_FADE_DURATION_SECONDS = 2.5;
+const ghost_rise_speed = 25;
+const ghost_fade_duration_seconds = 2.5;
 
-// Float-and-fade ghost, driven by GameState once Player.deathAnimationFinished.
-// Mirrors triggerFullReveal's victory beat in color-zone.js: it darkens the
-// level instead of bursting into color, then GameState opens the Game Over
-// panel once update() reports finished.
+/** The float-and-fade ghost shown once the player's death animation finishes. */
 export class DeathSequence {
     /**
      * Sets up the ghost animation and inactive default state.
@@ -43,10 +43,10 @@ export class DeathSequence {
      */
     update(dt) {
         this.elapsed += dt;
-        this.y -= GHOST_RISE_SPEED * dt;
+        this.y -= ghost_rise_speed * dt;
         this.ghostAnimation.update(dt);
 
-        if (!this._reportedFinished && this.elapsed >= GHOST_FADE_DURATION_SECONDS) {
+        if (!this._reportedFinished && this.elapsed >= ghost_fade_duration_seconds) {
             this._reportedFinished = true;
             return true;
         }
@@ -58,7 +58,7 @@ export class DeathSequence {
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
-        const alpha = Math.max(0, 1 - this.elapsed / GHOST_FADE_DURATION_SECONDS);
+        const alpha = Math.max(0, 1 - this.elapsed / ghost_fade_duration_seconds);
         if (alpha <= 0) return;
 
         ctx.save();

@@ -3,10 +3,7 @@ import { SpriteAnimation } from '../utils/sprite-animation.js';
 
 export const SECRET_DOOR_PRISMA_COST = 50;
 
-// Secret Room entrance; same closed -> opening -> open lifecycle as
-// portal.js, but gated on the player affording the Prisma cost instead of
-// all enemies dead. GameState owns the actual spend/interact logic - this
-// class only tracks/renders state.
+/** Secret Room entrance: tracks/renders its closed/opening/open state. */
 export class SecretDoor extends Entity {
     /**
      * Creates a closed secret door at a fixed position.

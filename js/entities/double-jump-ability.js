@@ -1,5 +1,5 @@
-// Composed onto Player as this.doubleJump. Purely queried/mutated from
-// player-movement.js's jump code - no per-frame update() of its own.
+
+/** Composed onto Player as this.doubleJump: tracks whether the extra jump is unlocked/used. */
 export class DoubleJumpAbility {
     /**
      * Sets up the unlock flag and used-this-cycle flag.

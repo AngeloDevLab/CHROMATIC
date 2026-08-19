@@ -1,8 +1,6 @@
 import { Entity } from './entity.js';
 
-// The buff pickup inside a Secret Room, past the secret-door.js entrance.
-// game-state.js drives the buff-choice panel and gates interaction on the
-// door already being open; this class only tracks whether it's been used.
+/** The buff pickup inside a Secret Room; tracks only whether it's been used. */
 export class BuffTerminal extends Entity {
     /**
      * Creates a buff terminal at a fixed position.

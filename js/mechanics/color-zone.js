@@ -1,3 +1,7 @@
+// Fade mode ages stamps and rebuilds the overlay from the grey template every frame, dissolving
+// back to grey - permanent mode instead punches directly into the persistent overlay and never
+// rebuilds.
+
 import { ColorZoneTransitions } from './color-zone-transitions.js';
 
 /**
@@ -16,11 +20,7 @@ export function buildGreyFilter(greyBrightness, greyTint) {
     return filters.join(' ');
 }
 
-// Permanent mode (default, fadeDurationSeconds = Infinity) punches directly
-// into the persistent overlay and stays revealed forever - the real trail
-// mechanic. Fade mode (a finite fadeDurationSeconds) is for decorative uses
-// only (e.g. the menu background): ages stamps and rebuilds the overlay from
-// the grey template each frame, dissolving back to grey instead of staying revealed.
+/** The color-reveal mechanic: punches holes into a grey overlay, permanently (the real trail) or fading (decorative uses). */
 export class ColorZone {
     /**
      * Sets up the grey/overlay/scratch canvases and desaturation filter.

@@ -1,16 +1,16 @@
-const TILE_SIZE = 32;
+// Tiled numbers gids as one continuous sequence across a level's tilesets, in firstgid order.
 
-// Tiled numbers gids as one continuous sequence across a level's tilesets,
-// in firstgid order; _tilesetFor() finds the tileset that started most
-// recently at or before a given gid.
+const tile_size = 32;
+
+/** A parsed Tiled level: tilesets, tile layers, and object markers. */
 export class Level {
     /**
      * Parses a Tiled JSON export into tilesets, layers, and object markers.
      * @param {object} data - Raw Tiled JSON export.
      * @param {Object<string, {image: HTMLImageElement, columns: number}>} tilesetRegistry - Loaded tileset images keyed by basename (see tileset-registry.js).
-     * @param {number} [tileSize=TILE_SIZE] - Tile edge length, in pixels.
+     * @param {number} [tileSize=tile_size] - Tile edge length, in pixels.
      */
-    constructor(data, tilesetRegistry, tileSize = TILE_SIZE) {
+    constructor(data, tilesetRegistry, tileSize = tile_size) {
         this.data = data;
         this.tileSize = tileSize;
         this.widthInTiles = data.width;

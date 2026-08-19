@@ -1,27 +1,22 @@
+// The iris draws onto a separate mask canvas first, then composites once with a capped alpha -
+// drawing blobs straight onto the scene would let overlaps stack past the cap and wash out early.
+
 import { State } from './state.js';
 import { SpriteAnimation } from '../utils/sprite-animation.js';
 
-const CHARACTER_FRAME_SIZE = 96;
-const DARKEN_DURATION = 10;
-const FLASH_DURATION = 0.6;
-const REVEAL_DURATION = 2;
-const IRIS_BLOB_COUNT = 8;
-const DARKEN_COLOR = '6, 10, 18';
-const DARKEN_MAX_ALPHA = 0.88;
-const TEXT_CHARS_PER_SECOND = 10;
+const character_frame_size = 96;
+const darken_duration = 10;
+const flash_duration = 0.6;
+const reveal_duration = 2;
+const iris_blob_count = 8;
+const darken_color = '6, 10, 18';
+const darken_max_alpha = 0.88;
+const text_chars_per_second = 10;
 
-const DARKENING_TEXT = 'The Darkness reaches this world too.<br> It spreads, devouring land and color.';
-const ARRIVAL_TEXT = 'Just before the world sinks completely into Darkness,<br> a burst of color splits the dark.';
+const darkening_text = 'The Darkness reaches this world too.<br> It spreads, devouring land and color.';
+const arrival_text = 'Just before the world sinks completely into Darkness,<br> a burst of color splits the dark.';
 
-// Intro cutscene, built entirely from the beach background + the existing
-// idle sprite. Sequence: beach in color, darkening from the edges inward
-// (iris effect) until fully dark, a white flash, then fading back from
-// white with the Guardian now present.
-//
-// The iris is drawn as several dark blobs onto a separate mask canvas
-// first, then composited onto the scene once with a single capped alpha -
-// drawing each blob straight onto the scene would let overlapping blobs
-// stack past the cap and wash out to solid black early.
+/** The intro cutscene: an iris-darken, flash, and reveal sequence built from the beach background and idle sprite. */
 export class CutsceneState extends State {
     /**
      * Sets up the darken -> flash -> reveal phase sequence and its overlay elements.
@@ -32,7 +27,7 @@ export class CutsceneState extends State {
         this.phaseTime = 0;
         this.idleAnimation = new SpriteAnimation(
             this.game.assets.getImage('guardian-idle'),
-            CHARACTER_FRAME_SIZE, CHARACTER_FRAME_SIZE, 9, 8
+            character_frame_size, character_frame_size, 9, 8
         );
         this._irisBlobs = this._generateIrisBlobs();
 
@@ -48,7 +43,7 @@ export class CutsceneState extends State {
         this.textEl = document.createElement('div');
         this.textEl.className = 'cutscene-text';
         this.game.overlay.appendChild(this.textEl);
-        this._setText(DARKENING_TEXT);
+        this._setText(darkening_text);
     }
 
     /**
@@ -107,7 +102,7 @@ export class CutsceneState extends State {
         if (!this._textTokens || this._textRevealedCount >= this._textTokens.length) return;
 
         this._textRevealTimer += dt;
-        const tokensToShow = Math.floor(this._textRevealTimer * TEXT_CHARS_PER_SECOND);
+        const tokensToShow = Math.floor(this._textRevealTimer * text_chars_per_second);
         if (tokensToShow > this._textRevealedCount) {
             this._textRevealedCount = Math.min(tokensToShow, this._textTokens.length);
             this.textEl.innerHTML = this._textTokens.slice(0, this._textRevealedCount).join('');
@@ -123,14 +118,14 @@ export class CutsceneState extends State {
         this.idleAnimation.update(dt);
         this._updateText(dt);
 
-        if (this.phase === 'darken' && this.phaseTime >= DARKEN_DURATION) {
+        if (this.phase === 'darken' && this.phaseTime >= darken_duration) {
             this.phase = 'flash';
             this.phaseTime = 0;
-            this._setText(ARRIVAL_TEXT);
-        } else if (this.phase === 'flash' && this.phaseTime >= FLASH_DURATION) {
+            this._setText(arrival_text);
+        } else if (this.phase === 'flash' && this.phaseTime >= flash_duration) {
             this.phase = 'reveal';
             this.phaseTime = 0;
-        } else if (this.phase === 'reveal' && this.phaseTime >= REVEAL_DURATION) {
+        } else if (this.phase === 'reveal' && this.phaseTime >= reveal_duration) {
             this.phase = 'hold';
         }
     }
@@ -154,7 +149,7 @@ export class CutsceneState extends State {
      */
     _drawPhase(ctx, w, h) {
         if (this.phase === 'darken') {
-            this._drawIris(ctx, w, h, this.phaseTime / DARKEN_DURATION);
+            this._drawIris(ctx, w, h, this.phaseTime / darken_duration);
         } else if (this.phase === 'flash') {
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, w, h);
@@ -173,7 +168,7 @@ export class CutsceneState extends State {
      */
     _drawRevealFade(ctx, w, h) {
         this._drawGuardian(ctx, w, h);
-        const t = 1 - this.phaseTime / REVEAL_DURATION;
+        const t = 1 - this.phaseTime / reveal_duration;
         ctx.fillStyle = `rgba(255, 255, 255, ${t})`;
         ctx.fillRect(0, 0, w, h);
     }
@@ -202,8 +197,8 @@ export class CutsceneState extends State {
      */
     _generateIrisBlobs() {
         const blobs = [];
-        for (let i = 0; i < IRIS_BLOB_COUNT; i++) {
-            const angle = (i / IRIS_BLOB_COUNT) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+        for (let i = 0; i < iris_blob_count; i++) {
+            const angle = (i / iris_blob_count) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
             const growthRate = 0.75 + Math.random() * 0.5;
             const delay = Math.random() * 0.15;
             blobs.push({ angle, growthRate, delay });
@@ -223,7 +218,7 @@ export class CutsceneState extends State {
         this._paintIrisMask(maskCtx, w, h, t);
 
         ctx.save();
-        ctx.globalAlpha = DARKEN_MAX_ALPHA;
+        ctx.globalAlpha = darken_max_alpha;
         ctx.drawImage(this._irisMaskCanvas, 0, 0);
         ctx.restore();
     }
@@ -257,7 +252,7 @@ export class CutsceneState extends State {
             this._paintIrisBlob(maskCtx, w, h, t, blob, geometry);
         }
         if (t >= 0.95) {
-            maskCtx.fillStyle = `rgba(${DARKEN_COLOR}, 1)`;
+            maskCtx.fillStyle = `rgba(${darken_color}, 1)`;
             maskCtx.fillRect(0, 0, w, h);
         }
     }
@@ -279,9 +274,9 @@ export class CutsceneState extends State {
         const originY = cy + Math.sin(blob.angle) * originDistance;
 
         const gradient = maskCtx.createRadialGradient(originX, originY, 0, originX, originY, radius);
-        gradient.addColorStop(0, `rgba(${DARKEN_COLOR}, 1)`);
-        gradient.addColorStop(0.7, `rgba(${DARKEN_COLOR}, 1)`);
-        gradient.addColorStop(1, `rgba(${DARKEN_COLOR}, 0)`);
+        gradient.addColorStop(0, `rgba(${darken_color}, 1)`);
+        gradient.addColorStop(0.7, `rgba(${darken_color}, 1)`);
+        gradient.addColorStop(1, `rgba(${darken_color}, 0)`);
 
         maskCtx.fillStyle = gradient;
         maskCtx.fillRect(0, 0, w, h);
@@ -294,7 +289,7 @@ export class CutsceneState extends State {
      * @param {number} h - Canvas height.
      */
     _drawGuardian(ctx, w, h) {
-        const size = CHARACTER_FRAME_SIZE * 0.75;
+        const size = character_frame_size * 0.75;
         const feetY = h * 0.85;
         this.idleAnimation.draw(ctx, w / 2 - size / 2, feetY - size, size, size);
     }

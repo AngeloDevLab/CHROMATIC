@@ -1,10 +1,14 @@
-const ICON_BASE = 'assets/icons/';
+// Mounted to document.body, outside #ui-overlay, since #ui-overlay is transform-scaled to the
+// internal resolution and would otherwise track the letterboxed canvas instead of the physical
+// screen corners.
+
+const icon_base = 'assets/icons/';
 
 /**
  * Held while pressed - InputHandler.pressAction()/releaseAction() apply the
  * same edge-press guard as a real keydown/keyup.
  */
-const HOLD_BUTTONS = [
+const hold_buttons = [
     { action: 'left', icon: 'btn-icon-left', className: 'touch-left' },
     { action: 'right', icon: 'btn-icon-right', className: 'touch-right' },
     { action: 'jump', icon: 'btn-icon-up', className: 'touch-jump' },
@@ -17,7 +21,7 @@ const HOLD_BUTTONS = [
  * either - it's context-sensitive, positioned by interactables.js's own
  * [E] prompt elements instead of a fixed corner button.
  */
-const TAP_BUTTONS = [
+const tap_buttons = [
     { name: 'attack', icon: 'btn-icon-attack', className: 'touch-attack' },
 ];
 
@@ -41,17 +45,11 @@ export function buildTouchButtonElement(icon, className) {
     const el = document.createElement('button');
     el.className = `touch-button ${className}`;
     el.innerHTML = '<span class="touch-button-bg"></span><span class="touch-button-icon"></span>';
-    el.querySelector('.touch-button-icon').style.setProperty('--touch-icon', `url('${ICON_BASE}${icon}.png')`);
+    el.querySelector('.touch-button-icon').style.setProperty('--touch-icon', `url('${icon_base}${icon}.png')`);
     return el;
 }
 
-// Virtual on-screen D-Pad/action buttons - plain HTML elements that feed
-// InputHandler's existing pressAction()/releaseAction()/triggerPress(), so
-// player.js/combat-coordinator.js never need to know input came from touch vs
-// a key. Mounted to document.body, outside #ui-overlay, like
-// landscape-gate.js/dev-panel.js, since #ui-overlay is transform-scaled to the
-// internal game resolution and would otherwise track the letterboxed canvas
-// instead of the physical screen corners.
+/** Virtual on-screen D-Pad/action buttons that feed InputHandler, shown only on touch devices. */
 export class TouchControls {
     /**
      * Builds the root and Pause button (always present), then starts watching for touch capability.
@@ -89,12 +87,12 @@ export class TouchControls {
      * Builds the D-Pad/action buttons, touch devices only.
      */
     _buildTouchOnlyButtons() {
-        for (const { action, icon, className } of HOLD_BUTTONS) {
+        for (const { action, icon, className } of hold_buttons) {
             const el = this._createButton(icon, className);
             this._touchOnlyElements.push(el);
             this._wireHoldButton(el, action);
         }
-        for (const { name, icon, className } of TAP_BUTTONS) {
+        for (const { name, icon, className } of tap_buttons) {
             const el = this._createButton(icon, className);
             this._touchOnlyElements.push(el);
             this._wireTapButton(el, name);

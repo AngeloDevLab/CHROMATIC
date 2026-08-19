@@ -1,3 +1,4 @@
+/** Web Audio playback: loads and plays music (with crossfade) and one-shot SFX through a Master/Music/SFX/Ambience bus hierarchy. */
 export class SoundManager {
     /**
      * Web Audio GainNode hierarchy: Master -> Music/SFX/Ambience. Each bus's

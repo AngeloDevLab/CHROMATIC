@@ -1,12 +1,12 @@
 import { LEVEL_JSON_KEYS, isBossLevel } from '../states/level-session.js';
 
-const TOGGLE_KEY_CODE = 'Backquote';
+const toggle_key_code = 'Backquote';
 
 /**
  * Prologue only, matches WorldmapState's level-skip target.
  */
-const CHAPTER_ID = 'prologue';
-const LEVEL_COUNT = 6;
+const chapter_id = 'prologue';
+const level_count = 6;
 
 /**
  * In-game debug panel (backtick key to toggle): level skip, hitbox/godmode
@@ -36,7 +36,7 @@ export class DevPanel {
      * @param {KeyboardEvent} e - The browser keydown event.
      */
     _onKeyDown(e) {
-        if (e.code !== TOGGLE_KEY_CODE) return;
+        if (e.code !== toggle_key_code) return;
         this.open ? this._close() : this._render();
     }
 
@@ -72,7 +72,7 @@ export class DevPanel {
      * @returns {string} One button per level, disabled if not yet registered.
      */
     _buildLevelButtons() {
-        return Array.from({ length: LEVEL_COUNT }, (_, i) => i + 1)
+        return Array.from({ length: level_count }, (_, i) => i + 1)
             .map((level) => {
                 const available = !!LEVEL_JSON_KEYS[level];
                 return `<button class="dev-panel-level" data-level="${level}" ${available ? '' : 'disabled title="Level not registered yet"'}>${level}</button>`;
@@ -112,7 +112,7 @@ export class DevPanel {
                 button.blur();
                 const level = Number(button.dataset.level);
                 const target = isBossLevel(this.game.assets, level) ? 'boss' : 'game';
-                this.game.stateMachine.change(target, { chapterId: CHAPTER_ID, level });
+                this.game.stateMachine.change(target, { chapterId: chapter_id, level });
             });
         }
     }

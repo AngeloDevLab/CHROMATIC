@@ -4,18 +4,23 @@ import { isTouchCapable } from '../ui/touch-controls.js';
 /**
  * Fixed gameplay timestep, independent of the display's frame rate.
  */
-const FIXED_DT = 1 / 60;
+const fixed_dt = 1 / 60;
 
 /**
  * Caps how many catch-up steps a single frame's accumulator can inject.
  */
-const FRAME_TIME_CAP_SECONDS = 0.05;
+const frame_time_cap_seconds = 0.05;
 
 /**
  * How long resizeBuffer()'s viewport CSS transition takes to grow/shrink into its new size.
  */
-const BUFFER_RESIZE_TRANSITION_SECONDS = 0.3;
+const buffer_resize_transition_seconds = 0.3;
 
+/**
+ * Owns the canvas/overlay/viewport DOM refs and the fixed-timestep render
+ * loop, every cross-state singleton system (assets/input/save/sound/music),
+ * and the player's persisted progress (difficulty/completedLevels/tokens/etc.).
+ */
 export class Game {
     /**
      * Base 640x360 resolution, as shipped in index.html's <canvas> attributes.
@@ -70,7 +75,7 @@ export class Game {
 
     /**
      * Restores completedLevels/buffs/tokens/abilities/difficulty from
-     * SaveSystem, converting the stored arrays back into Sets.
+     * SaveSystem (`this.save`).
      */
     loadProgress() {
         this.completedLevels = new Set(this.save.get('completedLevels', []));
@@ -83,7 +88,7 @@ export class Game {
     }
 
     /**
-     * Snapshots completedLevels/buffs/tokens/abilities/difficulty into SaveSystem.
+     * Snapshots completedLevels/buffs/tokens/abilities/difficulty into SaveSystem (`this.save`).
      */
     saveProgress() {
         this.save.set('completedLevels', [...this.completedLevels]);
@@ -177,14 +182,14 @@ export class Game {
      * Starts the viewport's grow/shrink CSS transition before a buffer resize.
      */
     _startResizeTransition() {
-        this.viewport.style.transition = `width ${BUFFER_RESIZE_TRANSITION_SECONDS}s ease, height ${BUFFER_RESIZE_TRANSITION_SECONDS}s ease`;
+        this.viewport.style.transition = `width ${buffer_resize_transition_seconds}s ease, height ${buffer_resize_transition_seconds}s ease`;
     }
 
     /**
      * Clears the transition once it's played out.
      */
     _clearResizeTransitionAfterDelay() {
-        setTimeout(() => { this.viewport.style.transition = ''; }, BUFFER_RESIZE_TRANSITION_SECONDS * 1000);
+        setTimeout(() => { this.viewport.style.transition = ''; }, buffer_resize_transition_seconds * 1000);
     }
 
     /**
@@ -207,7 +212,7 @@ export class Game {
      * @param {number} timestamp - High-resolution timestamp from rAF.
      */
     _loop(timestamp) {
-        const frameTime = Math.min(this._lastTime ? (timestamp - this._lastTime) / 1000 : 0, FRAME_TIME_CAP_SECONDS);
+        const frameTime = Math.min(this._lastTime ? (timestamp - this._lastTime) / 1000 : 0, frame_time_cap_seconds);
         this._lastTime = timestamp;
 
         this._advanceFixedSteps(frameTime);
@@ -230,9 +235,9 @@ export class Game {
         }
 
         this._accumulator += frameTime;
-        while (this._accumulator >= FIXED_DT) {
-            this.stateMachine.update(FIXED_DT);
-            this._accumulator -= FIXED_DT;
+        while (this._accumulator >= fixed_dt) {
+            this.stateMachine.update(fixed_dt);
+            this._accumulator -= fixed_dt;
         }
     }
 }

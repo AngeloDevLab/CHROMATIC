@@ -1,12 +1,12 @@
-const RISE_PX = 20;
-const DAMAGE_DURATION_SECONDS = 0.7;
+// Rendered via the HTML overlay, not canvas fillText - update() reprojects world coordinates
+// through camera.zoom every frame to stay aligned with the canvas's own scaling.
 
-const STATUS_DURATION_SECONDS = 1.2;
+const rise_px = 20;
+const damage_duration_seconds = 0.7;
 
-// Floating popups over an entity's head - damage numbers over enemies, short
-// status text over the player. Rendered via the HTML overlay, not canvas
-// fillText, so update() reprojects world coordinates through camera.zoom
-// every frame to stay aligned with the canvas's own scaling.
+const status_duration_seconds = 1.2;
+
+/** Floating damage-number/status-text popups over an entity's head, rendered via the HTML overlay. */
 export class DamageNumbers {
     /**
      * Sets up an empty popup pool over the given overlay.
@@ -24,7 +24,7 @@ export class DamageNumbers {
      * @param {number} amount - Damage amount, rounded for display.
      */
     spawn(worldX, worldY, amount) {
-        this._spawn(worldX, worldY, String(Math.round(amount)), 'damage-number', DAMAGE_DURATION_SECONDS);
+        this._spawn(worldX, worldY, String(Math.round(amount)), 'damage-number', damage_duration_seconds);
     }
 
     /**
@@ -35,7 +35,7 @@ export class DamageNumbers {
      * @param {string} text - Status text to display.
      */
     spawnStatus(worldX, worldY, text) {
-        this._spawn(worldX, worldY, text, 'status-message', STATUS_DURATION_SECONDS);
+        this._spawn(worldX, worldY, text, 'status-message', status_duration_seconds);
     }
 
     /**
@@ -64,7 +64,7 @@ export class DamageNumbers {
             entry.age += dt;
             const progress = Math.min(1, entry.age / entry.durationSeconds);
             entry.el.style.left = `${(entry.worldX - camera.x) * camera.zoom}px`;
-            entry.el.style.top = `${(entry.worldY - camera.y - RISE_PX * progress) * camera.zoom}px`;
+            entry.el.style.top = `${(entry.worldY - camera.y - rise_px * progress) * camera.zoom}px`;
             entry.el.style.opacity = String(1 - progress);
         }
 

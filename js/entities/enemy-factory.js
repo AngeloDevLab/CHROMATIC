@@ -7,14 +7,14 @@ import { SpriteAnimation } from '../utils/sprite-animation.js';
 /**
  * Enemy sprite sheets use their own 64x64 convention, independent of the player's 96x96 one.
  */
-const ENEMY_FRAME_SIZE = 64;
+const enemy_frame_size = 64;
 
 /**
  * Maps an EnemySpawn's Tiled Name field to its asset keys and per-type
  * animation overrides (`runningFrames`, `deadFrames`, `chargeFps`,
  * `shootFrames`, `projectile`) - absent for types that don't use them.
  */
-const ENEMY_SPRITE_SETS = {
+const enemy_sprite_sets = {
     patroller: { running: 'enemy-patroller-walking-idle', dead: 'enemy-patroller-dead' },
     charger: { running: 'enemy-charger-walking-idle', dead: 'enemy-charger-dead', runningFrames: 10, chargeFps: 14 },
     sentinel: { running: 'enemy-sentinel-walking-idle', dead: 'enemy-sentinel-dead', runningFrames: 9, deadFrames: 9 },
@@ -38,7 +38,7 @@ const ENEMY_SPRITE_SETS = {
  * @returns {Enemy|null} The constructed enemy, or null for an unregistered spawn name.
  */
 export function createEnemy(assets, collision, player, spawn) {
-    const spriteSet = ENEMY_SPRITE_SETS[spawn.name?.toLowerCase()];
+    const spriteSet = enemy_sprite_sets[spawn.name?.toLowerCase()];
     if (!spriteSet) {
         console.warn(`EnemyFactory: no enemy type registered for EnemySpawn name "${spawn.name}" at (${spawn.x}, ${spawn.y}) - skipped.`);
         return null;
@@ -47,7 +47,7 @@ export function createEnemy(assets, collision, player, spawn) {
     const typeName = spawn.name.toLowerCase();
     const sprite = assets.getImage(spriteSet.running);
     const EnemyClass = _resolveEnemyClass(typeName);
-    const enemy = new EnemyClass(spawn.x, spawn.y, sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE);
+    const enemy = new EnemyClass(spawn.x, spawn.y, sprite, enemy_frame_size, enemy_frame_size);
 
     enemy.setAnimations(_buildAnimations(assets, sprite, spriteSet));
     _enableBehavior(enemy, collision, player, assets, spriteSet);
@@ -71,22 +71,22 @@ function _resolveEnemyClass(typeName) {
  * sprite set provides them. `dead` and `shoot` both play once rather than looping.
  * @param {AssetLoader} assets - Loader holding enemy sprites.
  * @param {HTMLImageElement} sprite - Running/idle sprite, also used for the 'running' animation.
- * @param {object} spriteSet - This type's entry from ENEMY_SPRITE_SETS.
+ * @param {object} spriteSet - This type's entry from enemy_sprite_sets.
  * @returns {Object<string, SpriteAnimation>}
  */
 function _buildAnimations(assets, sprite, spriteSet) {
     const runningFrames = spriteSet.runningFrames ?? 12;
     const deadFrames = spriteSet.deadFrames ?? 12;
     const animations = {
-        running: new SpriteAnimation(sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, runningFrames, 10),
-        dead: new SpriteAnimation(assets.getImage(spriteSet.dead), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, deadFrames, 12, { loop: false }),
+        running: new SpriteAnimation(sprite, enemy_frame_size, enemy_frame_size, runningFrames, 10),
+        dead: new SpriteAnimation(assets.getImage(spriteSet.dead), enemy_frame_size, enemy_frame_size, deadFrames, 12, { loop: false }),
     };
     if (spriteSet.chargeFps) {
-        animations.charge = new SpriteAnimation(sprite, ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, runningFrames, spriteSet.chargeFps);
+        animations.charge = new SpriteAnimation(sprite, enemy_frame_size, enemy_frame_size, runningFrames, spriteSet.chargeFps);
     }
     if (spriteSet.shoot) {
         const shootFrames = spriteSet.shootFrames ?? 6;
-        animations.shoot = new SpriteAnimation(assets.getImage(spriteSet.shoot), ENEMY_FRAME_SIZE, ENEMY_FRAME_SIZE, shootFrames, 12, { loop: false });
+        animations.shoot = new SpriteAnimation(assets.getImage(spriteSet.shoot), enemy_frame_size, enemy_frame_size, shootFrames, 12, { loop: false });
     }
     return animations;
 }
@@ -97,7 +97,7 @@ function _buildAnimations(assets, sprite, spriteSet) {
  * @param {Collision} collision - Level collision for patrol/charge movement.
  * @param {Player} player - Player instance enemies aggro/react to.
  * @param {AssetLoader} assets - Loader holding enemy sprites.
- * @param {object} spriteSet - This type's entry from ENEMY_SPRITE_SETS.
+ * @param {object} spriteSet - This type's entry from enemy_sprite_sets.
  */
 function _enableBehavior(enemy, collision, player, assets, spriteSet) {
     if (enemy instanceof Sentinel) {

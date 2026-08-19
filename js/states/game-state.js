@@ -1,12 +1,7 @@
 import { State } from './state.js';
 import { LevelSession } from './level-session.js';
 
-// A normal (non-boss) level - thin wrapper around LevelSession, which owns
-// everything the level actually needs (Level/Collision/Camera/ColorZone/
-// Player/enemies/HUD/interactables/combat resolution). boss-state.js
-// constructs the same LevelSession and adds its own extras (boss HP bar,
-// arena-sized buffer) on top - this class has nothing level-type-specific
-// left in it.
+/** A normal (non-boss) level - a thin wrapper around LevelSession. */
 export class GameState extends State {
     /**
      * Builds the level session for the requested level.

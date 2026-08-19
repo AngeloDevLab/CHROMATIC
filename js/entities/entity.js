@@ -1,3 +1,4 @@
+/** Base class for every game object: position/size/velocity, update()/render(). */
 export class Entity {
     /**
      * Sets up position, size, and zeroed velocity.

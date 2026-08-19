@@ -1,10 +1,10 @@
+// The fall itself needs no code - the Tiled object sits directly over a genuine gap in the terrain
+// layer, so gravity does the work.
+
 import { Entity } from './entity.js';
 import { SpriteAnimation } from '../utils/sprite-animation.js';
 
-// The fall itself needs no code - the Tiled object sits directly over a
-// genuine gap in the `terrain` layer, so gravity does the work. This class is
-// purely the visual cue: closed -> opening (one-shot break) -> gone, nothing
-// renders once opening finishes.
+/** Purely the visual cue for a floor gap: closed -> opening -> gone. */
 export class Trapdoor extends Entity {
     /**
      * Creates a closed trapdoor at a fixed position.

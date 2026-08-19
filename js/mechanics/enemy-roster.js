@@ -8,13 +8,13 @@ import { VfxEffect } from '../entities/vfx-effect.js';
  * Every living enemy continuously erases color around itself while
  * patrolling, independent of the player's own reveal.
  */
-const ENEMY_DARKEN_RADIUS = 65;
+const enemy_darken_radius = 65;
 
 /**
  * A bit bigger than the darken radius above - dying reveals back what the
  * enemy had darkened while patrolling, plus a bit more as a small death beat.
  */
-const ENEMY_DEATH_REVEAL_RADIUS = 90;
+const enemy_death_reveal_radius = 90;
 
 /**
  * Checks whether an EnemySpawn name refers to a boss.
@@ -26,8 +26,7 @@ export function isBossSpawnName(name) {
     return lower === 'miniboss' || lower === 'templateboss';
 }
 
-// Spawns and per-frame bookkeeping for a level's enemy roster (regular
-// enemies + the one optional Miniboss/Templateboss), extracted out of level-session.js.
+/** Spawns and per-frame bookkeeping for a level's enemy roster, including its optional Miniboss/Templateboss. */
 export class EnemyRoster {
     /**
      * Spawns every enemy from the level's EnemySpawn markers.
@@ -158,10 +157,10 @@ export class EnemyRoster {
     updateColorReveal(colorZone) {
         for (const enemy of this.enemies) {
             if (!enemy.dead) {
-                colorZone.darken(enemy.centerX, enemy.centerY, ENEMY_DARKEN_RADIUS);
+                colorZone.darken(enemy.centerX, enemy.centerY, enemy_darken_radius);
             } else if (!enemy.colorRevealed) {
                 enemy.colorRevealed = true;
-                colorZone.reveal(enemy.centerX, enemy.centerY, ENEMY_DEATH_REVEAL_RADIUS);
+                colorZone.reveal(enemy.centerX, enemy.centerY, enemy_death_reveal_radius);
                 this.game.sound.playSfx('enemy-death');
             }
         }

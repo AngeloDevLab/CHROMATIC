@@ -1,4 +1,4 @@
-const LEGAL_NOTICE_BODY = `
+const legal_notice_body = `
     <h3>Legal Notice</h3>
     <p>Information according to § 5 DDG</p>
     <p>
@@ -15,7 +15,7 @@ const LEGAL_NOTICE_BODY = `
     </p>
 `;
 
-const PRIVACY_POLICY_BODY = `
+const privacy_policy_body = `
     <h3>Privacy Policy</h3>
     <p><strong>1. Controller</strong><br>
         Angelo Pietsch<br>
@@ -109,5 +109,5 @@ function buildCreditsBody(credits) {
  */
 export function buildInfoBody(assets) {
     const credits = assets.getJSON('credits');
-    return `<div class="readable-body">${buildCreditsBody(credits) + LEGAL_NOTICE_BODY + PRIVACY_POLICY_BODY}</div>`;
+    return `<div class="readable-body">${buildCreditsBody(credits) + legal_notice_body + privacy_policy_body}</div>`;
 }

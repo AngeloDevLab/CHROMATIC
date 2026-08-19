@@ -1,20 +1,18 @@
 import { Enemy } from '../enemy.js';
 
-const CHARGE_HP = 25;
-const DEFAULT_CHARGE_SPEED = 115;
-const CHARGE_RANGE_PX = 190;
-const CHARGE_HEIGHT_TOLERANCE_PX = 24;
+const charge_hp = 25;
+const default_charge_speed = 115;
+const charge_range_px = 190;
+const charge_height_tolerance_px = 24;
 
 /**
  * Facing is locked at the start of a charge, not re-aimed every frame.
  */
-const DEFAULT_CHARGE_DISTANCE_PX = 210;
+const default_charge_distance_px = 210;
 
-const DEFAULT_CHARGE_COOLDOWN_SECONDS = 5;
+const default_charge_cooldown_seconds = 5;
 
-// Patrols like the base Enemy/Patroller until the player comes within range
-// on roughly the same floor, then rushes at chargeSpeed instead of
-// patrolSpeed - overrides _updatePatrol() rather than duplicating it.
+/** Enemy that patrols normally until the player is in range, then rushes at chargeSpeed. */
 export class Charger extends Enemy {
     /**
      * Sets Charger's HP and default charge state.
@@ -26,12 +24,12 @@ export class Charger extends Enemy {
      */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
-        this.hp = CHARGE_HP;
-        this.maxHp = CHARGE_HP;
+        this.hp = charge_hp;
+        this.maxHp = charge_hp;
         this.player = null;
-        this.chargeSpeed = DEFAULT_CHARGE_SPEED;
-        this.chargeCooldownSeconds = DEFAULT_CHARGE_COOLDOWN_SECONDS;
-        this.chargeDistance = DEFAULT_CHARGE_DISTANCE_PX;
+        this.chargeSpeed = default_charge_speed;
+        this.chargeCooldownSeconds = default_charge_cooldown_seconds;
+        this.chargeDistance = default_charge_distance_px;
         this.charging = false;
         this.chargeCooldownTimer = 0;
         this.chargeTraveled = 0;
@@ -41,14 +39,14 @@ export class Charger extends Enemy {
      * Arms this Charger to track a player and rush it once in range.
      * @param {Player} player - Player instance to watch for range/line of sight.
      * @param {object} [options] - Optional settings.
-     * @param {number} [options.chargeSpeed=DEFAULT_CHARGE_SPEED] - Speed while charging.
-     * @param {number} [options.chargeCooldownSeconds=DEFAULT_CHARGE_COOLDOWN_SECONDS] - Seconds between charges.
-     * @param {number} [options.chargeDistance=DEFAULT_CHARGE_DISTANCE_PX] - Max distance a charge travels.
+     * @param {number} [options.chargeSpeed=default_charge_speed] - Speed while charging.
+     * @param {number} [options.chargeCooldownSeconds=default_charge_cooldown_seconds] - Seconds between charges.
+     * @param {number} [options.chargeDistance=default_charge_distance_px] - Max distance a charge travels.
      */
     enableCharge(player, {
-        chargeSpeed = DEFAULT_CHARGE_SPEED,
-        chargeCooldownSeconds = DEFAULT_CHARGE_COOLDOWN_SECONDS,
-        chargeDistance = DEFAULT_CHARGE_DISTANCE_PX,
+        chargeSpeed = default_charge_speed,
+        chargeCooldownSeconds = default_charge_cooldown_seconds,
+        chargeDistance = default_charge_distance_px,
     } = {}) {
         this.player = player;
         this.chargeSpeed = chargeSpeed;
@@ -153,8 +151,8 @@ export class Charger extends Enemy {
      */
     _canSeePlayer() {
         if (!this.player || this.player.dead) return false;
-        const withinHeight = Math.abs(this.player.centerY - this.centerY) <= CHARGE_HEIGHT_TOLERANCE_PX;
-        const withinRange = Math.abs(this.player.centerX - this.centerX) <= CHARGE_RANGE_PX;
+        const withinHeight = Math.abs(this.player.centerY - this.centerY) <= charge_height_tolerance_px;
+        const withinRange = Math.abs(this.player.centerX - this.centerX) <= charge_range_px;
         return withinHeight && withinRange;
     }
 }

@@ -1,32 +1,33 @@
+// Once a shot starts, facing locks and it always plays out - a hit mid-windup can shove it around
+// but won't cancel it.
+
 import { Enemy } from '../enemy.js';
 import { ShooterProjectile } from './shooter-projectile.js';
 
 /**
  * Contact and projectile damage both match every other enemy type's contact hit.
  */
-const SHOOTER_HP = 20;
-const SHOOTER_CONTACT_DAMAGE = 20;
-const SHOOTER_PROJECTILE_DAMAGE = 20;
+const shooter_hp = 20;
+const shooter_contact_damage = 20;
+const shooter_projectile_damage = 20;
 
 /**
  * Engages from farther out than Charger's own 190px charge range.
  */
-const SHOOTER_RANGE_PX = 260;
-const SHOOTER_HEIGHT_TOLERANCE_PX = 24;
+const shooter_range_px = 260;
+const shooter_height_tolerance_px = 24;
 
 /**
  * Paired with the projectile speed (shooter-projectile.js).
  */
-const DEFAULT_SHOT_COOLDOWN_SECONDS = 2;
+const default_shot_cooldown_seconds = 2;
 
 /**
  * 10-frame shoot animation; mirrors player.js's ATTACK_IMPACT_FRAME.
  */
-const SHOT_IMPACT_FRAME = 5;
+const shot_impact_frame = 5;
 
-// Patrols like the base Enemy until the player comes within range on roughly
-// the same floor, then holds position and fires. Once a shot starts, facing
-// locks and it always plays out - a hit mid-windup can shove it around but won't cancel it.
+/** Enemy that patrols until the player is in range, then holds position and fires a projectile. */
 export class Shooter extends Enemy {
     /**
      * GameState's mailbox for a newly-spawned shot - read and cleared there right after enemy.update().
@@ -43,13 +44,13 @@ export class Shooter extends Enemy {
      */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
-        this.hp = SHOOTER_HP;
-        this.maxHp = SHOOTER_HP;
-        this.contactDamage = SHOOTER_CONTACT_DAMAGE;
+        this.hp = shooter_hp;
+        this.maxHp = shooter_hp;
+        this.contactDamage = shooter_contact_damage;
 
         this.player = null;
         this.projectileSprite = null;
-        this.shotCooldownSeconds = DEFAULT_SHOT_COOLDOWN_SECONDS;
+        this.shotCooldownSeconds = default_shot_cooldown_seconds;
         this.shootCooldownTimer = 0;
         this.shooting = false;
         this._shotFired = false;
@@ -60,9 +61,9 @@ export class Shooter extends Enemy {
      * @param {Player} player - Player instance to watch for range/line of sight.
      * @param {HTMLImageElement} projectileSprite - Sprite for spawned shots.
      * @param {object} [options] - Optional settings.
-     * @param {number} [options.cooldownSeconds=DEFAULT_SHOT_COOLDOWN_SECONDS] - Seconds between shots.
+     * @param {number} [options.cooldownSeconds=default_shot_cooldown_seconds] - Seconds between shots.
      */
-    enableShoot(player, projectileSprite, { cooldownSeconds = DEFAULT_SHOT_COOLDOWN_SECONDS } = {}) {
+    enableShoot(player, projectileSprite, { cooldownSeconds = default_shot_cooldown_seconds } = {}) {
         this.player = player;
         this.projectileSprite = projectileSprite;
         this.shotCooldownSeconds = cooldownSeconds;
@@ -130,10 +131,10 @@ export class Shooter extends Enemy {
      * @param {SpriteAnimation} shootAnim - Active shoot animation to read the impact frame from.
      */
     _trySpawnProjectile(shootAnim) {
-        if (this._shotFired || shootAnim.currentFrame < SHOT_IMPACT_FRAME) return;
+        if (this._shotFired || shootAnim.currentFrame < shot_impact_frame) return;
         this._shotFired = true;
         const spawnCenterX = this.facing === 1 ? this.x + this.width : this.x;
-        this.pendingProjectile = new ShooterProjectile(spawnCenterX, this.centerY, this.facing, this.projectileSprite, SHOOTER_PROJECTILE_DAMAGE);
+        this.pendingProjectile = new ShooterProjectile(spawnCenterX, this.centerY, this.facing, this.projectileSprite, shooter_projectile_damage);
     }
 
     /**
@@ -165,8 +166,8 @@ export class Shooter extends Enemy {
      */
     _canSeePlayer() {
         if (!this.player || this.player.dead) return false;
-        const withinHeight = Math.abs(this.player.centerY - this.centerY) <= SHOOTER_HEIGHT_TOLERANCE_PX;
-        const withinRange = Math.abs(this.player.centerX - this.centerX) <= SHOOTER_RANGE_PX;
+        const withinHeight = Math.abs(this.player.centerY - this.centerY) <= shooter_height_tolerance_px;
+        const withinRange = Math.abs(this.player.centerX - this.centerX) <= shooter_range_px;
         return withinHeight && withinRange;
     }
 }

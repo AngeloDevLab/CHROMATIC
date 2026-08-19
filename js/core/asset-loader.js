@@ -1,3 +1,4 @@
+/** Loads images and JSON by key, caching them for later lookup via getImage()/getJSON(). */
 export class AssetLoader {
     constructor() {
         this.images = new Map();

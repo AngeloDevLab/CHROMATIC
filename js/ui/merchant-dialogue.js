@@ -3,14 +3,11 @@ import { Panel } from './panel.js';
 /**
  * Faster than CutsceneState's 10 chars/sec.
  */
-const CHARS_PER_SECOND = 30;
-const TITLE = 'Unknown Merchant';
-const PORTRAIT_SRC = 'assets/images/objects/merchant-dialog-portrait.png';
+const chars_per_second = 30;
+const title = 'Unknown Merchant';
+const portrait_src = 'assets/images/objects/merchant-dialog-portrait.png';
 
-// Single-panel typewriter dialogue (Miniboss tier) that can optionally carry
-// an ability shop (Templateboss/Chapterboss tier). Reuses panel.js for the
-// backdrop/box chrome; drives its own typewriter reveal on top, the same way
-// cutscene-state.js does for cutscene text.
+/** Single-panel typewriter dialogue for the Merchant, optionally carrying an ability shop. */
 export class MerchantDialogue {
     /**
      * Sets up empty dialogue/shop state; call open() to actually show it.
@@ -86,9 +83,9 @@ export class MerchantDialogue {
     _buildBodyHTML() {
         return `
             <div class="merchant-dialogue">
-                <img class="merchant-portrait" src="${PORTRAIT_SRC}" alt="${TITLE}">
+                <img class="merchant-portrait" src="${portrait_src}" alt="${title}">
                 <div class="merchant-dialogue-text">
-                    <div class="merchant-name">${TITLE}</div>
+                    <div class="merchant-name">${title}</div>
                     <p></p>
                 </div>
             </div>
@@ -136,7 +133,7 @@ export class MerchantDialogue {
         if (!this.isOpen || this._fullyRevealed) return;
 
         this._revealTimer += dt;
-        const tokensToShow = Math.floor(this._revealTimer * CHARS_PER_SECOND);
+        const tokensToShow = Math.floor(this._revealTimer * chars_per_second);
         if (tokensToShow > this._revealedCount) {
             this._revealedCount = Math.min(tokensToShow, this._tokens.length);
             this._textEl.textContent = this._tokens.slice(0, this._revealedCount).join('');

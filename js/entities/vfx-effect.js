@@ -1,9 +1,9 @@
+// Anchors to the animation's auto-detected ground line rather than assuming the artwork sits
+// centered in its frame.
+
 import { Entity } from './entity.js';
 
-// Lightweight one-shot visual effect (player action smoke: jump/landing/
-// dash); own `dead` flag, no physics/collision, driven entirely by its
-// SpriteAnimation. Anchors to the animation's auto-detected ground line
-// rather than assuming the artwork sits centered in its frame.
+/** A lightweight one-shot visual effect (e.g. jump/landing/dash smoke), driven entirely by its SpriteAnimation. */
 export class VfxEffect extends Entity {
     /**
      * Creates a VFX clip anchored to a ground contact point.

@@ -1,3 +1,7 @@
+// _startDeathSequence() clamps the ghost's rise position to the camera's visible bottom edge - a
+// pit death can land below where camera.js ever scrolls, so without this the rise-and-fade would
+// spawn off-screen.
+
 import { Level } from '../world/level.js';
 import { buildTilesetRegistry } from '../world/tileset-registry.js';
 import { EnemyRoster, isBossSpawnName } from '../mechanics/enemy-roster.js';
@@ -5,7 +9,7 @@ import { GHOST_FRAME_SIZE } from '../mechanics/death-sequence.js';
 import { LevelSessionSetup } from './level-session-setup.js';
 import { LevelSessionRenderer } from './level-session-renderer.js';
 
-const FALL_DEATH_MARGIN_PX = 64;
+const fall_death_margin_px = 64;
 
 /**
  * Player's live-glow/permanent color trail radius, shared with interactables.js's revealRadius option.
@@ -53,21 +57,7 @@ export function isBossLevel(assets, levelNumber) {
     return !!level && level.getObjectsByType('EnemySpawn').some((spawn) => isBossSpawnName(spawn.name));
 }
 
-// Everything a running level needs - Level/Collision/Camera/ColorZone/Player/
-// enemies/HUD/interactables/combat - extracted out of game-state.js. Not a
-// State (no enter()/exit()), just a plain constructor + update()/render()/
-// destroy(), driven by whichever State owns it (GameState for a normal
-// level, BossState for a boss arena).
-//
-// A few non-obvious choices, gathered here instead of scattered near their
-// call sites: the constructor leaves Camera's zoom at its default (1) even
-// for a Boss - boss-state.js handles that separately, via its own
-// arena-sized buffer. _updateWorld() re-applies every unlocked ability
-// every frame - idempotent, so a DevPanel unlock takes effect immediately
-// instead of only on the next respawn. _startDeathSequence() clamps the
-// ghost's rise position to the camera's visible bottom edge, since a pit
-// death can land below where camera.js ever scrolls - without this the
-// rise-and-fade would spawn off-screen.
+/** Everything a running level needs - Level/Collision/Camera/ColorZone/Player/enemies/HUD/interactables/combat - driven by whichever State owns it. */
 export class LevelSession {
     /**
      * Loads the level and builds every system a running level needs.
@@ -212,7 +202,7 @@ export class LevelSession {
      * Kills the player once they fall past the level's bottom edge (with margin).
      */
     _checkFallDeath() {
-        if (!this.player.dead && this.player.y > this.level.pixelHeight + FALL_DEATH_MARGIN_PX) {
+        if (!this.player.dead && this.player.y > this.level.pixelHeight + fall_death_margin_px) {
             this.player.die();
         }
     }
@@ -260,10 +250,7 @@ export class LevelSession {
         this.tokenCounterEl.textContent = `x ${this.game.tokens}`;
     }
 
-    /**
-     * completedLevels lives on Game, not this session, since WorldmapState
-     * gets torn down/rebuilt on every visit.
-     */
+    /** Marks the level complete, persists progress, and returns to the Worldmap. */
     _completeLevel() {
         this.game.completedLevels.add(this.levelNumber);
         this.game.saveProgress();

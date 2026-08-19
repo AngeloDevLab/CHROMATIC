@@ -1,7 +1,8 @@
-// Boss zoom-out is a camera param, not a resolution change - `zoom` is
-// applied via ctx.scale() elsewhere (1 = normal 32px/tile, e.g. 0.75 ->
-// ~24px/tile for more FOV). follow() divides viewWidth/viewHeight by zoom
-// to convert screen-space bounds into world-space before clamping.
+// zoom is applied via ctx.scale() elsewhere (1 = normal 32px/tile); follow() divides
+// viewWidth/viewHeight by zoom to convert screen-space bounds into world-space before clamping.
+
+
+/** Tracks the world-space viewport, centered on a target and clamped to the level bounds. */
 export class Camera {
     /**
      * Sets up the camera at the origin with no zoom.

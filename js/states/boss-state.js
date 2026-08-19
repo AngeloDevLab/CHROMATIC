@@ -1,3 +1,6 @@
+// The render buffer must resize in enter() before LevelSession (and its Camera) is constructed,
+// since Camera reads game.width/height at construction time.
+
 import { State } from './state.js';
 import { LevelSession, loadLevelPreview } from './level-session.js';
 import { BOSS_BAR_HEIGHT, BOSS_BAR_TOP_PX } from '../ui/hud.js';
@@ -6,20 +9,10 @@ import { BOSS_BAR_HEIGHT, BOSS_BAR_TOP_PX } from '../ui/hud.js';
  * Top-center stack: name label, then HUD.renderBossBar()'s canvas bar
  * (BOSS_BAR_TOP_PX/HEIGHT), then this HP value label right below it.
  */
-const BOSS_NAME_TOP_PX = 6;
-const BOSS_HP_VALUE_TOP_PX = BOSS_BAR_TOP_PX + BOSS_BAR_HEIGHT + 2;
+const boss_name_top_px = 6;
+const boss_hp_value_top_px = BOSS_BAR_TOP_PX + BOSS_BAR_HEIGHT + 2;
 
-// A boss-level session - same LevelSession as a normal level, with two
-// boss-specific additions: a dedicated render buffer sized to match the
-// arena, and the top-center HP bar + name label. Routed to instead of
-// GameState at level-load time via isBossLevel(), not a mid-session trigger.
-//
-// The buffer resize happens in enter() before the session (and its Camera,
-// which reads game.width/height) is constructed.
-//
-// The arena buffer is larger than the base 640x360, so Game._handleResize()'s
-// window-fit scale ends up smaller than in a normal level; name/HP-bar
-// labels and hud.js's renderBossBar() both correct for it via Game.hudScale.
+/** A boss-level session: the same LevelSession as a normal level, plus an arena-sized render buffer and the top-center boss HP bar/name label. */
 export class BossState extends State {
     /**
      * Loads the arena preview, resizes the render buffer to match it, and starts the level session.
@@ -93,10 +86,10 @@ export class BossState extends State {
         this.bossNameEl.textContent = boss.name ?? '';
         this.bossNameEl.classList.toggle('enraged', boss.enraged);
         this.bossNameEl.style.left = `${centerX}px`;
-        this.bossNameEl.style.top = `${BOSS_NAME_TOP_PX * scale}px`;
+        this.bossNameEl.style.top = `${boss_name_top_px * scale}px`;
 
         this.bossHpValueEl.textContent = `${Math.round(boss.hp)}/${boss.maxHp}`;
         this.bossHpValueEl.style.left = `${centerX}px`;
-        this.bossHpValueEl.style.top = `${BOSS_HP_VALUE_TOP_PX * scale}px`;
+        this.bossHpValueEl.style.top = `${boss_hp_value_top_px * scale}px`;
     }
 }

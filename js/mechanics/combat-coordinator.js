@@ -10,12 +10,9 @@ import {
     RANGED_ATTACK_COOLDOWN_SECONDS,
 } from './combat.js';
 
-const HIT_STOP_SECONDS = 0.06;
+const hit_stop_seconds = 0.06;
 
-// Sequences the player's per-frame attack decision (melee vs the ranged
-// thrown-sword) and both projectile pools (the player's own throw, and
-// enemy-fired shots/beams) through combat.js's pure resolve* functions,
-// extracted out of level-session.js.
+/** Sequences the player's per-frame attack (melee vs ranged) and both projectile pools through combat.js's resolve functions. */
 export class CombatCoordinator {
     projectiles = [];
 
@@ -89,7 +86,7 @@ export class CombatCoordinator {
         const contactHits = resolveContactDamage(dt, this.player, this.enemies, difficulty);
         this._displayContactHitsOnPlayer(contactHits);
         if (contactHits.length > 0) {
-            this._hitStopTimer = HIT_STOP_SECONDS;
+            this._hitStopTimer = hit_stop_seconds;
             this.sound.playSfx('hit-player');
         }
         return contactHits.filter((hit) => hit.enemyAmount > 0).map((hit) => ({ enemy: hit.enemy, amount: hit.enemyAmount }));
@@ -162,7 +159,7 @@ export class CombatCoordinator {
             this.damageNumbers.spawn(this.player.centerX, this.player.visualTopY, hit.amount);
         }
         if (playerHits.length > 0) {
-            this._hitStopTimer = HIT_STOP_SECONDS;
+            this._hitStopTimer = hit_stop_seconds;
             this.sound.playSfx('hit-player');
         }
         this.enemyProjectiles = this.enemyProjectiles.filter((projectile) => !projectile.dead);
@@ -177,7 +174,7 @@ export class CombatCoordinator {
             this.damageNumbers.spawn(hit.enemy.centerX, hit.enemy.visualTopY, hit.amount);
         }
         if (hits.length > 0) {
-            this._hitStopTimer = HIT_STOP_SECONDS;
+            this._hitStopTimer = hit_stop_seconds;
             this.sound.playSfx('hit-enemy');
         }
     }

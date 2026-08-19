@@ -1,3 +1,6 @@
+// State machine, one state per sprite clip: idle -> toFiring -> firing -> toVulnerable ->
+// vulnerable -> toIdle -> walking -> idle.
+
 import { Boss } from '../boss.js';
 import { WraithBeam } from './wraith-beam.js';
 import { computeWraithAnchors } from './wraith-anchors.js';
@@ -15,13 +18,7 @@ import {
     ENRAGE_WALK_SPEED_PX_PER_SEC,
 } from './wraith-constants.js';
 
-// Wraith of the Shifting Sands (Lvl 3 Miniboss); also the shared base moveset
-// wraith-templateboss.js (Lvl 6) extends.
-//
-// State machine, one state per sprite clip: idle -> toFiring -> firing ->
-// toVulnerable -> vulnerable -> toIdle -> walking -> idle.
-//
-// Phase 2 (enraged, HP <= 50%) shortens the hold timers and speeds up the walk.
+/** Wraith of the Shifting Sands (Lvl 3 Miniboss): a fire/vulnerable/walk state machine, the shared base wraith-templateboss.js extends. */
 export class Wraith extends Boss {
     /**
      * Sets up Wraith's stats, arena anchors, and state machine.

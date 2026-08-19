@@ -6,7 +6,7 @@ import { MENU_ZONE, MENU_TRACK_KEYS } from '../core/music-playlist.js';
 /**
  * Only Prologue is active at game start, the rest unlock as previous chapters are completed.
  */
-const CHAPTERS = [
+const chapters = [
     { id: 'prologue', label: 'Prologue', available: true },
     { id: 'chap1', label: 'Chap 1', available: false },
     { id: 'chap2', label: 'Chap 2', available: false },
@@ -21,7 +21,7 @@ const CHAPTERS = [
  * contain-fit offset/scale. Rough estimate tracing the visible path, tune
  * further once checked against the art.
  */
-const PROLOGUE_NODES = [
+const prologue_nodes = [
     { level: 1, type: 'Combat (Tutorial)', hasSecret: false, x: 0.06, y: 0.40 },
     { level: 2, type: 'Combat (Tutorial)', hasSecret: false, x: 0.20, y: 0.75 },
     { level: 3, type: 'Miniboss', hasSecret: false, x: 0.35, y: 0.45 },
@@ -30,7 +30,7 @@ const PROLOGUE_NODES = [
     { level: 6, type: 'Templateboss', hasSecret: false, x: 0.80, y: 0.55 },
 ];
 
-const NODE_SIZE = 64;
+const node_size = 64;
 
 /**
  * Worldmap screen: shows Prologue level nodes over a background image
@@ -82,8 +82,8 @@ export class WorldmapState extends State {
     _revealCompletedZones(justCompletedLevel) {
         const bounds = this._computeZoneBounds();
 
-        for (let i = 0; i < PROLOGUE_NODES.length; i++) {
-            const node = PROLOGUE_NODES[i];
+        for (let i = 0; i < prologue_nodes.length; i++) {
+            const node = prologue_nodes[i];
             if (!this.completedLevels.has(node.level)) continue;
 
             const { xStart, xEnd } = bounds[i];
@@ -102,7 +102,7 @@ export class WorldmapState extends State {
      * @returns {{xStart:number, xEnd:number}[]}
      */
     _computeZoneBounds() {
-        const xs = PROLOGUE_NODES.map((node) => node.x * this.background.width);
+        const xs = prologue_nodes.map((node) => node.x * this.background.width);
         return xs.map((x, i) => ({
             xStart: i === 0 ? 0 : (xs[i - 1] + x) / 2,
             xEnd: i === xs.length - 1 ? this.background.width : (x + xs[i + 1]) / 2,
@@ -141,7 +141,7 @@ export class WorldmapState extends State {
     _buildChapterBar() {
         this.chapterBar = document.createElement('div');
         this.chapterBar.className = 'chapter-bar';
-        for (const chapter of CHAPTERS) this.chapterBar.appendChild(this._buildChapterButton(chapter));
+        for (const chapter of chapters) this.chapterBar.appendChild(this._buildChapterButton(chapter));
         this.game.overlay.appendChild(this.chapterBar);
     }
 
@@ -168,13 +168,13 @@ export class WorldmapState extends State {
         this.nodeContainer = document.createElement('div');
         this.nodeContainer.className = 'worldmap-nodes';
         this.game.overlay.appendChild(this.nodeContainer);
-        this.nodeElements = PROLOGUE_NODES.map((_, index) => this._buildNodeButton(index));
+        this.nodeElements = prologue_nodes.map((_, index) => this._buildNodeButton(index));
         this._layoutNodes();
     }
 
     /**
      * Builds one level node button that selects itself on click.
-     * @param {number} index - Index into PROLOGUE_NODES, selected on click.
+     * @param {number} index - Index into prologue_nodes, selected on click.
      * @returns {HTMLButtonElement}
      */
     _buildNodeButton(index) {
@@ -206,11 +206,11 @@ export class WorldmapState extends State {
 
     /**
      * Converts a node's fractional position into screen coordinates.
-     * @param {number} index - Index into PROLOGUE_NODES.
+     * @param {number} index - Index into prologue_nodes.
      * @returns {{x:number,y:number}} Screen-space position of that node.
      */
     _nodeScreenPos(index) {
-        const data = PROLOGUE_NODES[index];
+        const data = prologue_nodes[index];
         return {
             x: this.bgOffsetX + data.x * this.bgDrawWidth,
             y: this.bgOffsetY + data.y * this.bgDrawHeight,
@@ -218,19 +218,17 @@ export class WorldmapState extends State {
     }
 
     /**
-     * completedLevels stores the Tiled/GameState level number
-     * (PROLOGUE_NODES[i].level, 1-based), not the array index, since node
-     * order and level number can diverge.
-     * @param {number} index - Index into PROLOGUE_NODES.
+     * Whether this node is locked (the previous node's level isn't completed yet).
+     * @param {number} index - Index into prologue_nodes.
      * @returns {boolean}
      */
     _isLocked(index) {
-        return index > 0 && !this.completedLevels.has(PROLOGUE_NODES[index - 1].level);
+        return index > 0 && !this.completedLevels.has(prologue_nodes[index - 1].level);
     }
 
     /**
      * Selects a node and shows its info card, unless locked.
-     * @param {number} index - Index into PROLOGUE_NODES.
+     * @param {number} index - Index into prologue_nodes.
      */
     _selectNode(index) {
         if (this._isLocked(index)) return;
@@ -239,30 +237,28 @@ export class WorldmapState extends State {
         this._showInfoCard(index);
     }
 
-    /**
-     * locked/completed both overlay the same always-visible default badge (see .worldmap-node::before in style.css).
-     */
+    /** Positions every node element and syncs its locked/completed/selected classes. */
     _layoutNodes() {
-        for (let i = 0; i < PROLOGUE_NODES.length; i++) {
+        for (let i = 0; i < prologue_nodes.length; i++) {
             const el = this.nodeElements[i];
             const { x, y } = this._nodeScreenPos(i);
 
-            el.style.left = `${x - NODE_SIZE / 2}px`;
-            el.style.top = `${y - NODE_SIZE / 2}px`;
+            el.style.left = `${x - node_size / 2}px`;
+            el.style.top = `${y - node_size / 2}px`;
             el.disabled = this._isLocked(i);
             el.classList.toggle('locked', this._isLocked(i));
-            el.classList.toggle('completed', this.completedLevels.has(PROLOGUE_NODES[i].level));
+            el.classList.toggle('completed', this.completedLevels.has(prologue_nodes[i].level));
             el.classList.toggle('selected', this.selectedIndex === i);
         }
     }
 
     /**
      * Opens the info card for a node.
-     * @param {number} index - Index into PROLOGUE_NODES.
+     * @param {number} index - Index into prologue_nodes.
      */
     _showInfoCard(index) {
         this._closeInfoCard();
-        const data = PROLOGUE_NODES[index];
+        const data = prologue_nodes[index];
 
         this.infoCard = document.createElement('div');
         this.infoCard.className = 'worldmap-info-card';
@@ -291,7 +287,7 @@ export class WorldmapState extends State {
 
     /**
      * Wires the info card's start/close buttons.
-     * @param {number} index - Index into PROLOGUE_NODES.
+     * @param {number} index - Index into prologue_nodes.
      */
     _wireInfoCard(index) {
         this.infoCard.addEventListener('click', (event) => event.stopPropagation());
@@ -306,7 +302,7 @@ export class WorldmapState extends State {
         if (!this.infoCard || this.selectedIndex === null) return;
 
         const { x, y } = this._nodeScreenPos(this.selectedIndex);
-        this.infoCard.style.left = `${Math.min(x + NODE_SIZE / 2 + 12, this.game.width - 160)}px`;
+        this.infoCard.style.left = `${Math.min(x + node_size / 2 + 12, this.game.width - 160)}px`;
         this.infoCard.style.top = `${y - 20}px`;
     }
 
@@ -320,10 +316,10 @@ export class WorldmapState extends State {
 
     /**
      * Starts the chosen level, routing bosses to BossState.
-     * @param {number} index - Index into PROLOGUE_NODES.
+     * @param {number} index - Index into prologue_nodes.
      */
     _enterLevel(index) {
-        const data = PROLOGUE_NODES[index];
+        const data = prologue_nodes[index];
         const target = isBossLevel(this.game.assets, data.level) ? 'boss' : 'game';
         this.game.stateMachine.change(target, { chapterId: 'prologue', level: data.level });
     }

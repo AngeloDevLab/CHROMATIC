@@ -1,7 +1,10 @@
+// Lifecycle flags: dormant keeps an enemy harmless and off the HP bar, buried controls draw order
+// relative to terrain, colorRevealed guards the one-time death color-reveal.
+
 import { Entity } from './entity.js';
 
-const DEFAULT_PATROL_SPEED = 40;
-const DEFAULT_GRAVITY = 700;
+const default_patrol_speed = 40;
+const default_gravity = 700;
 
 /**
  * Brief white tint on taking damage. Exported for boss.js, which needs the
@@ -13,24 +16,13 @@ export const HIT_FLASH_SECONDS = 0.15;
  * How long a knockback push overrides the normal patrol vx assignment;
  * without it, _updatePatrol would immediately overwrite the pushed-back vx.
  */
-const KNOCKBACK_LOCK_SECONDS = 0.15;
+const knockback_lock_seconds = 0.15;
 
-const DEFAULT_HP = 30;
-const DEFAULT_CONTACT_DAMAGE = 20;
-const LOOKAHEAD_PX = 4;
+const default_hp = 30;
+const default_contact_damage = 20;
+const lookahead_px = 4;
 
-// Walks left/right along whatever one-way floor it spawned on, direction
-// flipping when the tile grid ahead shows a wall or a floor about to run out.
-//
-// Lifecycle flags: `dormant` keeps an enemy harmless and off the HP bar;
-// `buried` controls draw order relative to terrain; `colorRevealed` guards
-// the one-time death color-reveal.
-//
-// `applyKnockback()` is the passive contact-push reaction; `applyAttackKnockback()`
-// handles active attacks and delegates to it by default.
-//
-// `pendingVfx` is a per-frame VFX mailbox drained by EnemyRoster, same
-// pattern as player.js's own mailbox - unused by most enemies, Charger pushes 'dash' on charge start.
+/** Base enemy: patrols a one-way floor, turning at walls/ledges, with HP/contact-damage/lifecycle state every enemy type shares. */
 export class Enemy extends Entity {
     /**
      * Builds base render/movement/combat/lifecycle state.
@@ -79,9 +71,9 @@ export class Enemy extends Entity {
      * HP/contact-damage/hit-feedback state.
      */
     _initCombatState() {
-        this.hp = DEFAULT_HP;
-        this.maxHp = DEFAULT_HP;
-        this.contactDamage = DEFAULT_CONTACT_DAMAGE;
+        this.hp = default_hp;
+        this.maxHp = default_hp;
+        this.contactDamage = default_contact_damage;
         this.contactSelfDamageMultiplier = 1;
         this.contactCooldown = 0;
         this.dead = false;
@@ -136,7 +128,7 @@ export class Enemy extends Entity {
      */
     applyKnockback(vx) {
         this.vx = vx;
-        this.knockbackTimer = KNOCKBACK_LOCK_SECONDS;
+        this.knockbackTimer = knockback_lock_seconds;
     }
 
     /**
@@ -168,10 +160,10 @@ export class Enemy extends Entity {
      * Starts gravity-bound left/right patrol against the level's collision.
      * @param {Collision} collision - Level collision to patrol against.
      * @param {object} [options] - Optional settings.
-     * @param {number} [options.speed=DEFAULT_PATROL_SPEED] - Patrol speed, in pixels/second.
-     * @param {number} [options.gravity=DEFAULT_GRAVITY] - Gravity applied while patrolling.
+     * @param {number} [options.speed=default_patrol_speed] - Patrol speed, in pixels/second.
+     * @param {number} [options.gravity=default_gravity] - Gravity applied while patrolling.
      */
-    enablePatrol(collision, { speed = DEFAULT_PATROL_SPEED, gravity = DEFAULT_GRAVITY } = {}) {
+    enablePatrol(collision, { speed = default_patrol_speed, gravity = default_gravity } = {}) {
         this.patrolling = true;
         this.collision = collision;
         this.patrolSpeed = speed;
@@ -231,8 +223,8 @@ export class Enemy extends Entity {
      */
     _blockedAhead() {
         const edgeX = this.facing > 0
-            ? this.x + this.width + LOOKAHEAD_PX
-            : this.x - LOOKAHEAD_PX;
+            ? this.x + this.width + lookahead_px
+            : this.x - lookahead_px;
 
         const wallAhead = this.collision.isSolidAt(edgeX, this.centerY);
         const floorAhead = this.collision.isSolidAt(edgeX, this.y + this.height + 1);

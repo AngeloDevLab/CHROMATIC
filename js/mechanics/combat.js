@@ -7,7 +7,7 @@
  * How far the melee hitbox extends past the player's own hitbox -
  * independent of how far the sword sprite visually reaches.
  */
-const ATTACK_REACH_PX = 40;
+const attack_reach_px = 40;
 
 export const PLAYER_ATTACK_DAMAGE = 10;
 
@@ -17,23 +17,23 @@ export const PLAYER_ATTACK_DAMAGE = 10;
 export const RANGED_ATTACK_DAMAGE = PLAYER_ATTACK_DAMAGE * 0.5;
 export const RANGED_ATTACK_COOLDOWN_SECONDS = 2;
 
-const CONTACT_DAMAGE_COOLDOWN_SECONDS = 1;
+const contact_damage_cooldown_seconds = 1;
 
 /**
  * Both entities' own knockback lock (player.js/enemy.js) briefly overrides normal movement while this plays out.
  */
-const ENEMY_KNOCKBACK_SPEED = 180;
-const PLAYER_KNOCKBACK_SPEED = 150;
+const enemy_knockback_speed = 180;
+const player_knockback_speed = 150;
 
 /**
  * Difficulty scales only incoming damage; enemy HP and the player's own damage stay the same across all three.
  */
-const DIFFICULTY_DAMAGE_MULTIPLIERS = { easy: 0.5, normal: 1, hard: 2 };
+const difficulty_damage_multipliers = { easy: 0.5, normal: 1, hard: 2 };
 
 /**
  * Charger mid-rush (entities/enemies/charger.js's `charging`) hits harder through the passive contact-damage barrier.
  */
-const CHARGE_CONTACT_DAMAGE_MULTIPLIER = 2;
+const charge_contact_damage_multiplier = 2;
 
 /**
  * Checks two axis-aligned rects for overlap.
@@ -67,7 +67,7 @@ export function findNearestEnemy(player, enemies) {
 }
 
 /**
- * Mode-decision only - reuses ATTACK_REACH_PX so melee/ranged never overlap or gap.
+ * Mode-decision only - reuses attack_reach_px so melee/ranged never overlap or gap.
  * @param {Player} player - Attacking player.
  * @param {Enemy} enemy - Enemy to check range against.
  * @returns {boolean}
@@ -76,7 +76,7 @@ export function isWithinMeleeRange(player, enemy) {
     const gap = player.centerX <= enemy.centerX
         ? enemy.x - (player.x + player.width)
         : player.x - (enemy.x + enemy.width);
-    return gap <= ATTACK_REACH_PX;
+    return gap <= attack_reach_px;
 }
 
 /**
@@ -94,14 +94,14 @@ export function resolveMeleeAttack(player, enemies, enemyProjectiles = []) {
 }
 
 /**
- * Builds the melee hitbox extending ATTACK_REACH_PX past the player, in the direction they're facing.
+ * Builds the melee hitbox extending attack_reach_px past the player, in the direction they're facing.
  * @param {Player} player - Attacking player.
  * @returns {{x:number,y:number,width:number,height:number}} Facing-direction melee hitbox.
  */
 function _buildMeleeHitbox(player) {
     return player.facing === 1
-        ? { x: player.x + player.width, y: player.y, width: ATTACK_REACH_PX, height: player.height }
-        : { x: player.x - ATTACK_REACH_PX, y: player.y, width: ATTACK_REACH_PX, height: player.height };
+        ? { x: player.x + player.width, y: player.y, width: attack_reach_px, height: player.height }
+        : { x: player.x - attack_reach_px, y: player.y, width: attack_reach_px, height: player.height };
 }
 
 /**
@@ -116,7 +116,7 @@ function _damageOverlappingEnemies(hitbox, enemies, facing) {
     for (const enemy of enemies) {
         if (!enemy.dead && rectsOverlap(hitbox, enemy)) {
             const applied = enemy.takeDamage(PLAYER_ATTACK_DAMAGE);
-            enemy.applyAttackKnockback(facing * ENEMY_KNOCKBACK_SPEED);
+            enemy.applyAttackKnockback(facing * enemy_knockback_speed);
             hits.push({ enemy, amount: applied });
         }
     }
@@ -165,7 +165,7 @@ function _hitFirstOverlappingEnemy(projectile, enemies) {
         if (enemy.dead || !rectsOverlap(projectile, enemy)) continue;
 
         const applied = enemy.takeDamage(projectile.damage);
-        enemy.applyAttackKnockback(projectile.direction * ENEMY_KNOCKBACK_SPEED);
+        enemy.applyAttackKnockback(projectile.direction * enemy_knockback_speed);
         projectile.dead = true;
         return { enemy, amount: applied };
     }
@@ -197,7 +197,7 @@ export function resolveEnemyProjectileHits(projectiles, player, difficulty) {
     const hits = [];
     if (player.dead) return hits;
 
-    const multiplier = DIFFICULTY_DAMAGE_MULTIPLIERS[difficulty] ?? DIFFICULTY_DAMAGE_MULTIPLIERS.normal;
+    const multiplier = difficulty_damage_multipliers[difficulty] ?? difficulty_damage_multipliers.normal;
     for (const projectile of projectiles) {
         const hit = _resolveEnemyProjectileHit(projectile, player, multiplier);
         if (hit) hits.push(hit);
@@ -217,7 +217,7 @@ function _resolveEnemyProjectileHit(projectile, player, multiplier) {
 
     const amount = projectile.damage * multiplier;
     player.takeDamage(amount);
-    player.applyKnockback(projectile.direction * PLAYER_KNOCKBACK_SPEED);
+    player.applyKnockback(projectile.direction * player_knockback_speed);
     projectile.dead = true;
     return { amount };
 }
@@ -233,7 +233,7 @@ function _resolveEnemyProjectileHit(projectile, player, multiplier) {
 export function resolveContactDamage(dt, player, enemies, difficulty) {
     if (player.dead) return [];
 
-    const multiplier = DIFFICULTY_DAMAGE_MULTIPLIERS[difficulty] ?? DIFFICULTY_DAMAGE_MULTIPLIERS.normal;
+    const multiplier = difficulty_damage_multipliers[difficulty] ?? difficulty_damage_multipliers.normal;
     const hits = [];
     for (const enemy of enemies) {
         const hit = _resolveEnemyContact(dt, player, enemy, multiplier);
@@ -255,7 +255,7 @@ function _resolveEnemyContact(dt, player, enemy, multiplier) {
     if (!_canContactDamage(dt, player, enemy)) return null;
 
     const isCharging = !!enemy.charging;
-    const playerAmount = enemy.contactDamage * multiplier * (isCharging ? CHARGE_CONTACT_DAMAGE_MULTIPLIER : 1);
+    const playerAmount = enemy.contactDamage * multiplier * (isCharging ? charge_contact_damage_multiplier : 1);
     const selfDamage = enemy.contactDamage * enemy.contactSelfDamageMultiplier;
     const enemyAmount = isCharging ? 0 : enemy.takeDamage(selfDamage, { scaleForVulnerable: false });
     _applyContactHit(player, enemy, playerAmount);
@@ -286,7 +286,7 @@ function _applyContactHit(player, enemy, playerAmount) {
     player.takeDamage(playerAmount);
 
     const pushDir = player.centerX >= enemy.centerX ? 1 : -1;
-    player.applyKnockback(pushDir * PLAYER_KNOCKBACK_SPEED);
-    enemy.applyKnockback(-pushDir * ENEMY_KNOCKBACK_SPEED);
-    enemy.contactCooldown = CONTACT_DAMAGE_COOLDOWN_SECONDS;
+    player.applyKnockback(pushDir * player_knockback_speed);
+    enemy.applyKnockback(-pushDir * enemy_knockback_speed);
+    enemy.contactCooldown = contact_damage_cooldown_seconds;
 }

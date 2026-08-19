@@ -1,3 +1,6 @@
+// The portal sits at one fixed position, so a one-way revealed flag tracks its color reveal
+// instead of a real per-pixel mechanism.
+
 import { Entity } from './entity.js';
 import { SpriteAnimation } from '../utils/sprite-animation.js';
 
@@ -5,16 +8,11 @@ import { SpriteAnimation } from '../utils/sprite-animation.js';
  * portal-closed.png/portal-open.png/portal-opens.png are all 128x128
  * (opens is a 10-frame strip, 1280x128).
  */
-const SIZE = 128;
-const OPENS_FRAME_COUNT = 10;
-const OPENS_FPS = 12;
+const size = 128;
+const opens_frame_count = 10;
+const opens_fps = 12;
 
-// Marks a level's end. Three states: closed -> opening -> open, driven by
-// GameState flipping `active` once every enemy is dead; this class only
-// tracks/renders the state.
-//
-// The portal sits at one fixed position, so a one-way `revealed` flag tracks
-// its color reveal instead of a real per-pixel mechanism.
+/** The level-end portal: tracks/renders its closed/opening/open state. */
 export class Portal extends Entity {
     /**
      * Creates a closed portal at a fixed position.
@@ -24,10 +22,10 @@ export class Portal extends Entity {
      * @param {string} greyFilterCSS - CSS filter matching the terrain's unrevealed grey treatment.
      */
     constructor(x, y, sprites, greyFilterCSS) {
-        super(x, y, SIZE, SIZE);
+        super(x, y, size, size);
         this.closedSprite = sprites.closed;
         this.openSprite = sprites.open;
-        this.opensAnimation = new SpriteAnimation(sprites.opens, SIZE, SIZE, OPENS_FRAME_COUNT, OPENS_FPS, { loop: false });
+        this.opensAnimation = new SpriteAnimation(sprites.opens, size, size, opens_frame_count, opens_fps, { loop: false });
         this.active = false;
         this.state = 'closed';
         this.greyFilterCSS = greyFilterCSS;

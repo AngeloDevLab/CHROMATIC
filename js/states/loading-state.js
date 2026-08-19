@@ -1,11 +1,9 @@
+// Waits for pointerup, not pointerdown - Chrome's autoplay unlock isn't granted until a gesture
+// completes.
+
 import { State } from './state.js';
 
-// Images/JSON and the first OST track + all SFX block state entry; the rest
-// of the OST rotation loads in the background afterward, since
-// music-playlist.js doesn't reach it until minutes into playback.
-// The final transition waits for one user gesture (`pointerup`, not
-// `pointerdown` - Chrome's autoplay unlock isn't granted until a gesture
-// completes) to apply the saved fullscreen preference and resume the AudioContext.
+/** Loads every image/JSON/sound asset, then waits for a user gesture before entering the Menu. */
 export class LoadingState extends State {
     /**
      * Shows the loading label and kicks off asset/sound loading.
