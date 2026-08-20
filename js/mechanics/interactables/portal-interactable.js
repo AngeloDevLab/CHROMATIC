@@ -54,10 +54,10 @@ export class PortalInteractable {
 
     /**
      * Advances the portal's animation, if it has one.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
-        this._portal?.update(dt);
+    update(deltaTime) {
+        this._portal?.update(deltaTime);
     }
 
     /**

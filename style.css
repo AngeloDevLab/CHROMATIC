@@ -902,7 +902,7 @@ body {
    same 16px base as .hud-value's player numbers; --hud-scale (see :root
    above) keeps it that same size on screen regardless of the arena's
    buffer size. */
-.boss-hp-label {
+.boss-health-label {
     position: absolute;
     transform: translate(-50%, 0);
     font-family: 'Jersey 10', monospace;

@@ -33,11 +33,11 @@ export class TrapdoorInteractable {
 
     /**
      * Triggers the trapdoor when the player is horizontally over it and close enough above its top edge.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
+    update(deltaTime) {
         if (!this._trapdoor) return;
-        this._trapdoor.update(dt);
+        this._trapdoor.update(deltaTime);
 
         if (!this._trapdoor.revealed) {
             const dist = Math.hypot(this.player.centerX - this._trapdoor.centerX, this.player.visualCenterY - this._trapdoor.centerY);

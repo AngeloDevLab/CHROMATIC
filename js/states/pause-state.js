@@ -54,9 +54,9 @@ export class PauseState extends State {
 
     /**
      * Unpauses on a Pause press.
-     * @param {number} dt - Unused, kept for the State/StateMachine contract.
+     * @param {number} deltaTime - Unused, kept for the State/StateMachine contract.
      */
-    update(dt) {
+    update(deltaTime) {
         if (this.game.input.consumePausePress()) this.game.stateMachine.pop();
     }
 }

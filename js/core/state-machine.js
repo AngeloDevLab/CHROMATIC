@@ -79,10 +79,10 @@ export class StateMachine {
     /**
      * Delegates the per-frame update to the current (topmost) state only;
      * anything beneath it on the stack stays frozen.
-     * @param {number} dt - Fixed timestep in seconds.
+     * @param {number} deltaTime - Fixed timestep in seconds.
      */
-    update(dt) {
-        this.current?.update(dt);
+    update(deltaTime) {
+        this.current?.update(deltaTime);
     }
 
     /**

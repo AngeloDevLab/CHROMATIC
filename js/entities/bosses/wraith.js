@@ -7,7 +7,7 @@ import { computeWraithAnchors } from './wraith-anchors.js';
 import {
     WRAITH_WIDTH,
     WRAITH_HEIGHT,
-    WRAITH_HP,
+    WRAITH_HEALTH,
     SIGNATURE_HIT_DAMAGE,
     WRAITH_CONTACT_DAMAGE,
     WRAITH_NAME,
@@ -29,8 +29,8 @@ export class Wraith extends Boss {
      */
     constructor(x, y, collision, player) {
         super(x, y, null, WRAITH_WIDTH, WRAITH_HEIGHT);
-        this.hp = WRAITH_HP;
-        this.maxHp = WRAITH_HP;
+        this.health = WRAITH_HEALTH;
+        this.maxHealth = WRAITH_HEALTH;
         this.contactDamage = WRAITH_CONTACT_DAMAGE;
         this.signatureHitDamage = SIGNATURE_HIT_DAMAGE;
         this.name = WRAITH_NAME;
@@ -67,29 +67,29 @@ export class Wraith extends Boss {
 
     /**
      * Runs one Wraith frame.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
-        this._tickTimers(dt);
+    update(deltaTime) {
+        this._tickTimers(deltaTime);
         if (this.dead) {
-            this.animations?.dead?.update(dt);
+            this.animations?.dead?.update(deltaTime);
             return;
         }
 
         const anim = this.animations?.[this.currentAnimation];
-        anim?.update(dt);
+        anim?.update(deltaTime);
         this._trackActiveBeam();
         this._updateFacing();
-        this._updateState(dt, anim);
+        this._updateState(deltaTime, anim);
     }
 
     /**
      * Counts down hit-flash and knockback timers.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _tickTimers(dt) {
-        if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
-        if (this.knockbackTimer > 0) this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
+    _tickTimers(deltaTime) {
+        if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - deltaTime);
+        if (this.knockbackTimer > 0) this.knockbackTimer = Math.max(0, this.knockbackTimer - deltaTime);
     }
 
     /**
@@ -115,85 +115,85 @@ export class Wraith extends Boss {
     /**
      * State machine dispatch. `default` is reachable only via subclasses
      * (wraith-templateboss.js's 'firingSweep').
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {SpriteAnimation} [anim] - The currently playing clip, if animations are wired up.
      */
-    _updateState(dt, anim) {
+    _updateState(deltaTime, anim) {
         switch (this.state) {
-            case 'idle': this._updateIdleState(dt); break;
-            case 'toFiring': this._updateToFiringState(dt, anim); break;
-            case 'firing': this._updateFiringState(dt); break;
-            case 'toVulnerable': this._updateToVulnerableState(dt, anim); break;
-            case 'vulnerable': this._updateVulnerableState(dt); break;
-            case 'toIdle': this._updateToIdleState(dt, anim); break;
-            case 'walking': this._updateWalk(dt); break;
-            default: this._updateCustomState(dt, anim); break;
+            case 'idle': this._updateIdleState(deltaTime); break;
+            case 'toFiring': this._updateToFiringState(deltaTime, anim); break;
+            case 'firing': this._updateFiringState(deltaTime); break;
+            case 'toVulnerable': this._updateToVulnerableState(deltaTime, anim); break;
+            case 'vulnerable': this._updateVulnerableState(deltaTime); break;
+            case 'toIdle': this._updateToIdleState(deltaTime, anim); break;
+            case 'walking': this._updateWalk(deltaTime); break;
+            default: this._updateCustomState(deltaTime, anim); break;
         }
     }
 
     /**
      * Counts down the idle hold, then starts rising to firing.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateIdleState(dt) {
-        this._stateTimer -= dt;
+    _updateIdleState(deltaTime) {
+        this._stateTimer -= deltaTime;
         if (this._stateTimer <= 0) this._enterTransition('toFiring', this._groundY, this._topY);
     }
 
     /**
      * Advances the rise glide, firing once it completes.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {SpriteAnimation} [anim] - The currently playing clip.
      */
-    _updateToFiringState(dt, anim) {
-        this._updateTransitionMove(dt);
+    _updateToFiringState(deltaTime, anim) {
+        this._updateTransitionMove(deltaTime);
         if (anim?.finished) this._onRiseComplete();
     }
 
     /**
      * Counts down the firing hold, then starts descending to vulnerable.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateFiringState(dt) {
-        this._stateTimer -= dt;
+    _updateFiringState(deltaTime) {
+        this._stateTimer -= deltaTime;
         if (this._stateTimer <= 0) this._enterTransition('toVulnerable', this._topY, this._groundY);
     }
 
     /**
      * Advances the descent glide, exposing the weak spot once it completes.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {SpriteAnimation} [anim] - The currently playing clip.
      */
-    _updateToVulnerableState(dt, anim) {
-        this._updateTransitionMove(dt);
+    _updateToVulnerableState(deltaTime, anim) {
+        this._updateTransitionMove(deltaTime);
         if (anim?.finished) this._enterVulnerable();
     }
 
     /**
      * Counts down the vulnerable window, then starts returning to idle.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateVulnerableState(dt) {
-        this._stateTimer -= dt;
+    _updateVulnerableState(deltaTime) {
+        this._stateTimer -= deltaTime;
         if (this._stateTimer <= 0) this._enterTransition('toIdle', this._groundY, this._groundY);
     }
 
     /**
      * Advances the idle-return glide, then starts walking once it completes.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {SpriteAnimation} [anim] - The currently playing clip.
      */
-    _updateToIdleState(dt, anim) {
-        this._updateTransitionMove(dt);
+    _updateToIdleState(deltaTime, anim) {
+        this._updateTransitionMove(deltaTime);
         if (anim?.finished) this._enterWalking();
     }
 
     /**
      * No-op; overridden by subclasses for extra states.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {SpriteAnimation} [anim] - The currently playing clip.
      */
-    _updateCustomState(dt, anim) {}
+    _updateCustomState(deltaTime, anim) {}
 
     /**
      * Reached the top of toFiring's rise - fires horizontally.
@@ -238,12 +238,12 @@ export class Wraith extends Boss {
     /**
      * Linear glide over the clip's playback duration, not a fixed speed.
      * No-ops when fromY === toY (toIdle), holding position while the pose morphs.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateTransitionMove(dt) {
-        this._transitionElapsed += dt;
-        const t = this._transitionDuration > 0 ? Math.min(1, this._transitionElapsed / this._transitionDuration) : 1;
-        this.y = this._transitionFromY + (this._transitionToY - this._transitionFromY) * t;
+    _updateTransitionMove(deltaTime) {
+        this._transitionElapsed += deltaTime;
+        const progress = this._transitionDuration > 0 ? Math.min(1, this._transitionElapsed / this._transitionDuration) : 1;
+        this.y = this._transitionFromY + (this._transitionToY - this._transitionFromY) * progress;
     }
 
     /**
@@ -280,7 +280,7 @@ export class Wraith extends Boss {
     }
 
     /**
-     * Heads for the fixed anchor it isn't currently on, facing that direction.
+     * Heads for the fixed anchor it isn'progress currently on, facing that direction.
      * Reuses the idle animation (no dedicated walk clip).
      */
     _enterWalking() {
@@ -292,18 +292,18 @@ export class Wraith extends Boss {
 
     /**
      * Moves toward `_walkTargetX`, shared by 'walking' and (via subclass) 'firingSweep'.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateWalk(dt) {
-        const dx = this._walkTargetX - this.x;
+    _updateWalk(deltaTime) {
+        const distanceX = this._walkTargetX - this.x;
         const speed = this.enraged ? ENRAGE_WALK_SPEED_PX_PER_SEC : WALK_SPEED_PX_PER_SEC;
-        const step = speed * dt;
-        if (Math.abs(dx) <= step) {
+        const step = speed * deltaTime;
+        if (Math.abs(distanceX) <= step) {
             this.x = this._walkTargetX;
             this._onSideA = !this._onSideA;
             this._onArrived();
         } else {
-            this.x += Math.sign(dx) * step;
+            this.x += Math.sign(distanceX) * step;
         }
     }
 

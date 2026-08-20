@@ -38,41 +38,41 @@ export class PlayerMovement {
 
     /**
      * Runs one movement frame.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
+    update(deltaTime) {
         const player = this.player;
-        player.healthState.regen(dt);
+        player.healthState.regen(deltaTime);
         this._handleAttackInput();
 
         const groundedAttack = player.attacking && player.grounded;
-        this._updatePhysics(dt, groundedAttack);
-        this._resolveCollision(dt);
-        this._updateAfkTimer(dt);
+        this._updatePhysics(deltaTime, groundedAttack);
+        this._resolveCollision(deltaTime);
+        this._updateAfkTimer(deltaTime);
         this._updateAnimationState();
     }
 
     /**
      * Advances physics for one frame.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {boolean} groundedAttack - Whether the player is mid-swing while grounded.
      */
-    _updatePhysics(dt, groundedAttack) {
-        this._updateJumpTimers(dt);
-        this.player.dash.update(dt, this.player);
-        this._updateHorizontalVelocity(dt, groundedAttack);
-        this._applyGravityAndJump(dt);
+    _updatePhysics(deltaTime, groundedAttack) {
+        this._updateJumpTimers(deltaTime);
+        this.player.dash.update(deltaTime, this.player);
+        this._updateHorizontalVelocity(deltaTime, groundedAttack);
+        this._applyGravityAndJump(deltaTime);
         this._updateDropThrough();
     }
 
     /**
      * Resolves collision, flags landing VFX on the grounded edge, and clears
      * the attack lock once its animation finishes.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _resolveCollision(dt) {
+    _resolveCollision(deltaTime) {
         const player = this.player;
-        player.grounded = player.collision.resolve(player, dt);
+        player.grounded = player.collision.resolve(player, deltaTime);
         if (player._wasGrounded === false && player.grounded) player.pendingVfx.push('landing');
         player._wasGrounded = player.grounded;
         if (player.attacking && player.animations.attack.finished) player.attacking = false;
@@ -80,17 +80,17 @@ export class PlayerMovement {
 
     /**
      * Accrues while idle; resets on any input, held or one-shot.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateAfkTimer(dt) {
+    _updateAfkTimer(deltaTime) {
         const player = this.player;
-        const standingStill = player.grounded && !player.attacking && player.vx === 0;
+        const standingStill = player.grounded && !player.attacking && player.velocityX === 0;
         const inputActive = player.input.isDown('left') || player.input.isDown('right')
             || player.input.isDown('jump') || player.input.isDown('drop')
             || player.input.consumeActivity();
 
         if (!standingStill || inputActive) player.afkTimer = 0;
-        else player.afkTimer += dt;
+        else player.afkTimer += deltaTime;
     }
 
     /**
@@ -107,32 +107,32 @@ export class PlayerMovement {
     /**
      * Ticks the coyote and jump-buffer timers; `player.grounded` here still
      * reflects last frame's result.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateJumpTimers(dt) {
+    _updateJumpTimers(deltaTime) {
         const player = this.player;
-        player.coyoteTimer = player.grounded ? coyote_time_seconds : Math.max(0, player.coyoteTimer - dt);
+        player.coyoteTimer = player.grounded ? coyote_time_seconds : Math.max(0, player.coyoteTimer - deltaTime);
         if (player.grounded) player.doubleJump.reset();
 
         if (player.input.consumeJumpPress()) player.jumpBufferTimer = jump_buffer_seconds;
-        else player.jumpBufferTimer = Math.max(0, player.jumpBufferTimer - dt);
+        else player.jumpBufferTimer = Math.max(0, player.jumpBufferTimer - deltaTime);
     }
 
     /**
      * Computes horizontal velocity; attack roots the player only while
      * grounded, and knockback/Dash override it entirely until they expire.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {boolean} groundedAttack - Whether the player is mid-swing while grounded.
      */
-    _updateHorizontalVelocity(dt, groundedAttack) {
+    _updateHorizontalVelocity(deltaTime, groundedAttack) {
         const player = this.player;
-        if (player.knockbackTimer > 0) player.knockbackTimer = Math.max(0, player.knockbackTimer - dt);
+        if (player.knockbackTimer > 0) player.knockbackTimer = Math.max(0, player.knockbackTimer - deltaTime);
         const inKnockback = player.knockbackTimer > 0;
         const inDash = player.dash.timer > 0;
 
         const targetVx = (!inKnockback && !inDash && !groundedAttack) ? this._resolveTargetVx() : 0;
         const accelRate = targetVx === 0 ? deceleration : acceleration;
-        player.vx = (inKnockback || inDash) ? player.vx : (groundedAttack ? 0 : moveToward(player.vx, targetVx, accelRate * dt));
+        player.velocityX = (inKnockback || inDash) ? player.velocityX : (groundedAttack ? 0 : moveToward(player.velocityX, targetVx, accelRate * deltaTime));
     }
 
     /**
@@ -156,15 +156,15 @@ export class PlayerMovement {
 
     /**
      * Applies gravity, then jump/double-jump/short-hop resolution.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _applyGravityAndJump(dt) {
+    _applyGravityAndJump(deltaTime) {
         const player = this.player;
-        player.vy += player.gravity * dt;
+        player.velocityY += player.gravity * deltaTime;
 
         if (!this._tryGroundJump() && !this._tryDoubleJump()
-            && player.vy < 0 && !player.input.isDown('jump')) {
-            player.vy = Math.max(player.vy, -player.jumpSpeed * short_hop_vy_fraction);
+            && player.velocityY < 0 && !player.input.isDown('jump')) {
+            player.velocityY = Math.max(player.velocityY, -player.jumpSpeed * short_hop_vy_fraction);
         }
     }
 
@@ -175,7 +175,7 @@ export class PlayerMovement {
     _tryGroundJump() {
         const player = this.player;
         if (player.attacking || player.jumpBufferTimer <= 0 || player.coyoteTimer <= 0) return false;
-        player.vy = -player.jumpSpeed;
+        player.velocityY = -player.jumpSpeed;
         player.jumpBufferTimer = 0;
         player.coyoteTimer = 0;
         player.pendingVfx.push('jump');
@@ -190,7 +190,7 @@ export class PlayerMovement {
         const player = this.player;
         if (player.attacking || !player.doubleJump.unlocked || player.doubleJump.used) return false;
         if (player.jumpBufferTimer <= 0) return false;
-        player.vy = -player.jumpSpeed;
+        player.velocityY = -player.jumpSpeed;
         player.jumpBufferTimer = 0;
         player.doubleJump.used = true;
         return true;
@@ -239,7 +239,7 @@ export class PlayerMovement {
         const player = this.player;
         if (player.attacking) return 'attack';
         if (!player.grounded) return 'jump';
-        if (player.vx === 0) return this._resolveIdleAnimation();
+        if (player.velocityX === 0) return this._resolveIdleAnimation();
         return 'running';
     }
 

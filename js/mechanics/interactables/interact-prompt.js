@@ -50,8 +50,8 @@ function _fillPromptContent(el, game, text) {
  */
 function _buildTouchButton(game) {
     const button = buildTouchButtonElement('btn-icon-interact', 'interact-prompt-icon');
-    button.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
+    button.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
         game.input.triggerPress('interact');
     });
     return button;

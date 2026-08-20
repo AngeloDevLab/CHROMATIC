@@ -76,19 +76,19 @@ export class SecretDoorInteractable {
 
         if (Math.min(overlapLeft, overlapRight) < Math.min(overlapTop, overlapBottom)) {
             player.x = overlapLeft < overlapRight ? door.x - player.width : door.x + door.width;
-            player.vx = 0;
+            player.velocityX = 0;
         } else {
             player.y = overlapTop < overlapBottom ? door.y - player.height : door.y + door.height;
-            player.vy = 0;
+            player.velocityY = 0;
         }
     }
 
     /**
      * Advances the door's animation, if it has one.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
-        this._secretDoor?.update(dt);
+    update(deltaTime) {
+        this._secretDoor?.update(deltaTime);
     }
 
     /**

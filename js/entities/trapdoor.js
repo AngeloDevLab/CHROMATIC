@@ -35,12 +35,12 @@ export class Trapdoor extends Entity {
 
     /**
      * Advances the opening animation.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
+    update(deltaTime) {
         if (this.state !== 'opening') return;
 
-        this.opensAnimation.update(dt);
+        this.opensAnimation.update(deltaTime);
         if (this.opensAnimation.finished) this.state = 'gone';
     }
 

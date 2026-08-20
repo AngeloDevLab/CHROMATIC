@@ -13,12 +13,12 @@ const default_gravity = 700;
 export const HIT_FLASH_SECONDS = 0.15;
 
 /**
- * How long a knockback push overrides the normal patrol vx assignment;
- * without it, _updatePatrol would immediately overwrite the pushed-back vx.
+ * How long a knockback push overrides the normal patrol velocityX assignment;
+ * without it, _updatePatrol would immediately overwrite the pushed-back velocityX.
  */
 const knockback_lock_seconds = 0.15;
 
-const default_hp = 30;
+const default_health = 30;
 const default_contact_damage = 20;
 const lookahead_px = 4;
 
@@ -71,8 +71,8 @@ export class Enemy extends Entity {
      * HP/contact-damage/hit-feedback state.
      */
     _initCombatState() {
-        this.hp = default_hp;
-        this.maxHp = default_hp;
+        this.health = default_health;
+        this.maxHealth = default_health;
         this.contactDamage = default_contact_damage;
         this.contactSelfDamageMultiplier = 1;
         this.contactCooldown = 0;
@@ -97,8 +97,8 @@ export class Enemy extends Entity {
      */
     takeDamage(amount) {
         if (this.dead) return 0;
-        this.hp = Math.max(0, this.hp - amount);
-        if (this.hp === 0) this._enterDeathAnimation();
+        this.health = Math.max(0, this.health - amount);
+        if (this.health === 0) this._enterDeathAnimation();
         this.hitFlashTimer = HIT_FLASH_SECONDS;
         return amount;
     }
@@ -124,19 +124,19 @@ export class Enemy extends Entity {
 
     /**
      * Sets velocity and starts the knockback lock timer.
-     * @param {number} vx - Knockback velocity to apply.
+     * @param {number} velocityX - Knockback velocity to apply.
      */
-    applyKnockback(vx) {
-        this.vx = vx;
+    applyKnockback(velocityX) {
+        this.velocityX = velocityX;
         this.knockbackTimer = knockback_lock_seconds;
     }
 
     /**
      * Applies knockback from an active attack (melee/projectile hit), as opposed to passive body contact.
-     * @param {number} vx - Knockback velocity to apply.
+     * @param {number} velocityX - Knockback velocity to apply.
      */
-    applyAttackKnockback(vx) {
-        this.applyKnockback(vx);
+    applyAttackKnockback(velocityX) {
+        this.applyKnockback(velocityX);
     }
 
     /**
@@ -173,48 +173,48 @@ export class Enemy extends Entity {
     /**
      * Starts a scripted constant-velocity run - no gravity/collision, no
      * ledge/wall turning like enablePatrol().
-     * @param {number} vx - Constant horizontal velocity.
+     * @param {number} velocityX - Constant horizontal velocity.
      */
-    enableFreeRun(vx) {
+    enableFreeRun(velocityX) {
         this.freeRun = true;
-        this.vx = vx;
-        this.facing = vx >= 0 ? 1 : -1;
+        this.velocityX = velocityX;
+        this.facing = velocityX >= 0 ? 1 : -1;
     }
 
     /**
      * Runs one enemy frame; hit-flash still ticks while dead.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
-        if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
+    update(deltaTime) {
+        if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - deltaTime);
 
         if (this.dead) {
-            this.animations?.dead?.update(dt);
+            this.animations?.dead?.update(deltaTime);
             return;
         }
 
-        if (this.patrolling) this._updatePatrol(dt);
-        else if (this.freeRun) super.update(dt);
-        this.animations?.[this.currentAnimation]?.update(dt);
+        if (this.patrolling) this._updatePatrol(deltaTime);
+        else if (this.freeRun) super.update(deltaTime);
+        this.animations?.[this.currentAnimation]?.update(deltaTime);
     }
 
     /**
      * Applies gravity and patrol movement, deferring to an active knockback.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updatePatrol(dt) {
-        this.vy += this.gravity * dt;
+    _updatePatrol(deltaTime) {
+        this.velocityY += this.gravity * deltaTime;
 
         if (this.knockbackTimer > 0) {
-            this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
+            this.knockbackTimer = Math.max(0, this.knockbackTimer - deltaTime);
         } else {
             if (this.grounded && this._blockedAhead()) {
                 this.facing *= -1;
             }
-            this.vx = this.patrolSpeed * this.facing;
+            this.velocityX = this.patrolSpeed * this.facing;
         }
 
-        this.grounded = this.collision.resolve(this, dt);
+        this.grounded = this.collision.resolve(this, deltaTime);
     }
 
     /**

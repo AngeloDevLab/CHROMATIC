@@ -1,7 +1,7 @@
 import { Enemy, HIT_FLASH_SECONDS } from './enemy.js';
 
 const vulnerable_damage_multiplier = 2;
-const enrage_hp_fraction = 0.5;
+const enrage_health_fraction = 0.5;
 const enrage_time_scale = 0.5;
 
 /** Base class every boss tier shares: vulnerability-window damage, enrage timing, and non-square sprite rendering. */
@@ -58,7 +58,7 @@ export class Boss extends Enemy {
      * @returns {boolean}
      */
     get enraged() {
-        return this.hp <= this.maxHp * enrage_hp_fraction;
+        return this.health <= this.maxHealth * enrage_health_fraction;
     }
 
     /**

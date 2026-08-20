@@ -80,11 +80,11 @@ export class MerchantInteractable {
 
     /**
      * Updates dropped Tokens until collected, then spawns the Merchant once all are gone.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
+    update(deltaTime) {
         if (!this._tokens.length) return;
-        for (const token of this._tokens) token.update(dt, this._collision);
+        for (const token of this._tokens) token.update(deltaTime, this._collision);
         this._tokens = this._tokens.filter((token) => !this._collectToken(token));
         if (!this._tokens.length && !this._merchant) {
             this._merchant = new Merchant(this._merchantSpawn.x, this._merchantSpawn.y, this.game.assets.getImage('merchant'));

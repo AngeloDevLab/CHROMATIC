@@ -6,7 +6,7 @@ import { Enemy } from '../enemy.js';
 /**
  * Tankiest in the roster; contact damage matches every other enemy type.
  */
-const sentinel_hp = 35;
+const sentinel_health = 35;
 const sentinel_contact_damage = 20;
 
 /**
@@ -39,8 +39,8 @@ export class Sentinel extends Enemy {
      */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
-        this.hp = sentinel_hp;
-        this.maxHp = sentinel_hp;
+        this.health = sentinel_health;
+        this.maxHealth = sentinel_health;
         this.contactDamage = sentinel_contact_damage;
         this.player = null;
         this.aggroRange = default_aggro_range_px;
@@ -65,16 +65,16 @@ export class Sentinel extends Enemy {
 
     /**
      * Rises from buried once the player is in range, then tracks facing once fully risen.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
-        super.update(dt);
+    update(deltaTime) {
+        super.update(deltaTime);
         if (this.dead) return;
 
         if (this.buried) {
             if (this._playerInRange()) this.buried = false;
         } else if (this.riseProgress < 1) {
-            this.riseProgress = Math.min(1, this.riseProgress + dt / this.riseDuration);
+            this.riseProgress = Math.min(1, this.riseProgress + deltaTime / this.riseDuration);
             if (this.riseProgress >= 1) this.dormant = false;
         } else {
             this.facing = this.player.centerX >= this.centerX ? 1 : -1;

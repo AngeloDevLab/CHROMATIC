@@ -194,14 +194,14 @@ export class WorldmapState extends State {
      * beach start / castle end of the path.
      */
     _computeFit() {
-        const w = this.game.width;
-        const h = this.game.height;
-        const scale = Math.min(w / this.background.width, h / this.background.height);
+        const width = this.game.width;
+        const height = this.game.height;
+        const scale = Math.min(width / this.background.width, height / this.background.height);
 
         this.bgDrawWidth = this.background.width * scale;
         this.bgDrawHeight = this.background.height * scale;
-        this.bgOffsetX = (w - this.bgDrawWidth) / 2;
-        this.bgOffsetY = (h - this.bgDrawHeight) / 2;
+        this.bgOffsetX = (width - this.bgDrawWidth) / 2;
+        this.bgOffsetY = (height - this.bgDrawHeight) / 2;
     }
 
     /**
@@ -357,10 +357,10 @@ export class WorldmapState extends State {
 
     /**
      * Advances the color zone's zone-wipe transition, if active.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
-        if (this.colorZone.isTransitioning) this.colorZone.update(dt, 0, 0);
+    update(deltaTime) {
+        if (this.colorZone.isTransitioning) this.colorZone.update(deltaTime, 0, 0);
     }
 
     /**

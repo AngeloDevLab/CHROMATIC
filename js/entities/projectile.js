@@ -50,7 +50,7 @@ export class Projectile extends Entity {
     constructor(spawnCenterX, spawnCenterY, direction, sprite, damage, trailSprite) {
         super(spawnCenterX - projectile_width / 2, spawnCenterY - projectile_height / 2, projectile_width, projectile_height);
         this.direction = direction;
-        this.vx = direction * projectile_speed;
+        this.velocityX = direction * projectile_speed;
         this.sprite = sprite;
         this.trailSprite = trailSprite;
         this.damage = damage;
@@ -60,11 +60,11 @@ export class Projectile extends Entity {
 
     /**
      * Sweeps forward in small steps, checking for a solid tile at each one.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {Collision} collision - Level collision to check against.
      */
-    update(dt, collision) {
-        const totalDx = this.vx * dt;
+    update(deltaTime, collision) {
+        const totalDx = this.velocityX * deltaTime;
         const steps = Math.max(1, Math.ceil(Math.abs(totalDx) / sweep_step_px));
         const stepDx = totalDx / steps;
 

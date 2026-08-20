@@ -1,4 +1,4 @@
-// PlayerMovement freezes vx/facing for the dash's duration, the same way it does for knockback.
+// PlayerMovement freezes velocityX/facing for the dash's duration, the same way it does for knockback.
 
 const dash_speed = 400;
 const dash_duration_seconds = 0.18;
@@ -22,12 +22,12 @@ export class DashAbility {
 
     /**
      * Ticks dash timers and checks for a double-tap trigger.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {Player} player - Player performing the dash.
      */
-    update(dt, player) {
+    update(deltaTime, player) {
         if (!this.unlocked) return;
-        this._tickTimers(dt);
+        this._tickTimers(deltaTime);
         const left = player.input.isDown('left');
         const right = player.input.isDown('right');
         if (this.timer <= 0) this._detectDoubleTap(player, left, right);
@@ -37,13 +37,13 @@ export class DashAbility {
 
     /**
      * Counts down the dash/cooldown timers and tap windows.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _tickTimers(dt) {
-        if (this.timer > 0) this.timer = Math.max(0, this.timer - dt);
-        else if (this.cooldownTimer > 0) this.cooldownTimer = Math.max(0, this.cooldownTimer - dt);
-        this._leftTapWindow = Math.max(0, this._leftTapWindow - dt);
-        this._rightTapWindow = Math.max(0, this._rightTapWindow - dt);
+    _tickTimers(deltaTime) {
+        if (this.timer > 0) this.timer = Math.max(0, this.timer - deltaTime);
+        else if (this.cooldownTimer > 0) this.cooldownTimer = Math.max(0, this.cooldownTimer - deltaTime);
+        this._leftTapWindow = Math.max(0, this._leftTapWindow - deltaTime);
+        this._rightTapWindow = Math.max(0, this._rightTapWindow - deltaTime);
     }
 
     /**
@@ -79,7 +79,7 @@ export class DashAbility {
     _trigger(player, direction) {
         this.timer = dash_duration_seconds;
         this.cooldownTimer = dash_cooldown_seconds;
-        player.vx = direction * dash_speed;
+        player.velocityX = direction * dash_speed;
         player.facing = direction;
         player.pendingVfx.push('dash');
     }

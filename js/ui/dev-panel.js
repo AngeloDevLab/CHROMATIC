@@ -33,10 +33,10 @@ export class DevPanel {
 
     /**
      * Toggles the panel open/closed on the backtick key.
-     * @param {KeyboardEvent} e - The browser keydown event.
+     * @param {KeyboardEvent} event - The browser keydown event.
      */
-    _onKeyDown(e) {
-        if (e.code !== toggle_key_code) return;
+    _onKeyDown(event) {
+        if (event.code !== toggle_key_code) return;
         this.open ? this._close() : this._render();
     }
 

@@ -18,7 +18,7 @@ export class WraithBeam extends Entity {
         super(...WraithBeam._initialBounds(spawnCenterX, spawnCenterY, axis));
         this.axis = axis;
         this.direction = direction;
-        this.vx = 0;
+        this.velocityX = 0;
         this.damage = damage;
         this.dead = false;
         this._collision = collision;
@@ -100,13 +100,13 @@ export class WraithBeam extends Entity {
     _isBlockedAcross(x, y, crossAxis) {
         const half = thickness_px / 2;
         for (let offset = -half; offset < half; offset += step_px) {
-            const px = crossAxis === 'x' ? x + offset : x;
-            const py = crossAxis === 'y' ? y + offset : y;
-            if (this._collision.isWallAt(px, py)) return true;
+            const pixelX = crossAxis === 'x' ? x + offset : x;
+            const pixelY = crossAxis === 'y' ? y + offset : y;
+            if (this._collision.isWallAt(pixelX, pixelY)) return true;
         }
-        const px = crossAxis === 'x' ? x + half : x;
-        const py = crossAxis === 'y' ? y + half : y;
-        return this._collision.isWallAt(px, py);
+        const pixelX = crossAxis === 'x' ? x + half : x;
+        const pixelY = crossAxis === 'y' ? y + half : y;
+        return this._collision.isWallAt(pixelX, pixelY);
     }
 
     /**

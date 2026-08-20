@@ -114,8 +114,8 @@ export class TouchControls {
      * @param {'left'|'right'|'jump'|'drop'} action - Held movement action to press/release.
      */
     _wireHoldButton(el, action) {
-        el.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
+        el.addEventListener('pointerdown', (event) => {
+            event.preventDefault();
             el.classList.add('pressed');
             this.game.input.pressAction(action);
         });
@@ -134,8 +134,8 @@ export class TouchControls {
      * @param {'attack'|'pause'} name - One-shot action to trigger.
      */
     _wireTapButton(el, name) {
-        el.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
+        el.addEventListener('pointerdown', (event) => {
+            event.preventDefault();
             el.classList.add('pressed');
             this.game.input.triggerPress(name);
         });

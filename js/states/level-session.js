@@ -98,23 +98,23 @@ export class LevelSession {
 
     /**
      * Routes the frame to dialogue/freeze handling, or a normal world update.
-     * @param {number} dt - Fixed timestep in seconds.
+     * @param {number} deltaTime - Fixed timestep in seconds.
      */
-    update(dt) {
+    update(deltaTime) {
         this._handlePauseInput();
 
         const merchantDialogue = this.interactables.merchantDialogue;
         if (merchantDialogue.isOpen) {
-            this._updateMerchantDialogue(dt, merchantDialogue);
+            this._updateMerchantDialogue(deltaTime, merchantDialogue);
             return;
         }
 
         if (this.combat.isFrozen) {
-            this.combat.tickFrozen(dt);
+            this.combat.tickFrozen(deltaTime);
             return;
         }
 
-        this._updateWorld(dt);
+        this._updateWorld(deltaTime);
     }
 
     /**
@@ -132,69 +132,69 @@ export class LevelSession {
 
     /**
      * Freezes gameplay the same way Pause does; [E] here advances the dialogue instead of interacting with the level.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {MerchantDialogue} merchantDialogue - Open dialogue to advance/update.
      */
-    _updateMerchantDialogue(dt, merchantDialogue) {
+    _updateMerchantDialogue(deltaTime, merchantDialogue) {
         if (this.game.input.consumeInteractPress()) merchantDialogue.advance();
-        merchantDialogue.update(dt);
+        merchantDialogue.update(deltaTime);
     }
 
     /**
      * The rest of a normal frame - player/enemies/interactables/combat, the
      * color mechanic, death, camera, and HUD text, in that order.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateWorld(dt) {
-        this._updatePlayer(dt);
-        this._updateEnemiesAndInteractables(dt);
-        this._updateCombatAndReveal(dt);
-        this._updateCameraAndHud(dt);
+    _updateWorld(deltaTime) {
+        this._updatePlayer(deltaTime);
+        this._updateEnemiesAndInteractables(deltaTime);
+        this._updateCombatAndReveal(deltaTime);
+        this._updateCameraAndHud(deltaTime);
     }
 
     /**
      * Re-applies unlocked abilities, then updates the player and its FX/secret-door block.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updatePlayer(dt) {
+    _updatePlayer(deltaTime) {
         this.player.godmode = this.game.devPanel.godmode;
         for (const id of this.game.abilities) this.player.unlockAbility(id);
-        this.player.update(dt);
-        this.playerFx.update(dt);
+        this.player.update(deltaTime);
+        this.playerFx.update(deltaTime);
         this.interactables.blockSecretDoor();
     }
 
     /**
      * Updates enemies and interactables, then checks for a fall death.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateEnemiesAndInteractables(dt) {
-        this.enemyRoster.updateEnemies(dt, this.combat, this.colorZone, PLAYER_REVEAL_RADIUS);
-        this.interactables.updateEntities(dt);
+    _updateEnemiesAndInteractables(deltaTime) {
+        this.enemyRoster.updateEnemies(deltaTime, this.combat, this.colorZone, PLAYER_REVEAL_RADIUS);
+        this.interactables.updateEntities(deltaTime);
         this._checkFallDeath();
     }
 
     /**
      * Resolves combat and color reveal, then checks boss/level-complete and the death sequence.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateCombatAndReveal(dt) {
-        this.combat.update(dt, this.game.difficulty);
+    _updateCombatAndReveal(deltaTime) {
+        this.combat.update(deltaTime, this.game.difficulty);
         this.enemyRoster.updateColorReveal(this.colorZone);
         this.enemyRoster.checkLevelFullyRevealed(this.colorZone, this.interactables);
         this.enemyRoster.checkBossDefeated(this.interactables);
-        this._updateDeathSequence(dt);
+        this._updateDeathSequence(deltaTime);
     }
 
     /**
      * Follows the camera, then updates prompts/color zone/damage numbers/HUD text.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateCameraAndHud(dt) {
+    _updateCameraAndHud(deltaTime) {
         this.camera.follow(this.player, this.level.pixelWidth, this.level.pixelHeight);
         this._updateInteractablePrompts();
-        this._updateColorZone(dt);
-        this.damageNumbers.update(dt, this.camera);
+        this._updateColorZone(deltaTime);
+        this.damageNumbers.update(deltaTime, this.camera);
         this._updateHudText();
     }
 
@@ -209,13 +209,13 @@ export class LevelSession {
 
     /**
      * Starts the ghost-rise once the fall animation finishes, then pushes GameOverState once its fade-out completes.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateDeathSequence(dt) {
+    _updateDeathSequence(deltaTime) {
         if (!this.deathSequence.active && this.player.dead && this.player.deathAnimationFinished) {
             this._startDeathSequence();
         }
-        if (this.deathSequence.active && this.deathSequence.update(dt)) {
+        if (this.deathSequence.active && this.deathSequence.update(deltaTime)) {
             this.game.stateMachine.push('gameover', { chapterId: this.chapterId, level: this.levelNumber });
         }
     }
@@ -232,11 +232,11 @@ export class LevelSession {
     /**
      * Stops feeding position updates once the death sequence's full-darken
      * sweep finishes, to avoid punching a fresh colored hole at the frozen death spot.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateColorZone(dt) {
+    _updateColorZone(deltaTime) {
         if (!this.deathSequence.active || this.colorZone.isTransitioning) {
-            this.colorZone.update(dt, this.player.centerX, this.player.visualCenterY);
+            this.colorZone.update(deltaTime, this.player.centerX, this.player.visualCenterY);
         }
     }
 

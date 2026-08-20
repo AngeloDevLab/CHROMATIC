@@ -23,9 +23,9 @@ export class State {
 
     /**
      * Per-frame logic update. No-op by default; subclasses override.
-     * @param {number} dt - Fixed timestep in seconds.
+     * @param {number} deltaTime - Fixed timestep in seconds.
      */
-    update(dt) {}
+    update(deltaTime) {}
 
     /**
      * Per-frame render. No-op by default; subclasses override.

@@ -127,12 +127,12 @@ export class MerchantDialogue {
 
     /**
      * Advances the typewriter reveal by one tick.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
+    update(deltaTime) {
         if (!this.isOpen || this._fullyRevealed) return;
 
-        this._revealTimer += dt;
+        this._revealTimer += deltaTime;
         const tokensToShow = Math.floor(this._revealTimer * chars_per_second);
         if (tokensToShow > this._revealedCount) {
             this._revealedCount = Math.min(tokensToShow, this._tokens.length);

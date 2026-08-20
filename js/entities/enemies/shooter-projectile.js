@@ -42,7 +42,7 @@ export class ShooterProjectile extends Entity {
     constructor(spawnCenterX, spawnCenterY, direction, sprite, damage) {
         super(spawnCenterX - hitbox_size / 2, spawnCenterY - hitbox_size / 2, hitbox_size, hitbox_size);
         this.direction = direction;
-        this.vx = direction * speed;
+        this.velocityX = direction * speed;
         this.damage = damage;
         this.traveled = 0;
         this.dead = false;
@@ -51,11 +51,11 @@ export class ShooterProjectile extends Entity {
 
     /**
      * Sweeps forward in small steps, checking for a solid tile at each one.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {Collision} collision - Level collision to check against.
      */
-    update(dt, collision) {
-        const totalDx = this.vx * dt;
+    update(deltaTime, collision) {
+        const totalDx = this.velocityX * deltaTime;
         const steps = Math.max(1, Math.ceil(Math.abs(totalDx) / sweep_step_px));
         const stepDx = totalDx / steps;
 
@@ -63,7 +63,7 @@ export class ShooterProjectile extends Entity {
             if (this._sweepStep(stepDx, collision)) return;
         }
 
-        this.spin.update(dt);
+        this.spin.update(deltaTime);
     }
 
     /**

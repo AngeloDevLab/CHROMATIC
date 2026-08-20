@@ -56,34 +56,34 @@ export class CombatCoordinator {
 
     /**
      * Counts down the active freeze - only meaningful while isFrozen.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    tickFrozen(dt) {
-        this._hitStopTimer = Math.max(0, this._hitStopTimer - dt);
+    tickFrozen(deltaTime) {
+        this._hitStopTimer = Math.max(0, this._hitStopTimer - deltaTime);
     }
 
     /**
      * Runs one frame of attack/projectile/contact-damage resolution.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {string} difficulty - Game.difficulty, for incoming-damage scaling (combat.js).
      */
-    update(dt, difficulty) {
-        this._rangedCooldownTimer = Math.max(0, this._rangedCooldownTimer - dt);
+    update(deltaTime, difficulty) {
+        this._rangedCooldownTimer = Math.max(0, this._rangedCooldownTimer - deltaTime);
         const hits = this._resolvePlayerAttack();
-        hits.push(...this._updateProjectiles(dt));
-        this._updateEnemyProjectiles(dt, difficulty);
-        hits.push(...this._resolveContactDamage(dt, difficulty));
+        hits.push(...this._updateProjectiles(deltaTime));
+        this._updateEnemyProjectiles(deltaTime, difficulty);
+        hits.push(...this._resolveContactDamage(deltaTime, difficulty));
         this._displayEnemyHits(hits);
     }
 
     /**
      * Resolves contact damage between the player and enemies this frame, displaying the player's share and returning the enemy's share. A charging enemy's own side is filtered out at 0.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {string} difficulty - Game.difficulty, for incoming-damage scaling (combat.js).
      * @returns {{enemy:Enemy,amount:number}[]} Enemy-side contact hits this frame.
      */
-    _resolveContactDamage(dt, difficulty) {
-        const contactHits = resolveContactDamage(dt, this.player, this.enemies, difficulty);
+    _resolveContactDamage(deltaTime, difficulty) {
+        const contactHits = resolveContactDamage(deltaTime, this.player, this.enemies, difficulty);
         this._displayContactHitsOnPlayer(contactHits);
         if (contactHits.length > 0) {
             this._hitStopTimer = hit_stop_seconds;
@@ -137,11 +137,11 @@ export class CombatCoordinator {
 
     /**
      * Advances the player's thrown-sword projectiles and resolves their hits.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @returns {{enemy:Enemy,amount:number}[]} Thrown-sword hits against enemies this frame.
      */
-    _updateProjectiles(dt) {
-        for (const projectile of this.projectiles) projectile.update(dt, this.collision);
+    _updateProjectiles(deltaTime) {
+        for (const projectile of this.projectiles) projectile.update(deltaTime, this.collision);
         const hits = resolveProjectileHits(this.projectiles, this.enemies, this.enemyProjectiles);
         this.projectiles = this.projectiles.filter((projectile) => !projectile.dead);
         return hits;
@@ -149,11 +149,11 @@ export class CombatCoordinator {
 
     /**
      * Updates enemy-fired projectiles and resolves their hits against the player.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {string} difficulty - Game.difficulty, for incoming-damage scaling (combat.js).
      */
-    _updateEnemyProjectiles(dt, difficulty) {
-        for (const projectile of this.enemyProjectiles) projectile.update(dt, this.collision);
+    _updateEnemyProjectiles(deltaTime, difficulty) {
+        for (const projectile of this.enemyProjectiles) projectile.update(deltaTime, this.collision);
         const playerHits = resolveEnemyProjectileHits(this.enemyProjectiles, this.player, difficulty);
         for (const hit of playerHits) {
             this.damageNumbers.spawn(this.player.centerX, this.player.visualTopY, hit.amount);

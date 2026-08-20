@@ -73,13 +73,13 @@ export class InputHandler {
 
     /**
      * Routes a keydown to the matching held or edge-triggered action.
-     * @param {KeyboardEvent} e - The browser keydown event.
+     * @param {KeyboardEvent} event - The browser keydown event.
      */
-    _onKeyDown(e) {
+    _onKeyDown(event) {
         this._active = true;
-        if (this._handleOneShotKey(e)) return;
+        if (this._handleOneShotKey(event)) return;
 
-        const action = key_map[e.code];
+        const action = key_map[event.code];
         if (!action) return;
         if (action === 'jump' && !this.actions.jump) this._presses.jump = true;
         if (action === 'drop' && !this.actions.drop) this._presses.drop = true;
@@ -88,20 +88,20 @@ export class InputHandler {
 
     /**
      * Handles the one-shot keys not covered by key_map.
-     * @param {KeyboardEvent} e - The browser keydown event.
+     * @param {KeyboardEvent} event - The browser keydown event.
      * @returns {boolean} Whether this key was a one-shot press (Pause/Interact/Attack).
      */
-    _handleOneShotKey(e) {
-        if (e.code === 'KeyP') {
+    _handleOneShotKey(event) {
+        if (event.code === 'KeyP') {
             this._presses.pause = true;
             return true;
         }
-        if (e.code === 'KeyE') {
+        if (event.code === 'KeyE') {
             this._presses.interact = true;
             return true;
         }
-        if (e.code === 'KeyF') {
-            if (!e.repeat) this._presses.attack = true;
+        if (event.code === 'KeyF') {
+            if (!event.repeat) this._presses.attack = true;
             return true;
         }
         return false;
@@ -109,10 +109,10 @@ export class InputHandler {
 
     /**
      * Releases a held action on keyup.
-     * @param {KeyboardEvent} e - The browser keyup event.
+     * @param {KeyboardEvent} event - The browser keyup event.
      */
-    _onKeyUp(e) {
-        const action = key_map[e.code];
+    _onKeyUp(event) {
+        const action = key_map[event.code];
         if (action) this.actions[action] = false;
     }
 
@@ -126,10 +126,10 @@ export class InputHandler {
 
     /**
      * Suppresses the right-click context menu over the game viewport.
-     * @param {MouseEvent} e - The browser contextmenu event.
+     * @param {MouseEvent} event - The browser contextmenu event.
      */
-    _onContextMenu(e) {
-        e.preventDefault();
+    _onContextMenu(event) {
+        event.preventDefault();
     }
 
     /**

@@ -12,18 +12,18 @@ export class Entity {
         this.y = y;
         this.width = width;
         this.height = height;
-        this.vx = 0;
-        this.vy = 0;
+        this.velocityX = 0;
+        this.velocityY = 0;
     }
 
     /**
-     * Integrates position from velocity. Subclasses call super.update(dt)
+     * Integrates position from velocity. Subclasses call super.update(deltaTime)
      * and layer additional behavior on top.
-     * @param {number} dt - Fixed timestep in seconds.
+     * @param {number} deltaTime - Fixed timestep in seconds.
      */
-    update(dt) {
-        this.x += this.vx * dt;
-        this.y += this.vy * dt;
+    update(deltaTime) {
+        this.x += this.velocityX * deltaTime;
+        this.y += this.velocityY * deltaTime;
     }
 
     /**

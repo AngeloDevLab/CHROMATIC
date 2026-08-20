@@ -57,25 +57,25 @@ export class ColorZoneTransitions {
 
     /**
      * Advances whichever sweep is currently active.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
+    update(deltaTime) {
         if (this._fullReveal) {
-            this._updateFullReveal(dt);
+            this._updateFullReveal(deltaTime);
         } else if (this._fullDarken) {
-            this._updateFullDarken(dt);
+            this._updateFullDarken(deltaTime);
         } else if (this._zoneWipe) {
-            this._updateZoneWipe(dt);
+            this._updateZoneWipe(deltaTime);
         }
     }
 
     /**
      * Grows the reveal circle, clearing the overlay outright once it completes.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateFullReveal(dt) {
+    _updateFullReveal(deltaTime) {
         const zone = this._colorZone;
-        this._fullReveal.elapsed += dt;
+        this._fullReveal.elapsed += deltaTime;
         const progress = Math.min(1, this._fullReveal.elapsed / full_reveal_duration_seconds);
 
         if (progress >= 1) {
@@ -89,11 +89,11 @@ export class ColorZoneTransitions {
 
     /**
      * Grows the darken circle, repainting the full grey template once it completes.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateFullDarken(dt) {
+    _updateFullDarken(deltaTime) {
         const zone = this._colorZone;
-        this._fullDarken.elapsed += dt;
+        this._fullDarken.elapsed += deltaTime;
         const progress = Math.min(1, this._fullDarken.elapsed / full_reveal_duration_seconds);
 
         if (progress >= 1) {
@@ -107,10 +107,10 @@ export class ColorZoneTransitions {
 
     /**
      * Sweeps the revealed strip's right edge toward xEnd.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateZoneWipe(dt) {
-        this._zoneWipe.elapsed += dt;
+    _updateZoneWipe(deltaTime) {
+        this._zoneWipe.elapsed += deltaTime;
         const progress = Math.min(1, this._zoneWipe.elapsed / zone_wipe_duration_seconds);
         const { xStart, xEnd } = this._zoneWipe;
         const right = xStart + (xEnd - xStart) * progress;

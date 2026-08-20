@@ -147,7 +147,7 @@ export class MenuState extends State {
      * @returns {boolean}
      */
     _hasExited(entity) {
-        return entity.vx >= 0 ? entity.x > this.game.width : entity.x + entity.width < 0;
+        return entity.velocityX >= 0 ? entity.x > this.game.width : entity.x + entity.width < 0;
     }
 
     /**
@@ -270,19 +270,19 @@ export class MenuState extends State {
 
     /**
      * Advances whichever actor's pass is currently playing.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
+    update(deltaTime) {
         if (this.phase === 'player') {
-            this.player.update(dt);
-            this.colorZone.update(dt, this.player.centerX, this.player.visualCenterY);
+            this.player.update(deltaTime);
+            this.colorZone.update(deltaTime, this.player.centerX, this.player.visualCenterY);
             if (this._hasExited(this.player)) this._startDelay(() => this._startEnemyPass());
         } else if (this.phase === 'enemy') {
-            this.enemy.update(dt);
+            this.enemy.update(deltaTime);
             this.colorZone.darken(this.enemy.centerX, this.enemy.centerY, darken_radius);
             if (this._hasExited(this.enemy)) this._startDelay(() => this._startPlayerPass());
         } else {
-            this._delayTimer -= dt;
+            this._delayTimer -= deltaTime;
             if (this._delayTimer <= 0) this._nextPass();
         }
     }

@@ -7,7 +7,7 @@ import { ShooterProjectile } from './shooter-projectile.js';
 /**
  * Contact and projectile damage both match every other enemy type's contact hit.
  */
-const shooter_hp = 20;
+const shooter_health = 20;
 const shooter_contact_damage = 20;
 const shooter_projectile_damage = 20;
 
@@ -44,8 +44,8 @@ export class Shooter extends Enemy {
      */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
-        this.hp = shooter_hp;
-        this.maxHp = shooter_hp;
+        this.health = shooter_health;
+        this.maxHealth = shooter_health;
         this.contactDamage = shooter_contact_damage;
 
         this.player = null;
@@ -71,34 +71,34 @@ export class Shooter extends Enemy {
 
     /**
      * Applies gravity, ticks the shot, moves, and resolves collision for one frame.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updatePatrol(dt) {
-        this.vy += this.gravity * dt;
+    _updatePatrol(deltaTime) {
+        this.velocityY += this.gravity * deltaTime;
 
-        if (this.shootCooldownTimer > 0) this.shootCooldownTimer = Math.max(0, this.shootCooldownTimer - dt);
+        if (this.shootCooldownTimer > 0) this.shootCooldownTimer = Math.max(0, this.shootCooldownTimer - deltaTime);
         if (this.shooting) this._updateShooting();
 
-        this._updateMovement(dt);
+        this._updateMovement(deltaTime);
 
         this._updateAnimationState();
-        this.grounded = this.collision.resolve(this, dt);
+        this.grounded = this.collision.resolve(this, deltaTime);
     }
 
     /**
      * Priority: knockback, then an active shot, then starting one, then patrol fallback.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateMovement(dt) {
+    _updateMovement(deltaTime) {
         if (this.knockbackTimer > 0) {
-            this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
+            this.knockbackTimer = Math.max(0, this.knockbackTimer - deltaTime);
         } else if (this.shooting) {
-            this.vx = 0;
+            this.velocityX = 0;
         } else if (this.grounded && this._canSeePlayer() && this.shootCooldownTimer <= 0) {
             this._startShooting();
         } else {
             if (this.grounded && this._blockedAhead()) this.facing *= -1;
-            this.vx = this.patrolSpeed * this.facing;
+            this.velocityX = this.patrolSpeed * this.facing;
         }
     }
 
@@ -109,7 +109,7 @@ export class Shooter extends Enemy {
         this.facing = this.player.centerX >= this.centerX ? 1 : -1;
         this.shooting = true;
         this._shotFired = false;
-        this.vx = 0;
+        this.velocityX = 0;
     }
 
     /**

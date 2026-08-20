@@ -61,7 +61,7 @@ export class HUD {
             width: enemy_bar_width,
             height: enemy_bar_height,
         };
-        this._drawBar(ctx, rect, enemy.hp / enemy.maxHp, '#241010', '#d4453f');
+        this._drawBar(ctx, rect, enemy.health / enemy.maxHealth, '#241010', '#d4453f');
     }
 
     /**
@@ -81,7 +81,7 @@ export class HUD {
             height: BOSS_BAR_HEIGHT * scale,
         };
         const fillColor = boss.enraged ? '#ff8a3f' : '#d4453f';
-        this._drawBar(ctx, rect, boss.hp / boss.maxHp, '#241010', fillColor);
+        this._drawBar(ctx, rect, boss.health / boss.maxHealth, '#241010', fillColor);
     }
 
     /**

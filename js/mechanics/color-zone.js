@@ -98,13 +98,13 @@ export class ColorZone {
 
     /**
      * Advances the overlay for the current frame at the live reveal point.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {number} x - Live reveal point's world X.
      * @param {number} y - Live reveal point's world Y.
      */
-    update(dt, x, y) {
+    update(deltaTime, x, y) {
         if (this._transitions.isActive) {
-            this._transitions.update(dt);
+            this._transitions.update(deltaTime);
             return;
         }
 
@@ -113,7 +113,7 @@ export class ColorZone {
             return;
         }
 
-        this._updateFade(dt, x, y);
+        this._updateFade(deltaTime, x, y);
     }
 
     /**
@@ -132,30 +132,30 @@ export class ColorZone {
 
     /**
      * Ages/expires stamps, then repaints the overlay from them.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {number} x - Live reveal point's world X.
      * @param {number} y - Live reveal point's world Y.
      */
-    _updateFade(dt, x, y) {
-        this._ageStamps(dt, x, y);
+    _updateFade(deltaTime, x, y) {
+        this._ageStamps(deltaTime, x, y);
         this._repaintFade(x, y);
     }
 
     /**
      * Adds a new stamp every stampIntervalSeconds and drops ones that have
      * fully faded.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {number} x - Live reveal point's world X.
      * @param {number} y - Live reveal point's world Y.
      */
-    _ageStamps(dt, x, y) {
-        this._timeSinceLastStamp += dt;
+    _ageStamps(deltaTime, x, y) {
+        this._timeSinceLastStamp += deltaTime;
         if (this._timeSinceLastStamp >= this.stampIntervalSeconds) {
             this._stamps.push({ x, y, age: 0 });
             this._timeSinceLastStamp = 0;
         }
 
-        for (const stamp of this._stamps) stamp.age += dt;
+        for (const stamp of this._stamps) stamp.age += deltaTime;
         this._stamps = this._stamps.filter((stamp) => stamp.age < this.fadeDurationSeconds);
     }
 

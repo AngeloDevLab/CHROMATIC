@@ -97,14 +97,14 @@ export class EnemyRoster {
     /**
      * Drains each enemy's pendingProjectile (Shooter's shots, the boss's
      * beam) into combat's pool, and pendingRoomDarken (wraith.js's beam-fire room-darken beat).
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {CombatCoordinator} combat - Combat pool to drain enemy projectiles into.
      * @param {ColorZone} colorZone - Color mechanic, for beam-fire room-darken beats.
      * @param {number} safeRevealRadius - Matches the player's own everyday reveal radius.
      */
-    updateEnemies(dt, combat, colorZone, safeRevealRadius) {
+    updateEnemies(deltaTime, combat, colorZone, safeRevealRadius) {
         for (const enemy of this.enemies) {
-            enemy.update(dt);
+            enemy.update(deltaTime);
             this._drainPendingVfx(enemy);
             if (enemy.pendingProjectile) {
                 combat.enemyProjectiles.push(enemy.pendingProjectile);
@@ -116,7 +116,7 @@ export class EnemyRoster {
                 enemy.pendingRoomDarken = false;
             }
         }
-        this._updateVfx(dt);
+        this._updateVfx(deltaTime);
     }
 
     /**
@@ -135,10 +135,10 @@ export class EnemyRoster {
 
     /**
      * Advances the enemy VFX pool and prunes finished clips.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateVfx(dt) {
-        for (const fx of this.vfx) fx.update(dt);
+    _updateVfx(deltaTime) {
+        for (const fx of this.vfx) fx.update(deltaTime);
         this.vfx = this.vfx.filter((fx) => !fx.dead);
     }
 

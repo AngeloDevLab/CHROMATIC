@@ -18,7 +18,7 @@ const attack_impact_frame = 4;
 
 /**
  * How long a knockback push overrides normal horizontal control; without it,
- * the accel/decel movement code would immediately pull vx back.
+ * the accel/decel movement code would immediately pull velocityX back.
  */
 const knockback_lock_seconds = 0.15;
 
@@ -149,10 +149,10 @@ export class Player extends Entity {
 
     /**
      * Applies a brief knockback push (see combat.js callers).
-     * @param {number} vx - Horizontal velocity to apply.
+     * @param {number} velocityX - Horizontal velocity to apply.
      */
-    applyKnockback(vx) {
-        this.vx = vx;
+    applyKnockback(velocityX) {
+        this.velocityX = velocityX;
         this.knockbackTimer = knockback_lock_seconds;
     }
 
@@ -185,18 +185,18 @@ export class Player extends Entity {
         this.autopilot = true;
         this._autopilotSpeed = speed;
         this._autopilotBounds = bounds;
-        this.vx = speed;
+        this.velocityX = speed;
         this.currentAnimation = 'running';
     }
 
     /**
      * Starts a scripted constant-velocity run, with no gravity or collision.
-     * @param {number} vx - Constant horizontal velocity.
+     * @param {number} velocityX - Constant horizontal velocity.
      */
-    enableFreeRun(vx) {
+    enableFreeRun(velocityX) {
         this.freeRun = true;
-        this.vx = vx;
-        this.facing = vx >= 0 ? 1 : -1;
+        this.velocityX = velocityX;
+        this.facing = velocityX >= 0 ? 1 : -1;
         this.currentAnimation = 'running';
     }
 
@@ -217,33 +217,33 @@ export class Player extends Entity {
 
     /**
      * Advances health/animation state and whichever movement mode is active.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
-        this.healthState.tickHitFlash(dt);
+    update(deltaTime) {
+        this.healthState.tickHitFlash(deltaTime);
 
         if (this.dead) {
-            this.animations.dead?.update(dt);
+            this.animations.dead?.update(deltaTime);
             return;
         }
 
-        this.healthState.tickInvincibility(dt);
-        this._updateMovementMode(dt);
-        this.animations[this.currentAnimation]?.update(dt);
+        this.healthState.tickInvincibility(deltaTime);
+        this._updateMovementMode(deltaTime);
+        this.animations[this.currentAnimation]?.update(deltaTime);
     }
 
     /**
      * Dispatches update() to whichever of autopilot/controlled/freeRun is active.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateMovementMode(dt) {
+    _updateMovementMode(deltaTime) {
         if (this.autopilot) {
             this._updateAutopilot();
-            super.update(dt);
+            super.update(deltaTime);
         } else if (this.controlled) {
-            this.movement.update(dt);
+            this.movement.update(deltaTime);
         } else if (this.freeRun) {
-            super.update(dt);
+            super.update(deltaTime);
         }
     }
 
@@ -252,13 +252,13 @@ export class Player extends Entity {
      */
     _updateAutopilot() {
         const { minX, maxX } = this._autopilotBounds;
-        if (this.x <= minX && this.vx < 0) {
+        if (this.x <= minX && this.velocityX < 0) {
             this.x = minX;
-            this.vx = this._autopilotSpeed;
+            this.velocityX = this._autopilotSpeed;
             this.facing = 1;
-        } else if (this.x >= maxX && this.vx > 0) {
+        } else if (this.x >= maxX && this.velocityX > 0) {
             this.x = maxX;
-            this.vx = -this._autopilotSpeed;
+            this.velocityX = -this._autopilotSpeed;
             this.facing = -1;
         }
     }

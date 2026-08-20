@@ -12,7 +12,7 @@ export class PlayerFx {
     /**
      * Sets up an empty VFX pool and action-SFX tracking state.
      * @param {Game} game - For assets/sound.
-     * @param {Player} player - Read for pendingVfx/attacking/grounded/vx/dead.
+     * @param {Player} player - Read for pendingVfx/attacking/grounded/velocityX/dead.
      */
     constructor(game, player) {
         this.game = game;
@@ -24,13 +24,13 @@ export class PlayerFx {
 
     /**
      * Spawns new VFX, advances/prunes the pool, and updates action SFX.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
+    update(deltaTime) {
         this._drainPendingVfx();
-        for (const vfx of this.vfx) vfx.update(dt);
+        for (const vfx of this.vfx) vfx.update(deltaTime);
         this.vfx = this.vfx.filter((vfx) => !vfx.dead);
-        this._updateActionSfx(dt);
+        this._updateActionSfx(deltaTime);
     }
 
     /**
@@ -47,26 +47,26 @@ export class PlayerFx {
 
     /**
      * Attack's swing sound and the running footstep loop - neither has a matching VfxEffect.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateActionSfx(dt) {
+    _updateActionSfx(deltaTime) {
         if (this.player.attacking && !this._wasAttacking) this.game.sound.playSfx('swoosh');
         this._wasAttacking = this.player.attacking;
-        this._updateFootstepSfx(dt);
+        this._updateFootstepSfx(deltaTime);
     }
 
     /**
      * Repeats every footstep_interval_seconds while actually running under
      * control. Resets so the next step fires immediately once running starts again.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateFootstepSfx(dt) {
-        const running = this.player.grounded && !this.player.dead && !this.player.attacking && this.player.vx !== 0;
+    _updateFootstepSfx(deltaTime) {
+        const running = this.player.grounded && !this.player.dead && !this.player.attacking && this.player.velocityX !== 0;
         if (!running) {
             this._footstepTimer = 0;
             return;
         }
-        this._footstepTimer -= dt;
+        this._footstepTimer -= deltaTime;
         if (this._footstepTimer > 0) return;
         this.game.sound.playSfx('footsteps');
         this._footstepTimer = footstep_interval_seconds;

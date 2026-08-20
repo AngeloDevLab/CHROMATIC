@@ -68,16 +68,16 @@ export class Collision {
     /**
      * Moves the entity by its current velocity and resolves overlaps against solid tiles, axis by axis.
      * @param {Entity} entity - Entity to move and resolve.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @returns {boolean} Whether the entity ends up standing on solid ground.
      */
-    resolve(entity, dt) {
-        entity.x += entity.vx * dt;
+    resolve(entity, deltaTime) {
+        entity.x += entity.velocityX * deltaTime;
         this._resolveX(entity);
         this._clampToLevelX(entity);
 
         const previousBottom = entity.y + entity.height;
-        entity.y += entity.vy * dt;
+        entity.y += entity.velocityY * deltaTime;
         return this._resolveY(entity, previousBottom);
     }
 
@@ -91,10 +91,10 @@ export class Collision {
         const maxX = this.level.pixelWidth - entity.width;
         if (entity.x < 0) {
             entity.x = 0;
-            if (entity.vx < 0) entity.vx = 0;
+            if (entity.velocityX < 0) entity.velocityX = 0;
         } else if (entity.x > maxX) {
             entity.x = maxX;
-            if (entity.vx > 0) entity.vx = 0;
+            if (entity.velocityX > 0) entity.velocityX = 0;
         }
     }
 
@@ -104,16 +104,16 @@ export class Collision {
      */
     _resolveX(entity) {
         const tileSize = this.level.tileSize;
-        if (entity.vx > 0) {
+        if (entity.velocityX > 0) {
             const rightEdge = entity.x + entity.width;
             if (this._blockedColumnX(rightEdge, entity.y, entity.y + entity.height)) {
                 entity.x = Math.floor(rightEdge / tileSize) * tileSize - entity.width;
-                entity.vx = 0;
+                entity.velocityX = 0;
             }
-        } else if (entity.vx < 0) {
+        } else if (entity.velocityX < 0) {
             if (this._blockedColumnX(entity.x, entity.y, entity.y + entity.height)) {
                 entity.x = (Math.floor(entity.x / tileSize) + 1) * tileSize;
-                entity.vx = 0;
+                entity.velocityX = 0;
             }
         }
     }
@@ -139,13 +139,13 @@ export class Collision {
      * @returns {boolean} Whether the entity ends up standing on solid ground.
      */
     _resolveY(entity, previousBottom) {
-        if (entity.vy > 0) return this._resolveFalling(entity, previousBottom);
-        if (entity.vy < 0) return this._resolveRising(entity);
+        if (entity.velocityY > 0) return this._resolveFalling(entity, previousBottom);
+        if (entity.velocityY < 0) return this._resolveRising(entity);
         return false;
     }
 
     /**
-     * Falling (vy>0): the wall layer, if configured, always catches, full
+     * Falling (velocityY>0): the wall layer, if configured, always catches, full
      * solidity in every direction. The one-way primary layer only catches
      * if the entity was already at/above the surface last frame (landing
      * onto it from above) - otherwise it was approaching from below/inside
@@ -181,12 +181,12 @@ export class Collision {
      */
     _snapOntoSurface(entity, bottomEdge, tileSize) {
         entity.y = Math.floor(bottomEdge / tileSize) * tileSize - entity.height;
-        entity.vy = 0;
+        entity.velocityY = 0;
         return true;
     }
 
     /**
-     * Rising (vy<0): the wall layer, if configured, always blocks. The
+     * Rising (velocityY<0): the wall layer, if configured, always blocks. The
      * one-way primary layer never blocks upward movement.
      * @param {Entity} entity - Entity whose Y movement to resolve.
      * @returns {boolean} Always false - rising never counts as "standing on ground".
@@ -214,7 +214,7 @@ export class Collision {
      */
     _snapBelowTile(entity, tileSize) {
         entity.y = (Math.floor(entity.y / tileSize) + 1) * tileSize;
-        entity.vy = 0;
+        entity.velocityY = 0;
     }
 
     /**

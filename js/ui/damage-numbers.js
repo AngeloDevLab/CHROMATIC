@@ -56,12 +56,12 @@ export class DamageNumbers {
 
     /**
      * Rises, fades, and repositions every active popup, pruning expired ones.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {Camera} camera - Camera to project world coordinates through.
      */
-    update(dt, camera) {
+    update(deltaTime, camera) {
         for (const entry of this.active) {
-            entry.age += dt;
+            entry.age += deltaTime;
             const progress = Math.min(1, entry.age / entry.durationSeconds);
             entry.el.style.left = `${(entry.worldX - camera.x) * camera.zoom}px`;
             entry.el.style.top = `${(entry.worldY - camera.y - rise_px * progress) * camera.zoom}px`;

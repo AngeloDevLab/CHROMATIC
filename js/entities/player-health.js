@@ -100,20 +100,20 @@ export class PlayerHealth {
 
     /**
      * Regenerates Shield over time, up to its max.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    regen(dt) {
-        this.shield = Math.min(this.maxShield, this.shield + this.shieldRegenPerSecond * dt);
+    regen(deltaTime) {
+        this.shield = Math.min(this.maxShield, this.shield + this.shieldRegenPerSecond * deltaTime);
     }
 
-    /** Counts down the hit-flash timer; still ticks while dead. @param {number} dt - Elapsed time in seconds. */
-    tickHitFlash(dt) {
-        if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - dt);
+    /** Counts down the hit-flash timer; still ticks while dead. @param {number} deltaTime - Elapsed time in seconds. */
+    tickHitFlash(deltaTime) {
+        if (this.hitFlashTimer > 0) this.hitFlashTimer = Math.max(0, this.hitFlashTimer - deltaTime);
     }
 
-    /** Counts down the invincibility timer. @param {number} dt - Elapsed time in seconds. */
-    tickInvincibility(dt) {
-        if (this.invincibleTimer > 0) this.invincibleTimer = Math.max(0, this.invincibleTimer - dt);
+    /** Counts down the invincibility timer. @param {number} deltaTime - Elapsed time in seconds. */
+    tickInvincibility(deltaTime) {
+        if (this.invincibleTimer > 0) this.invincibleTimer = Math.max(0, this.invincibleTimer - deltaTime);
     }
 
     /** White-tint amount for the current hit flash, 0-1. @returns {number} */

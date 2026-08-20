@@ -60,13 +60,13 @@ export class Interactables {
 
     /**
      * Updates every interactable type.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    updateEntities(dt) {
-        this.portal.update(dt);
-        this.trapdoor.update(dt);
-        this.secretDoor.update(dt);
-        this.merchant.update(dt);
+    updateEntities(deltaTime) {
+        this.portal.update(deltaTime);
+        this.trapdoor.update(deltaTime);
+        this.secretDoor.update(deltaTime);
+        this.merchant.update(deltaTime);
     }
 
     /**

@@ -38,13 +38,13 @@ export class DeathSequence {
 
     /**
      * Rises and ages the ghost.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @returns {boolean} True exactly once, the frame the fade-out completes.
      */
-    update(dt) {
-        this.elapsed += dt;
-        this.y -= ghost_rise_speed * dt;
-        this.ghostAnimation.update(dt);
+    update(deltaTime) {
+        this.elapsed += deltaTime;
+        this.y -= ghost_rise_speed * deltaTime;
+        this.ghostAnimation.update(deltaTime);
 
         if (!this._reportedFinished && this.elapsed >= ghost_fade_duration_seconds) {
             this._reportedFinished = true;

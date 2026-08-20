@@ -96,12 +96,12 @@ export class CutsceneState extends State {
 
     /**
      * Advances the typewriter reveal by one tick.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateText(dt) {
+    _updateText(deltaTime) {
         if (!this._textTokens || this._textRevealedCount >= this._textTokens.length) return;
 
-        this._textRevealTimer += dt;
+        this._textRevealTimer += deltaTime;
         const tokensToShow = Math.floor(this._textRevealTimer * text_chars_per_second);
         if (tokensToShow > this._textRevealedCount) {
             this._textRevealedCount = Math.min(tokensToShow, this._textTokens.length);
@@ -111,12 +111,12 @@ export class CutsceneState extends State {
 
     /**
      * Advances the animation, text, and phase timer.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
-        this.phaseTime += dt;
-        this.idleAnimation.update(dt);
-        this._updateText(dt);
+    update(deltaTime) {
+        this.phaseTime += deltaTime;
+        this.idleAnimation.update(deltaTime);
+        this._updateText(deltaTime);
 
         if (this.phase === 'darken' && this.phaseTime >= darken_duration) {
             this.phase = 'flash';
@@ -135,42 +135,42 @@ export class CutsceneState extends State {
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      */
     render(ctx) {
-        const { width: w, height: h } = this.game;
+        const { width: width, height: height } = this.game;
         const bg = this.game.assets.getImage('cutscene-beach-bg');
-        this._drawCover(ctx, bg, w, h);
-        this._drawPhase(ctx, w, h);
+        this._drawCover(ctx, bg, width, height);
+        this._drawPhase(ctx, width, height);
     }
 
     /**
      * Draws whichever phase is currently active.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
-     * @param {number} w - Canvas width.
-     * @param {number} h - Canvas height.
+     * @param {number} width - Canvas width.
+     * @param {number} height - Canvas height.
      */
-    _drawPhase(ctx, w, h) {
+    _drawPhase(ctx, width, height) {
         if (this.phase === 'darken') {
-            this._drawIris(ctx, w, h, this.phaseTime / darken_duration);
+            this._drawIris(ctx, width, height, this.phaseTime / darken_duration);
         } else if (this.phase === 'flash') {
             ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, w, h);
+            ctx.fillRect(0, 0, width, height);
         } else if (this.phase === 'reveal') {
-            this._drawRevealFade(ctx, w, h);
+            this._drawRevealFade(ctx, width, height);
         } else {
-            this._drawGuardian(ctx, w, h);
+            this._drawGuardian(ctx, width, height);
         }
     }
 
     /**
      * Guardian fades in from white as the flash clears.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
-     * @param {number} w - Canvas width.
-     * @param {number} h - Canvas height.
+     * @param {number} width - Canvas width.
+     * @param {number} height - Canvas height.
      */
-    _drawRevealFade(ctx, w, h) {
-        this._drawGuardian(ctx, w, h);
-        const t = 1 - this.phaseTime / reveal_duration;
-        ctx.fillStyle = `rgba(255, 255, 255, ${t})`;
-        ctx.fillRect(0, 0, w, h);
+    _drawRevealFade(ctx, width, height) {
+        this._drawGuardian(ctx, width, height);
+        const progress = 1 - this.phaseTime / reveal_duration;
+        ctx.fillStyle = `rgba(255, 255, 255, ${progress})`;
+        ctx.fillRect(0, 0, width, height);
     }
 
     /**
@@ -178,15 +178,15 @@ export class CutsceneState extends State {
      * cover), cropping the overflow instead of leaving empty space or distorting.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
      * @param {HTMLImageElement} image - Image to draw.
-     * @param {number} w - Canvas width.
-     * @param {number} h - Canvas height.
+     * @param {number} width - Canvas width.
+     * @param {number} height - Canvas height.
      */
-    _drawCover(ctx, image, w, h) {
-        const scale = Math.max(w / image.width, h / image.height);
+    _drawCover(ctx, image, width, height) {
+        const scale = Math.max(width / image.width, height / image.height);
         const drawWidth = image.width * scale;
         const drawHeight = image.height * scale;
-        const x = (w - drawWidth) / 2;
-        const y = (h - drawHeight) / 2;
+        const x = (width - drawWidth) / 2;
+        const y = (height - drawHeight) / 2;
         ctx.drawImage(image, x, y, drawWidth, drawHeight);
     }
 
@@ -209,13 +209,13 @@ export class CutsceneState extends State {
     /**
      * Draws the iris darkening effect at the given progress.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
-     * @param {number} w - Canvas width.
-     * @param {number} h - Canvas height.
-     * @param {number} t - Darken progress, 0 to 1.
+     * @param {number} width - Canvas width.
+     * @param {number} height - Canvas height.
+     * @param {number} progress - Darken progress, 0 to 1.
      */
-    _drawIris(ctx, w, h, t) {
-        const maskCtx = this._getIrisMaskContext(w, h);
-        this._paintIrisMask(maskCtx, w, h, t);
+    _drawIris(ctx, width, height, progress) {
+        const maskCtx = this._getIrisMaskContext(width, height);
+        this._paintIrisMask(maskCtx, width, height, progress);
 
         ctx.save();
         ctx.globalAlpha = darken_max_alpha;
@@ -225,15 +225,15 @@ export class CutsceneState extends State {
 
     /**
      * Lazily creates the scratch canvas used for the iris mask.
-     * @param {number} w - Canvas width.
-     * @param {number} h - Canvas height.
+     * @param {number} width - Canvas width.
+     * @param {number} height - Canvas height.
      * @returns {CanvasRenderingContext2D} A scratch canvas sized to the scene, created lazily.
      */
-    _getIrisMaskContext(w, h) {
+    _getIrisMaskContext(width, height) {
         if (!this._irisMaskCanvas) {
             this._irisMaskCanvas = document.createElement('canvas');
-            this._irisMaskCanvas.width = w;
-            this._irisMaskCanvas.height = h;
+            this._irisMaskCanvas.width = width;
+            this._irisMaskCanvas.height = height;
         }
         return this._irisMaskCanvas.getContext('2d');
     }
@@ -241,37 +241,37 @@ export class CutsceneState extends State {
     /**
      * Paints every blob onto the mask, snapping to solid black near full darken.
      * @param {CanvasRenderingContext2D} maskCtx - Mask canvas context.
-     * @param {number} w - Canvas width.
-     * @param {number} h - Canvas height.
-     * @param {number} t - Darken progress, 0 to 1.
+     * @param {number} width - Canvas width.
+     * @param {number} height - Canvas height.
+     * @param {number} progress - Darken progress, 0 to 1.
      */
-    _paintIrisMask(maskCtx, w, h, t) {
-        maskCtx.clearRect(0, 0, w, h);
-        const geometry = { cx: w / 2, cy: h / 2, originDistance: Math.max(w, h) * 0.6, diagonal: Math.hypot(w, h) };
+    _paintIrisMask(maskCtx, width, height, progress) {
+        maskCtx.clearRect(0, 0, width, height);
+        const geometry = { centerX: width / 2, centerY: height / 2, originDistance: Math.max(width, height) * 0.6, diagonal: Math.hypot(width, height) };
         for (const blob of this._irisBlobs) {
-            this._paintIrisBlob(maskCtx, w, h, t, blob, geometry);
+            this._paintIrisBlob(maskCtx, width, height, progress, blob, geometry);
         }
-        if (t >= 0.95) {
+        if (progress >= 0.95) {
             maskCtx.fillStyle = `rgba(${darken_color}, 1)`;
-            maskCtx.fillRect(0, 0, w, h);
+            maskCtx.fillRect(0, 0, width, height);
         }
     }
 
     /**
      * Paints one blob as a radial gradient growing from its fixed origin.
      * @param {CanvasRenderingContext2D} maskCtx - Mask canvas context.
-     * @param {number} w - Canvas width.
-     * @param {number} h - Canvas height.
-     * @param {number} t - Darken progress, 0 to 1.
+     * @param {number} width - Canvas width.
+     * @param {number} height - Canvas height.
+     * @param {number} progress - Darken progress, 0 to 1.
      * @param {{angle:number,growthRate:number,delay:number}} blob - This blob's fixed parameters.
-     * @param {{cx:number,cy:number,originDistance:number,diagonal:number}} geometry - Shared scene geometry.
+     * @param {{centerX:number,centerY:number,originDistance:number,diagonal:number}} geometry - Shared scene geometry.
      */
-    _paintIrisBlob(maskCtx, w, h, t, blob, geometry) {
-        const { cx, cy, originDistance, diagonal } = geometry;
-        const localT = Math.max(0, Math.min(1, (t - blob.delay) / (1 - blob.delay)));
-        const radius = Math.max(diagonal * blob.growthRate * localT, 1);
-        const originX = cx + Math.cos(blob.angle) * originDistance;
-        const originY = cy + Math.sin(blob.angle) * originDistance;
+    _paintIrisBlob(maskCtx, width, height, progress, blob, geometry) {
+        const { centerX, centerY, originDistance, diagonal } = geometry;
+        const localProgress = Math.max(0, Math.min(1, (progress - blob.delay) / (1 - blob.delay)));
+        const radius = Math.max(diagonal * blob.growthRate * localProgress, 1);
+        const originX = centerX + Math.cos(blob.angle) * originDistance;
+        const originY = centerY + Math.sin(blob.angle) * originDistance;
 
         const gradient = maskCtx.createRadialGradient(originX, originY, 0, originX, originY, radius);
         gradient.addColorStop(0, `rgba(${darken_color}, 1)`);
@@ -279,18 +279,18 @@ export class CutsceneState extends State {
         gradient.addColorStop(1, `rgba(${darken_color}, 0)`);
 
         maskCtx.fillStyle = gradient;
-        maskCtx.fillRect(0, 0, w, h);
+        maskCtx.fillRect(0, 0, width, height);
     }
 
     /**
      * Draws the idle Guardian centered near the bottom of the frame.
      * @param {CanvasRenderingContext2D} ctx - Canvas context to draw into.
-     * @param {number} w - Canvas width.
-     * @param {number} h - Canvas height.
+     * @param {number} width - Canvas width.
+     * @param {number} height - Canvas height.
      */
-    _drawGuardian(ctx, w, h) {
+    _drawGuardian(ctx, width, height) {
         const size = character_frame_size * 0.75;
-        const feetY = h * 0.85;
-        this.idleAnimation.draw(ctx, w / 2 - size / 2, feetY - size, size, size);
+        const feetY = height * 0.85;
+        this.idleAnimation.draw(ctx, width / 2 - size / 2, feetY - size, size, size);
     }
 }

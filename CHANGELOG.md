@@ -4,6 +4,13 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.21.1] - 2026-08-19
+
+### Changed
+- Renamed short/cryptic identifiers across `js/` for readability: `dt` -> `deltaTime` (352 occurrences, 43 files); `vx`/`vy` -> `velocityX`/`velocityY` (76 occurrences, 15 files - revisits an earlier "leave as-is" call now that a broader pass is underway); `hp`/`maxHp` -> `health`/`maxHealth` on `Enemy`/`Boss` and every subclass, plus their feeding constants (`WRAITH_HP` -> `WRAITH_HEALTH`, `charge_hp` -> `charge_health`, etc.) and `boss-state.js`'s `bossHpValueEl`/`boss_hp_value_top_px`/the `.boss-hp-label` CSS class, kept in sync so nothing abbreviated was left sitting next to the renamed health system; `px`/`py` -> `pixelX`/`pixelY` in `wraith-beam.js`'s `_isBlockedAcross()` (the only real usages - every other `px` hit was a CSS unit suffix like `` `${x}px` ``, left alone). `sprite-animation.js`/`level.js`'s `sx`/`sy`/`dx`/`dy`/`dw`/`dh` deliberately kept - they mirror the native `ctx.drawImage()` parameter names.
+- `cutscene-state.js`'s `w`/`h`/`t`/`cx`/`cy`/`localT` -> `width`/`height`/`progress`/`centerX`/`centerY`/`localProgress` (96 occurrences - the worst offender, threaded through ~10 methods); `worldmap-state.js`'s `_computeFit()` `w`/`h` -> `width`/`height`; `wraith.js`'s `_updateWalk()`/`_updateTransitionMove()` `dx`/`t` -> `distanceX`/`progress`, matching `color-zone-transitions.js`'s existing `progress` naming. Event-handler parameters unified on `event` (was inconsistently `e` in `dev-panel.js`/`input-handler.js`/`touch-controls.js`/`interact-prompt.js` vs. `event` everywhere else).
+- `TODO.md` updated to match the constant renames from 0.20.2 that it had fallen behind on, plus two incidental fixes noticed along the way: `VFX_CLIPS`'s file reference corrected (`character-animations.js`, not `level-session.js`) and the now-moot "script file naming: PascalCase vs camelCase" open question removed (settled by 0.20.1's kebab-case sweep).
+
 ## [0.21.0] - 2026-08-19
 
 ### Added

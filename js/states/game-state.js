@@ -20,10 +20,10 @@ export class GameState extends State {
 
     /**
      * Delegates to the level session's own update.
-     * @param {number} dt - Fixed timestep in seconds.
+     * @param {number} deltaTime - Fixed timestep in seconds.
      */
-    update(dt) {
-        this.session.update(dt);
+    update(deltaTime) {
+        this.session.update(deltaTime);
     }
 
     /**

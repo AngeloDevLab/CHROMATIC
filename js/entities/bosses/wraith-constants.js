@@ -6,9 +6,9 @@ export const WRAITH_WIDTH = 96;
 export const WRAITH_HEIGHT = 128;
 
 /**
- * wraith-templateboss.js overrides hp/signatureHitDamage; contactDamage stays shared.
+ * wraith-templateboss.js overrides health/signatureHitDamage; contactDamage stays shared.
  */
-export const WRAITH_HP = 300;
+export const WRAITH_HEALTH = 300;
 export const SIGNATURE_HIT_DAMAGE = 60;
 export const WRAITH_CONTACT_DAMAGE = 40;
 

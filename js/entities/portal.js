@@ -42,16 +42,16 @@ export class Portal extends Entity {
 
     /**
      * Advances the portal's state machine and opening animation.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
+    update(deltaTime) {
         if (this.active && this.state === 'closed') {
             this.state = 'opening';
             this.opensAnimation.reset();
         }
 
         if (this.state === 'opening') {
-            this.opensAnimation.update(dt);
+            this.opensAnimation.update(deltaTime);
             if (this.opensAnimation.finished) this.state = 'open';
         }
     }

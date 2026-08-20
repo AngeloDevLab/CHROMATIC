@@ -21,10 +21,10 @@ export class VfxEffect extends Entity {
 
     /**
      * Advances the animation and marks itself dead once finished.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
-        this.animation.update(dt);
+    update(deltaTime) {
+        this.animation.update(deltaTime);
         if (this.animation.finished) this.dead = true;
     }
 

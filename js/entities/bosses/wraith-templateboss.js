@@ -1,7 +1,7 @@
 import { Wraith } from './wraith.js';
 import { WraithBeam } from './wraith-beam.js';
 
-const templateboss_hp = 400;
+const templateboss_health = 400;
 const templateboss_signature_hit_damage = 80;
 const templateboss_name = 'Wraith of the Grey City';
 const templateboss_token_reward = 2;
@@ -22,8 +22,8 @@ export class WraithTemplateboss extends Wraith {
      */
     constructor(x, y, collision, player) {
         super(x, y, collision, player);
-        this.hp = templateboss_hp;
-        this.maxHp = templateboss_hp;
+        this.health = templateboss_health;
+        this.maxHealth = templateboss_health;
         this.signatureHitDamage = templateboss_signature_hit_damage;
         this.name = templateboss_name;
         this.tokenReward = templateboss_token_reward;
@@ -70,10 +70,10 @@ export class WraithTemplateboss extends Wraith {
 
     /**
      * Handles 'firingSweep', which isn't in wraith.js's own switch.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateCustomState(dt) {
-        if (this.state === 'firingSweep') this._updateWalk(dt);
+    _updateCustomState(deltaTime) {
+        if (this.state === 'firingSweep') this._updateWalk(deltaTime);
     }
 
     /**

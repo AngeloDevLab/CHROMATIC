@@ -1,6 +1,6 @@
 import { Enemy } from '../enemy.js';
 
-const charge_hp = 25;
+const charge_health = 25;
 const default_charge_speed = 115;
 const charge_range_px = 190;
 const charge_height_tolerance_px = 24;
@@ -24,8 +24,8 @@ export class Charger extends Enemy {
      */
     constructor(x, y, sprite, width, height) {
         super(x, y, sprite, width, height);
-        this.hp = charge_hp;
-        this.maxHp = charge_hp;
+        this.health = charge_health;
+        this.maxHealth = charge_health;
         this.player = null;
         this.chargeSpeed = default_charge_speed;
         this.chargeCooldownSeconds = default_charge_cooldown_seconds;
@@ -56,67 +56,67 @@ export class Charger extends Enemy {
 
     /**
      * Voids attack-triggered knockback while charging; passive contact knockback still applies.
-     * @param {number} vx - Knockback velocity to apply.
+     * @param {number} velocityX - Knockback velocity to apply.
      */
-    applyAttackKnockback(vx) {
+    applyAttackKnockback(velocityX) {
         if (this.charging) return;
-        super.applyAttackKnockback(vx);
+        super.applyAttackKnockback(velocityX);
     }
 
     /**
      * Runs one frame of gravity, knockback-or-charge movement, and animation.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updatePatrol(dt) {
-        this.vy += this.gravity * dt;
+    _updatePatrol(deltaTime) {
+        this.velocityY += this.gravity * deltaTime;
 
-        if (this.chargeCooldownTimer > 0) this.chargeCooldownTimer = Math.max(0, this.chargeCooldownTimer - dt);
+        if (this.chargeCooldownTimer > 0) this.chargeCooldownTimer = Math.max(0, this.chargeCooldownTimer - deltaTime);
 
         if (this.knockbackTimer > 0) {
-            this._updateKnockback(dt);
+            this._updateKnockback(deltaTime);
         } else {
-            this._updateChargeMovement(dt);
+            this._updateChargeMovement(deltaTime);
         }
 
         this._updateChargeAnimation();
-        this.grounded = this.collision.resolve(this, dt);
+        this.grounded = this.collision.resolve(this, deltaTime);
     }
 
     /**
      * Ends any active charge when contact-damage knockback lands, same as running into a wall.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateKnockback(dt) {
+    _updateKnockback(deltaTime) {
         this._setCharging(false);
-        this.knockbackTimer = Math.max(0, this.knockbackTimer - dt);
+        this.knockbackTimer = Math.max(0, this.knockbackTimer - deltaTime);
     }
 
     /**
-     * Turns at a wall/ledge, starts or continues a charge once in range and off cooldown, and sets vx accordingly.
-     * @param {number} dt - Elapsed time in seconds.
+     * Turns at a wall/ledge, starts or continues a charge once in range and off cooldown, and sets velocityX accordingly.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateChargeMovement(dt) {
+    _updateChargeMovement(deltaTime) {
         if (this.grounded && this._blockedAhead()) {
             this.facing *= -1;
             this._setCharging(false);
         } else if (this.grounded) {
-            this._updateGroundedCharge(dt);
+            this._updateGroundedCharge(deltaTime);
         }
 
-        this.vx = (this.charging ? this.chargeSpeed : this.patrolSpeed) * this.facing;
+        this.velocityX = (this.charging ? this.chargeSpeed : this.patrolSpeed) * this.facing;
     }
 
     /**
      * Starts a charge when eligible, or advances/ends one already running.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    _updateGroundedCharge(dt) {
+    _updateGroundedCharge(deltaTime) {
         if (!this.charging && this.chargeCooldownTimer <= 0 && this._canSeePlayer()) {
             this.facing = this.player.centerX >= this.centerX ? 1 : -1;
             this.chargeTraveled = 0;
             this._setCharging(true);
         } else if (this.charging) {
-            this.chargeTraveled += this.chargeSpeed * dt;
+            this.chargeTraveled += this.chargeSpeed * deltaTime;
             if (this.chargeTraveled >= this.chargeDistance) this._setCharging(false);
         }
     }

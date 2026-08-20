@@ -82,12 +82,12 @@ export class SpriteAnimation {
 
     /**
      * Advances playback by one tick.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      */
-    update(dt) {
+    update(deltaTime) {
         if (this.finished) return;
 
-        this.elapsed += dt;
+        this.elapsed += deltaTime;
         while (this.elapsed >= this.frameDuration) {
             this.elapsed -= this.frameDuration;
             if (this._advanceFrame()) break;

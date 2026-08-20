@@ -23,26 +23,26 @@ export class Token extends Entity {
 
     /**
      * Falls until landed, then bobs in place.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {Collision} collision - For falling onto the level's floor.
      */
-    update(dt, collision) {
+    update(deltaTime, collision) {
         if (!this._landed) {
-            this._fall(dt, collision);
+            this._fall(deltaTime, collision);
             return;
         }
-        this._bobTimer += dt;
+        this._bobTimer += deltaTime;
         this.y = this._restY + Math.sin(this._bobTimer * bob_speed) * bob_amplitude_px;
     }
 
     /**
      * Applies gravity and checks for landing.
-     * @param {number} dt - Elapsed time in seconds.
+     * @param {number} deltaTime - Elapsed time in seconds.
      * @param {Collision} collision - For falling onto the level's floor.
      */
-    _fall(dt, collision) {
-        this.vy += gravity * dt;
-        this._landed = collision.resolve(this, dt);
+    _fall(deltaTime, collision) {
+        this.velocityY += gravity * deltaTime;
+        this._landed = collision.resolve(this, deltaTime);
         if (this._landed) this._restY = this.y;
     }
 

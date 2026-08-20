@@ -224,19 +224,19 @@ function _resolveEnemyProjectileHit(projectile, player, multiplier) {
 
 /**
  * Resolves passive contact damage between the player and every enemy this frame.
- * @param {number} dt - Elapsed time in seconds.
+ * @param {number} deltaTime - Elapsed time in seconds.
  * @param {Player} player - Player to check for contact damage.
  * @param {Enemy[]} enemies - Enemies to check for contact damage.
  * @param {string} difficulty - Game.difficulty, for incoming-damage scaling.
  * @returns {{enemy:Enemy,playerAmount:number,enemyAmount:number}[]}
  */
-export function resolveContactDamage(dt, player, enemies, difficulty) {
+export function resolveContactDamage(deltaTime, player, enemies, difficulty) {
     if (player.dead) return [];
 
     const multiplier = difficulty_damage_multipliers[difficulty] ?? difficulty_damage_multipliers.normal;
     const hits = [];
     for (const enemy of enemies) {
-        const hit = _resolveEnemyContact(dt, player, enemy, multiplier);
+        const hit = _resolveEnemyContact(deltaTime, player, enemy, multiplier);
         if (hit) hits.push(hit);
     }
     return hits;
@@ -245,14 +245,14 @@ export function resolveContactDamage(dt, player, enemies, difficulty) {
 /**
  * A charging enemy skips the self-damage mirror (enemyAmount 0) - otherwise
  * every charge would tick it to death off its own rush.
- * @param {number} dt - Elapsed time in seconds.
+ * @param {number} deltaTime - Elapsed time in seconds.
  * @param {Player} player - Player to check for contact damage.
  * @param {Enemy} enemy - Enemy to check for contact damage.
  * @param {number} multiplier - Difficulty damage multiplier.
  * @returns {{enemy:Enemy,playerAmount:number,enemyAmount:number}|null} The hit, if contact damage actually landed this frame.
  */
-function _resolveEnemyContact(dt, player, enemy, multiplier) {
-    if (!_canContactDamage(dt, player, enemy)) return null;
+function _resolveEnemyContact(deltaTime, player, enemy, multiplier) {
+    if (!_canContactDamage(deltaTime, player, enemy)) return null;
 
     const isCharging = !!enemy.charging;
     const playerAmount = enemy.contactDamage * multiplier * (isCharging ? charge_contact_damage_multiplier : 1);
@@ -264,14 +264,14 @@ function _resolveEnemyContact(dt, player, enemy, multiplier) {
 
 /**
  * Ticks the enemy's contact cooldown and checks whether it's eligible to hit the player this frame.
- * @param {number} dt - Elapsed time in seconds.
+ * @param {number} deltaTime - Elapsed time in seconds.
  * @param {Player} player - Player to check overlap against.
  * @param {Enemy} enemy - Enemy to check overlap and cooldown against.
  * @returns {boolean}
  */
-function _canContactDamage(dt, player, enemy) {
+function _canContactDamage(deltaTime, player, enemy) {
     if (enemy.dead || enemy.dormant) return false;
-    enemy.contactCooldown = Math.max(0, enemy.contactCooldown - dt);
+    enemy.contactCooldown = Math.max(0, enemy.contactCooldown - deltaTime);
     if (enemy.contactCooldown > 0) return false;
     return rectsOverlap(player, enemy);
 }

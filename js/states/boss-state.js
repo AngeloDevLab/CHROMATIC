@@ -10,7 +10,7 @@ import { BOSS_BAR_HEIGHT, BOSS_BAR_TOP_PX } from '../ui/hud.js';
  * (BOSS_BAR_TOP_PX/HEIGHT), then this HP value label right below it.
  */
 const boss_name_top_px = 6;
-const boss_hp_value_top_px = BOSS_BAR_TOP_PX + BOSS_BAR_HEIGHT + 2;
+const boss_health_value_top_px = BOSS_BAR_TOP_PX + BOSS_BAR_HEIGHT + 2;
 
 /** A boss-level session: the same LevelSession as a normal level, plus an arena-sized render buffer and the top-center boss HP bar/name label. */
 export class BossState extends State {
@@ -24,7 +24,7 @@ export class BossState extends State {
 
         this.session = new LevelSession(this.game, params);
         this.bossNameEl = this._buildHiddenLabel('boss-name-label');
-        this.bossHpValueEl = this._buildHiddenLabel('boss-hp-label');
+        this.bossHealthValueEl = this._buildHiddenLabel('boss-health-label');
     }
 
     /**
@@ -46,16 +46,16 @@ export class BossState extends State {
     exit() {
         this.session.destroy();
         this.bossNameEl.remove();
-        this.bossHpValueEl.remove();
+        this.bossHealthValueEl.remove();
         this.game.resetBuffer();
     }
 
     /**
      * Delegates to the level session's own update.
-     * @param {number} dt - Fixed timestep in seconds.
+     * @param {number} deltaTime - Fixed timestep in seconds.
      */
-    update(dt) {
-        this.session.update(dt);
+    update(deltaTime) {
+        this.session.update(deltaTime);
     }
 
     /**
@@ -68,7 +68,7 @@ export class BossState extends State {
         const boss = this.session.enemyRoster.boss;
         const showBar = boss && !boss.dead;
         this.bossNameEl.hidden = !showBar;
-        this.bossHpValueEl.hidden = !showBar;
+        this.bossHealthValueEl.hidden = !showBar;
         if (!showBar) return;
 
         const scale = this.game.hudScale;
@@ -88,8 +88,8 @@ export class BossState extends State {
         this.bossNameEl.style.left = `${centerX}px`;
         this.bossNameEl.style.top = `${boss_name_top_px * scale}px`;
 
-        this.bossHpValueEl.textContent = `${Math.round(boss.hp)}/${boss.maxHp}`;
-        this.bossHpValueEl.style.left = `${centerX}px`;
-        this.bossHpValueEl.style.top = `${boss_hp_value_top_px * scale}px`;
+        this.bossHealthValueEl.textContent = `${Math.round(boss.health)}/${boss.maxHealth}`;
+        this.bossHealthValueEl.style.left = `${centerX}px`;
+        this.bossHealthValueEl.style.top = `${boss_health_value_top_px * scale}px`;
     }
 }
