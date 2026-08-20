@@ -52,7 +52,7 @@ body {
     height: 100%;
     overflow: hidden;
     background-color: #111318;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='160' viewBox='0 0 240 160'%3E%3Cpath d='M0,30 L20,30 L20,25 L40,25 L40,20 L60,20 L60,15 L80,15 L80,10 L100,10 L140,10 L140,15 L160,15 L160,20 L180,20 L180,25 L200,25 L200,30 L220,30 L240,30 L240,160 L0,160 Z' fill='%231a1c20'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScyNDAnIGhlaWdodD0nMTYwJyB2aWV3Qm94PScwIDAgMjQwIDE2MCc+PHBhdGggZD0nTTAsMzAgTDIwLDMwIEwyMCwyNSBMNDAsMjUgTDQwLDIwIEw2MCwyMCBMNjAsMTUgTDgwLDE1IEw4MCwxMCBMMTAwLDEwIEwxNDAsMTAgTDE0MCwxNSBMMTYwLDE1IEwxNjAsMjAgTDE4MCwyMCBMMTgwLDI1IEwyMDAsMjUgTDIwMCwzMCBMMjIwLDMwIEwyNDAsMzAgTDI0MCwxNjAgTDAsMTYwIFonIGZpbGw9JyMxYTFjMjAnLz48L3N2Zz4=");
     background-repeat: repeat-x;
     background-position: bottom;
     -webkit-touch-callout: none;

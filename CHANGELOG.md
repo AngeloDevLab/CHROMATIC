@@ -4,6 +4,15 @@ All notable changes to CHROMATIC, loosely following [Keep a Changelog](https://k
 
 Version numbers below were rescaled on 2026-07-22 (previously 0.1.0-0.8.3) to leave realistic room before 1.0 given the Prologue-only scope cut above. No functional/code change, renumbering only.
 
+## [0.21.2] - 2026-08-19
+
+### Fixed
+- The `body` background's decorative skyline silhouette rendered in the wrong color (white instead of the intended dark `#1a1c20`) in Firefox, even though the pixel-art shape itself displayed correctly - the raw (non-base64) `data:image/svg+xml,...` URI's percent-encoded `fill='%231a1c20'` likely wasn't decoding correctly. Switched to a base64-encoded data URI, which needs no percent-decoding at all (`style.css`).
+- `isTouchCapable()` (`touch-controls.js`) showed the on-screen touch controls on plain mouse-only desktops in Brave - `navigator.maxTouchPoints`/`'ontouchstart' in window` only report API support, not actual primary input, and Brave's fingerprinting protection can report them true regardless of real hardware. Switched to the `pointer: coarse` media feature, which reflects the actual primary pointer.
+
+### Changed
+- Trimmed a few JSDoc/comment blocks in `touch-controls.js` back down to what the function/constant actually does, dropping rationale that had crept back in (`isTouchCapable()`, `tap_buttons`, `buildTouchButtonElement()`).
+
 ## [0.21.1] - 2026-08-19
 
 ### Changed

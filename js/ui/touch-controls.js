@@ -15,28 +15,18 @@ const hold_buttons = [
     { action: 'drop', icon: 'btn-icon-down', className: 'touch-drop' },
 ];
 
-/**
- * One-shot on tap (InputHandler.triggerPress()), no held state to release.
- * Pause is built separately below, for any device. Interact isn't here
- * either - it's context-sensitive, positioned by interactables.js's own
- * [E] prompt elements instead of a fixed corner button.
- */
+/** One-shot on tap (InputHandler.triggerPress()), no held state to release. */
 const tap_buttons = [
     { name: 'attack', icon: 'btn-icon-attack', className: 'touch-attack' },
 ];
 
-/**
- * Checks whether this device reports any touch capability.
- * @returns {boolean}
- */
+/** Whether touch is the primary pointing method. @returns {boolean} */
 export function isTouchCapable() {
-    return navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+    return window.matchMedia('(pointer: coarse)').matches;
 }
 
 /**
- * Builds one button's background plate + icon as separate layered children,
- * so the plate's see-through opacity doesn't also fade the icon. Caller owns
- * appending/removing it - interactables.js's Interact prompt reuses this too.
+ * Builds one button's background plate + icon as separate layered children.
  * @param {string} icon - Icon filename (without extension) under assets/icons/.
  * @param {string} className - CSS class for the button element.
  * @returns {HTMLButtonElement}
